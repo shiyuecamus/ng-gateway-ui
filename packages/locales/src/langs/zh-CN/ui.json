@@ -17,6 +17,14 @@
     "delete": "删除{0}",
     "view": "查看{0}"
   },
+  "help": {
+    "unit": "单位",
+    "unitWithName": "单位：{unit}"
+  },
+  "unit": {
+    "seconds": "秒",
+    "milliseconds": "毫秒"
+  },
   "actionMessage": {
     "deleteConfirm": "确定删除 {0} 吗？",
     "deleting": "正在删除 {0} ...",
@@ -27,7 +35,9 @@
   "placeholder": {
     "input": "请输入",
     "select": "请选择",
-    "upload": "点击上传"
+    "upload": "点击上传",
+    "inputWithName": "请输入{name}",
+    "selectWithName": "请选择{name}"
   },
   "captcha": {
     "title": "请完成安全验证",
@@ -110,5 +120,13 @@
       "setTimezone": "设置时区",
       "setSuccess": "时区设置成功"
     }
+  },
+  "connectionState": {
+    "title": "连接状态",
+    "disconnected": "离线",
+    "connecting": "连接中",
+    "connected": "在线",
+    "reconnecting": "重连中",
+    "failed": "失败"
   }
 }

@@ -5,7 +5,7 @@ import { defineConfig } from 'vitepress';
 import { version } from '../../../package.json';
 
 export const zh = defineConfig({
-  description: 'Vben Admin & 企业级管理系统框架',
+  description: 'NG Gateway & 新一代高性能 IoT 网关',
   lang: 'zh-Hans',
   themeConfig: {
     darkModeSwitchLabel: '主题',
@@ -16,11 +16,11 @@ export const zh = defineConfig({
     },
     editLink: {
       pattern:
-        'https://github.com/vbenjs/vue-vben-admin/edit/main/docs/src/:path',
+        'https://github.com/shiyuecamus/node-grove-gateway/edit/main/docs/src/:path',
       text: '在 GitHub 上编辑此页面',
     },
     footer: {
-      copyright: `Copyright © 2020-${new Date().getFullYear()} Vben`,
+      copyright: `Copyright © 2020-${new Date().getFullYear()} Shiyuecamus`,
       message: '基于 MIT 许可发布.',
     },
     langMenuLabel: '多语言',
@@ -36,166 +36,179 @@ export const zh = defineConfig({
 
     outline: {
       label: '页面导航',
+      level: 'deep',
     },
     returnToTopLabel: '回到顶部',
 
-    sidebar: {
-      '/commercial/': { base: '/commercial/', items: sidebarCommercial() },
-      '/components/': { base: '/components/', items: sidebarComponents() },
-      '/guide/': { base: '/guide/', items: sidebarGuide() },
-    },
+    // Best practice for product docs: a global sidebar tree so readers can always see the full TOC.
+    sidebar: sidebar(),
     sidebarMenuLabel: '菜单',
   },
 });
 
-function sidebarGuide(): DefaultTheme.SidebarItem[] {
+function sidebar(): DefaultTheme.SidebarItem[] {
   return [
     {
       collapsed: false,
-      text: '简介',
+      text: '概览',
       items: [
+        { link: '/overview/', text: '产品概览' },
+        { link: '/overview/architecture', text: '核心架构' },
+      ],
+    },
+    {
+      collapsed: true,
+      text: '安装',
+      items: [
+        { link: '/install/', text: '快速开始' },
+        { link: '/install/docker', text: 'Docker 安装' },
+        { link: '/install/helm', text: 'Helm 安装' },
+        { link: '/install/macos', text: 'MacOS 安装' },
+        { link: '/install/linux', text: 'Linux 安装' },
+        { link: '/install/windows', text: 'Windows 安装' },
+      ],
+    },
+    {
+      collapsed: true,
+      text: '南向',
+      items: [
+        { link: '/southward/overview', text: '南向总览' },
         {
-          link: 'introduction/vben',
-          text: '关于 Vben Admin',
+          link: '/southward/driver-metadata-schema',
+          text: 'Driver Metadata Schema',
+        },
+        { link: '/southward/iec104-bulk-import', text: 'IEC104 批量导入示例' },
+        {
+          text: 'Modbus',
+          collapsed: true,
+          items: [
+            { link: '/southward/modbus/', text: '驱动概览与配置' },
+            { link: '/southward/modbus/addressing', text: '地址与 quantity' },
+            { link: '/southward/modbus/batching', text: '批量读写与调优' },
+          ],
         },
         {
-          link: 'introduction/why',
-          text: '为什么选择我们?',
+          text: '西门子 S7',
+          collapsed: true,
+          items: [
+            { link: '/southward/s7/', text: '驱动概览与配置' },
+            { link: '/southward/s7/addressing', text: 'S7 地址语法' },
+          ],
         },
-        { link: 'introduction/quick-start', text: '快速开始' },
-        { link: 'introduction/thin', text: '精简版本' },
         {
-          base: '/',
-          link: 'components/introduction',
-          text: '组件文档',
+          text: 'IEC 60870-5-104',
+          collapsed: true,
+          items: [
+            { link: '/southward/iec104/', text: '驱动概览与配置' },
+            { link: '/southward/iec104/typeid', text: 'TypeID 与建模' },
+            { link: '/southward/iec104/link-timers', text: '链路定时器与背压' },
+          ],
+        },
+        {
+          text: 'DLT645',
+          collapsed: true,
+          items: [
+            { link: '/southward/dlt645/', text: '驱动概览与配置' },
+            {
+              link: '/southward/dlt645/address-di',
+              text: '表地址 / DI / 小数位',
+            },
+          ],
+        },
+        {
+          text: 'CJT188',
+          collapsed: true,
+          items: [
+            { link: '/southward/cjt188/', text: '驱动概览与配置' },
+            { link: '/southward/cjt188/address-di', text: '地址 / 类型 / DI' },
+          ],
+        },
+        {
+          text: 'OPC UA',
+          collapsed: true,
+          items: [
+            { link: '/southward/opcua/', text: '驱动概览与配置' },
+            { link: '/southward/opcua/nodeid', text: 'NodeId 语法与获取' },
+            { link: '/southward/opcua/security', text: '安全与认证' },
+          ],
+        },
+        {
+          text: 'Ethernet-IP',
+          collapsed: true,
+          items: [
+            { link: '/southward/ethernet-ip/', text: '驱动概览与配置' },
+            { link: '/southward/ethernet-ip/tag', text: 'Tag 建模与限制' },
+          ],
+        },
+        {
+          text: 'DNP3',
+          collapsed: true,
+          items: [
+            { link: '/southward/dnp3/', text: '驱动概览与配置' },
+            { link: '/southward/dnp3/groups', text: '对象组/索引/命令类型' },
+            { link: '/southward/dnp3/crob', text: 'CROB ControlCode' },
+          ],
+        },
+        {
+          text: '三菱 MC',
+          collapsed: true,
+          items: [
+            { link: '/southward/mc/', text: '驱动概览与配置' },
+            { link: '/southward/mc/addressing', text: 'MC 地址语法' },
+            { link: '/southward/mc/batching', text: '批量读写与调优' },
+          ],
         },
       ],
     },
     {
-      text: '基础',
+      collapsed: true,
+      text: '北向',
       items: [
-        { link: 'essentials/concept', text: '基础概念' },
-        { link: 'essentials/development', text: '本地开发' },
-        { link: 'essentials/route', text: '路由和菜单' },
-        { link: 'essentials/settings', text: '配置' },
-        { link: 'essentials/icons', text: '图标' },
-        { link: 'essentials/styles', text: '样式' },
-        { link: 'essentials/external-module', text: '外部模块' },
-        { link: 'essentials/build', text: '构建与部署' },
-        { link: 'essentials/server', text: '服务端交互与数据Mock' },
+        { link: '/northward/overview', text: '北向总览' },
+        { link: '/northward/kafka', text: 'Kafka' },
+        { link: '/northward/pulsar', text: 'Pulsar' },
+        { link: '/northward/thingsboard', text: 'Thingsboard' },
+        { link: '/northward/opcua', text: 'OPC UA Server' },
+        { link: '/northward/mqtt', text: 'MQTT' },
+        { link: '/northward/websocket', text: 'WebSocket' },
+        { link: '/northward/http', text: 'HTTP' },
       ],
     },
     {
-      text: '深入',
+      collapsed: true,
+      text: '运维',
       items: [
-        { link: 'in-depth/login', text: '登录' },
-        // { link: 'in-depth/layout', text: '布局' },
-        { link: 'in-depth/theme', text: '主题' },
-        { link: 'in-depth/access', text: '权限' },
-        { link: 'in-depth/locale', text: '国际化' },
-        { link: 'in-depth/features', text: '常用功能' },
-        { link: 'in-depth/check-updates', text: '检查更新' },
-        { link: 'in-depth/loading', text: '全局loading' },
-        { link: 'in-depth/ui-framework', text: '组件库切换' },
+        { link: '/ops/data-monitor', text: '数据监控' },
+        { link: '/ops/action-debug', text: 'Action 调试' },
+        { link: '/ops/configuration', text: '配置管理' },
+        { link: '/ops/logging', text: '日志管理' },
+        { link: '/ops/metrics', text: '指标管理' },
+        { link: '/ops/tracing', text: '指标追踪' },
+        { link: '/ops/faq', text: '常见问题及故障排查' },
       ],
     },
     {
-      text: '工程',
+      collapsed: true,
+      text: '开发',
       items: [
-        { link: 'project/standard', text: '规范' },
-        { link: 'project/cli', text: 'CLI' },
-        { link: 'project/dir', text: '目录说明' },
-        { link: 'project/test', text: '单元测试' },
-        { link: 'project/tailwindcss', text: 'Tailwind CSS' },
-        { link: 'project/changeset', text: 'Changeset' },
-        { link: 'project/vite', text: 'Vite Config' },
+        { link: '/dev/driver-dev', text: '南向驱动开发' },
+        { link: '/dev/plugin-dev', text: '北向插件开发' },
       ],
     },
     {
-      text: '其他',
+      collapsed: true,
+      text: '指南',
       items: [
-        { link: 'other/project-update', text: '项目更新' },
-        { link: 'other/remove-code', text: '移除代码' },
-        { link: 'other/faq', text: '常见问题' },
-      ],
-    },
-  ];
-}
-
-function sidebarCommercial(): DefaultTheme.SidebarItem[] {
-  return [
-    {
-      link: 'community',
-      text: '交流群',
-    },
-    {
-      link: 'technical-support',
-      text: '技术支持',
-    },
-    {
-      link: 'customized',
-      text: '定制开发',
-    },
-  ];
-}
-
-function sidebarComponents(): DefaultTheme.SidebarItem[] {
-  return [
-    {
-      text: '组件',
-      items: [
-        {
-          link: 'introduction',
-          text: '介绍',
-        },
+        { link: '/guide/other/release', text: '发布日志' },
+        { link: '/guide/other/roadmap', text: '路线图' },
       ],
     },
     {
-      collapsed: false,
-      text: '布局组件',
+      collapsed: true,
+      text: '附录',
       items: [
-        {
-          link: 'layout-ui/page',
-          text: 'Page 页面',
-        },
-      ],
-    },
-    {
-      collapsed: false,
-      text: '通用组件',
-      items: [
-        {
-          link: 'common-ui/vben-api-component',
-          text: 'ApiComponent Api组件包装器',
-        },
-        {
-          link: 'common-ui/vben-alert',
-          text: 'Alert 轻量提示框',
-        },
-        {
-          link: 'common-ui/vben-modal',
-          text: 'Modal 模态框',
-        },
-        {
-          link: 'common-ui/vben-drawer',
-          text: 'Drawer 抽屉',
-        },
-        {
-          link: 'common-ui/vben-form',
-          text: 'Form 表单',
-        },
-        {
-          link: 'common-ui/vben-vxe-table',
-          text: 'Vxe Table 表格',
-        },
-        {
-          link: 'common-ui/vben-count-to-animator',
-          text: 'CountToAnimator 数字动画',
-        },
-        {
-          link: 'common-ui/vben-ellipsis-text',
-          text: 'EllipsisText 省略文本',
-        },
+        { link: '/appendix/data-types', text: '数据类型' },
+        { link: '/appendix/protocol-docs', text: '协议文档' },
       ],
     },
   ];
@@ -204,64 +217,8 @@ function sidebarComponents(): DefaultTheme.SidebarItem[] {
 function nav(): DefaultTheme.NavItem[] {
   return [
     {
-      activeMatch: '^/(guide|components)/',
       text: '文档',
-      items: [
-        {
-          activeMatch: '^/guide/',
-          link: '/guide/introduction/vben',
-          text: '指南',
-        },
-        {
-          activeMatch: '^/components/',
-          link: '/components/introduction',
-          text: '组件',
-        },
-        {
-          text: '历史版本',
-          items: [
-            {
-              link: 'https://doc.vvbin.cn',
-              text: '2.x版本文档',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      text: '演示',
-      items: [
-        {
-          text: 'Vben Admin',
-          items: [
-            {
-              link: 'https://www.vben.pro',
-              text: '演示版本',
-            },
-            {
-              link: 'https://ant.vben.pro',
-              text: 'Ant Design Vue 版本',
-            },
-            {
-              link: 'https://naive.vben.pro',
-              text: 'Naive 版本',
-            },
-            {
-              link: 'https://ele.vben.pro',
-              text: 'Element Plus版本',
-            },
-          ],
-        },
-        {
-          text: '其他',
-          items: [
-            {
-              link: 'https://vben.vvbin.cn',
-              text: 'Vben Admin 2.x',
-            },
-          ],
-        },
-      ],
+      link: '/overview/',
     },
     {
       text: version,
@@ -269,14 +226,6 @@ function nav(): DefaultTheme.NavItem[] {
         {
           link: 'https://github.com/vbenjs/vue-vben-admin/releases',
           text: '更新日志',
-        },
-        {
-          link: 'https://github.com/orgs/vbenjs/projects/5',
-          text: '路线图',
-        },
-        {
-          link: 'https://github.com/vbenjs/vue-vben-admin/blob/main/.github/contributing.md',
-          text: '贡献',
         },
       ],
     },

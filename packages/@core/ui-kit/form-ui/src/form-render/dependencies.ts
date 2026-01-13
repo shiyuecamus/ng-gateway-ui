@@ -6,7 +6,7 @@ import type {
 
 import { computed, ref, watch } from 'vue';
 
-import { isBoolean, isFunction } from '@vben-core/shared/utils';
+import { get, isBoolean, isFunction } from '@vben-core/shared/utils';
 
 import { useFormValues } from 'vee-validate';
 
@@ -37,7 +37,7 @@ export default function useDependencies(
     // 该字段可能会被多个字段触发
     const triggerFields = getDependencies()?.triggerFields ?? [];
     return triggerFields.map((dep) => {
-      return values.value[dep];
+      return get(values.value, dep);
     });
   });
 

@@ -9,5 +9,20 @@ export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
     name: import.meta.env.VITE_APP_TITLE,
+    enableRefreshToken: false,
+    accessMode: 'backend',
+    dynamicTitle: true,
+    loginExpiredMode: 'modal',
+    defaultHomePath: '/home',
+  },
+  theme: {
+    colorPrimary: 'hsl(18 89% 40%)',
+    builtinType: 'orange',
+    mode: 'dark',
+  },
+  logo: {
+    enable: true,
+    fit: 'contain',
+    source: '/static/logo.png',
   },
 });

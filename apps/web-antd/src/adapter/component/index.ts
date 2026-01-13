@@ -33,6 +33,8 @@ import { isEmpty } from '@vben/utils';
 
 import { message, notification } from 'ant-design-vue';
 
+import 'vanilla-jsoneditor/themes/jse-theme-dark.css';
+
 const AutoComplete = defineAsyncComponent(
   () => import('ant-design-vue/es/auto-complete'),
 );
@@ -77,10 +79,19 @@ const TimePicker = defineAsyncComponent(
 const TreeSelect = defineAsyncComponent(
   () => import('ant-design-vue/es/tree-select'),
 );
+const Transfer = defineAsyncComponent(
+  () => import('ant-design-vue/es/transfer'),
+);
 const Cascader = defineAsyncComponent(
   () => import('ant-design-vue/es/cascader'),
 );
 const Upload = defineAsyncComponent(() => import('ant-design-vue/es/upload'));
+const UploadDragger = defineAsyncComponent(() =>
+  import('ant-design-vue/es/upload').then((res) => res.UploadDragger),
+);
+const JsonEditorVue = defineAsyncComponent(() =>
+  import('json-editor-vue').then((res) => res.default),
+);
 const Image = defineAsyncComponent(() => import('ant-design-vue/es/image'));
 const PreviewGroup = defineAsyncComponent(() =>
   import('ant-design-vue/es/image').then((res) => res.ImagePreviewGroup),
@@ -357,6 +368,7 @@ export type ComponentType =
   | 'Input'
   | 'InputNumber'
   | 'InputPassword'
+  | 'JsonEditor'
   | 'Mentions'
   | 'PrimaryButton'
   | 'Radio'
@@ -368,6 +380,7 @@ export type ComponentType =
   | 'Switch'
   | 'Textarea'
   | 'TimePicker'
+  | 'Transfer'
   | 'TreeSelect'
   | 'Upload'
   | BaseFormComponentType;
@@ -446,6 +459,9 @@ async function initComponentAdapter() {
     TimePicker,
     TreeSelect: withDefaultPlaceholder(TreeSelect, 'select'),
     Upload: withPreviewUpload(),
+    Transfer,
+    UploadDragger,
+    JsonEditor: JsonEditorVue,
   };
 
   // 将组件注册到全局共享状态中

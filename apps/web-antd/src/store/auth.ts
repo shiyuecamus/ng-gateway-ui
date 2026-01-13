@@ -10,7 +10,7 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { notification } from 'ant-design-vue';
 import { defineStore } from 'pinia';
 
-import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi } from '#/api';
+import { getUserInfoApi, loginApi, logoutApi } from '#/api';
 import { $t } from '#/locales';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -33,36 +33,31 @@ export const useAuthStore = defineStore('auth', () => {
     let userInfo: null | UserInfo = null;
     try {
       loginLoading.value = true;
-      const { accessToken } = await loginApi(params);
+      const { token } = await loginApi(params);
 
       // 如果成功获取到 accessToken
-      if (accessToken) {
-        accessStore.setAccessToken(accessToken);
+      if (token) {
+        accessStore.setAccessToken(token);
 
         // 获取用户信息并存储到 accessStore 中
-        const [fetchUserInfoResult, accessCodes] = await Promise.all([
-          fetchUserInfo(),
-          getAccessCodesApi(),
-        ]);
+        const fetchUserInfoResult = await fetchUserInfo();
 
         userInfo = fetchUserInfoResult;
 
-        userStore.setUserInfo(userInfo);
-        accessStore.setAccessCodes(accessCodes);
+        // userStore.setUserInfo(userInfo);
+        // accessStore.setAccessCodes(accessCodes);
 
         if (accessStore.loginExpired) {
           accessStore.setLoginExpired(false);
         } else {
           onSuccess
             ? await onSuccess?.()
-            : await router.push(
-                userInfo.homePath || preferences.app.defaultHomePath,
-              );
+            : await router.push(preferences.app.defaultHomePath);
         }
 
-        if (userInfo?.realName) {
+        if (userInfo?.nickname) {
           notification.success({
-            description: `${$t('authentication.loginSuccessDesc')}:${userInfo?.realName}`,
+            description: `${$t('authentication.loginSuccessDesc')}:${userInfo?.nickname}`,
             duration: 3,
             message: $t('authentication.loginSuccess'),
           });

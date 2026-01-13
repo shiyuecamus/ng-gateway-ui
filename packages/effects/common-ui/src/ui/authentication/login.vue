@@ -11,6 +11,7 @@ import { useRouter } from 'vue-router';
 import { $t } from '@vben/locales';
 
 import { useVbenForm } from '@vben-core/form-ui';
+import { preferences } from '@vben-core/preferences';
 import { VbenButton, VbenCheckbox } from '@vben-core/shadcn-ui';
 
 import Title from './auth-title.vue';
@@ -31,12 +32,12 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   qrCodeLoginPath: '/auth/qrcode-login',
   registerPath: '/auth/register',
-  showCodeLogin: true,
-  showForgetPassword: true,
-  showQrcodeLogin: true,
-  showRegister: true,
+  showCodeLogin: false,
+  showForgetPassword: false,
+  showQrcodeLogin: false,
+  showRegister: false,
   showRememberMe: true,
-  showThirdPartyLogin: true,
+  showThirdPartyLogin: false,
   submitButtonText: '',
   subTitle: '',
   title: '',
@@ -57,6 +58,17 @@ const [Form, formApi] = useVbenForm(
   }),
 );
 const router = useRouter();
+
+/**
+ * Default application name used across the UI.
+ *
+ * The value comes from runtime preferences (e.g. branding page updates it),
+ * so login pages can reflect the current product name without hardcoding.
+ */
+const app_name = computed(() => {
+  const name = String(preferences?.app?.name ?? '').trim();
+  return name.length > 0 ? name : '';
+});
 
 const REMEMBER_ME_KEY = `REMEMBER_ME_USERNAME_${location.hostname}`;
 
@@ -101,7 +113,12 @@ defineExpose({
         <template #desc>
           <span class="text-muted-foreground">
             <slot name="subTitle">
-              {{ subTitle || $t('authentication.loginSubtitle') }}
+              {{
+                subTitle ||
+                $t('authentication.loginSubtitle', {
+                  appName: app_name,
+                })
+              }}
             </slot>
           </span>
         </template>

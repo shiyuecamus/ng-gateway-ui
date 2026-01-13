@@ -17,6 +17,14 @@
     "delete": "Delete {0}",
     "view": "View {0}"
   },
+  "help": {
+    "unit": "Unit",
+    "unitWithName": "Unit: {unit}"
+  },
+  "unit": {
+    "seconds": "Seconds",
+    "milliseconds": "Milliseconds"
+  },
   "actionMessage": {
     "deleteConfirm": "Are you sure to delete {0}?",
     "deleting": "Deleting {0} ...",
@@ -27,7 +35,9 @@
   "placeholder": {
     "input": "Please enter",
     "select": "Please select",
-    "upload": "Click to upload"
+    "upload": "Click to upload",
+    "inputWithName": "Please enter {name}",
+    "selectWithName": "Please select {name}"
   },
   "captcha": {
     "title": "Please complete the security verification",
@@ -110,5 +120,13 @@
       "setTimezone": "Set Timezone",
       "setSuccess": "Timezone set successfully"
     }
+  },
+  "connectionState": {
+    "title": "Connection State",
+    "disconnected": "Disconnected",
+    "connecting": "Connecting",
+    "connected": "Connected",
+    "reconnecting": "Reconnecting",
+    "failed": "Failed"
   }
 }

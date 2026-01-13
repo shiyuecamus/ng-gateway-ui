@@ -97,7 +97,7 @@ function setupAccessGuard(router: Router) {
 
     // 生成菜单和路由
     const { accessibleMenus, accessibleRoutes } = await generateAccess({
-      roles: userRoles,
+      roles: userRoles.map((item) => item.code),
       router,
       // 则会在菜单中显示，但是访问会被重定向到403
       routes: accessRoutes,
@@ -109,7 +109,7 @@ function setupAccessGuard(router: Router) {
     accessStore.setIsAccessChecked(true);
     const redirectPath = (from.query.redirect ??
       (to.path === preferences.app.defaultHomePath
-        ? userInfo.homePath || preferences.app.defaultHomePath
+        ? preferences.app.defaultHomePath
         : to.fullPath)) as string;
 
     return {

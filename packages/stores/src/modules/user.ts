@@ -1,3 +1,5 @@
+import type { SimpleRole } from '@vben-core/typings';
+
 import { acceptHMRUpdate, defineStore } from 'pinia';
 
 interface BasicUserInfo {
@@ -7,17 +9,21 @@ interface BasicUserInfo {
    */
   avatar: string;
   /**
+   * 用户id
+   */
+  id: number | string;
+  /**
    * 用户昵称
    */
-  realName: string;
+  nickname: string;
   /**
    * 用户角色
    */
-  roles?: string[];
+  roles?: SimpleRole[];
   /**
-   * 用户id
+   * 状态
    */
-  userId: string;
+  status?: number;
   /**
    * 用户名
    */
@@ -47,8 +53,8 @@ export const useUserStore = defineStore('core-user', {
       const roles = userInfo?.roles ?? [];
       this.setUserRoles(roles);
     },
-    setUserRoles(roles: string[]) {
-      this.userRoles = roles;
+    setUserRoles(roles: SimpleRole[]) {
+      this.userRoles = roles.map((item) => item.code);
     },
   },
   state: (): AccessState => ({

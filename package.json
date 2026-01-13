@@ -1,27 +1,24 @@
 {
-  "name": "vben-admin-monorepo",
-  "version": "5.5.9",
+  "name": "ng-gateway-ui",
+  "version": "1.0.0",
   "private": true,
   "keywords": [
     "monorepo",
     "turbo",
     "vben",
-    "vben admin",
-    "vben pro",
+    "ng-gateway",
+    "ng-gateway-ui",
     "vue",
-    "vue admin",
-    "vue vben admin",
-    "vue vben admin pro",
     "vue3"
   ],
-  "homepage": "https://github.com/vbenjs/vue-vben-admin",
-  "bugs": "https://github.com/vbenjs/vue-vben-admin/issues",
-  "repository": "vbenjs/vue-vben-admin.git",
+  "homepage": "https://github.com/shiyuecamus/ng-gateway",
+  "bugs": "https://github.com/shiyuecamus/ng-gateway/issues",
+  "repository": "shiyuecamus/ng-gateway.git",
   "license": "MIT",
   "author": {
-    "name": "vben",
-    "email": "ann.vben@gmail.com",
-    "url": "https://github.com/anncwb"
+    "name": "shiyuecamus",
+    "email": "shiyuecamus@gmail.com",
+    "url": "https://github.com/shiyuecamus"
   },
   "type": "module",
   "scripts": {

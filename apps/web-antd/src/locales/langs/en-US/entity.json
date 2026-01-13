@@ -1,0 +1,20 @@
+{
+  "user": "User",
+  "role": "Role",
+  "menu": "Menu",
+  "channel": "Channel",
+  "device": "Device",
+  "point": "Point",
+  "action": "Action",
+  "driver": "Driver",
+  "detail": {
+    "details": "Details",
+    "detailsWithEntityType": "{entityType} - Details",
+    "properties": "Properties",
+    "telemetry": "Telemetry",
+    "alarms": "Alarms",
+    "events": "Events",
+    "relations": "Relations",
+    "audit": "Audit"
+  }
+}

@@ -56,14 +56,12 @@ export const useAuthStore = defineStore('auth', () => {
         } else {
           onSuccess
             ? await onSuccess?.()
-            : await router.push(
-                userInfo.homePath || preferences.app.defaultHomePath,
-              );
+            : await router.push(preferences.app.defaultHomePath);
         }
 
-        if (userInfo?.realName) {
+        if (userInfo?.nickname) {
           notification.success({
-            description: `${$t('authentication.loginSuccessDesc')}:${userInfo?.realName}`,
+            description: `${$t('authentication.loginSuccessDesc')}:${userInfo?.nickname}`,
             duration: 3,
             message: $t('authentication.loginSuccess'),
           });

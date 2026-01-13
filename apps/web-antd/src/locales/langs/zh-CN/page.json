@@ -11,5 +11,312 @@
     "title": "概览",
     "analytics": "分析页",
     "workspace": "工作台"
+  },
+  "home": {
+    "title": "首页"
+  },
+  "system": {
+    "title": "系统",
+    "user": {
+      "title": "用户",
+      "username": "用户名",
+      "email": "邮箱",
+      "nickname": "昵称",
+      "phone": "手机号",
+      "password": "密码",
+      "newPassword": "新密码",
+      "resetPassword": "重置密码",
+      "assignRole": "分配角色"
+    },
+    "role": {
+      "title": "角色"
+    },
+    "menu": {
+      "title": "菜单"
+    }
+  },
+  "northward": {
+    "title": "北向",
+    "plugin": {
+      "title": "插件",
+      "name": "名称",
+      "description": "描述",
+      "pluginType": "插件类型",
+      "source": {
+        "title": "来源",
+        "builtIn": "内置",
+        "custom": "自定义"
+      },
+      "version": "版本",
+      "apiVersion": "API版本",
+      "sdkVersion": "SDK版本",
+      "size": "大小",
+      "checksum": "校验和",
+      "install": {
+        "uploadText": "请上传插件文件",
+        "step1": "上传",
+        "step2": "预览",
+        "step3": "安装"
+      },
+      "uninstallTips": "卸载后将移除插件及相关配置。"
+    },
+    "app": {
+      "title": "应用",
+      "name": "名称",
+      "plugin": "插件",
+      "description": "描述",
+      "subscription": "订阅",
+      "subscriptionForm": {
+        "target": "订阅应用",
+        "allDevices": "订阅全部设备",
+        "devices": "请选择设备",
+        "priority": "优先级",
+        "empty": "暂无可用设备",
+        "validation": {
+          "deviceRequired": "请至少选择一个设备。"
+        }
+      },
+      "form": {
+        "step1": "基础配置",
+        "step2": "重试策略",
+        "step3": "队列策略",
+        "step4": "插件配置"
+      },
+      "retryPolicy": {
+        "maxAttempts": "最大重试次数",
+        "maxAttemptsHelp": "当达到最大重试次数后，将停止重试",
+        "initialInterval": "初始间隔",
+        "maxInterval": "最大间隔",
+        "randomizationFactor": "随机因子",
+        "randomizationFactorHelp": "用于在重试间隔中添加随机性，避免同时重试",
+        "multiplier": "倍增系数",
+        "multiplierHelp": "每次重试时，间隔时间会乘以该系数",
+        "maxElapsedTime": "最大耗时"
+      },
+      "queuePolicy": {
+        "capacity": "队列容量",
+        "capacityHelp": "队列中可存储的最大消息数量",
+        "dropPolicy": {
+          "title": "丢弃策略",
+          "discard": "丢弃",
+          "block": "阻塞"
+        },
+        "blockDuration": "阻塞时长",
+        "buffer": {
+          "title": "缓冲配置",
+          "enabled": "启用缓冲",
+          "capacity": "缓冲容量",
+          "capacityHelp": "缓冲中可存储的最大消息数量",
+          "expireTime": "过期时间"
+        }
+      }
+    }
+  },
+  "southward": {
+    "title": "南向",
+    "form": {
+      "step1": "基础配置",
+      "step2": "连接策略",
+      "step3": "通道配置"
+    },
+    "channel": {
+      "title": "通道",
+      "name": "名称",
+      "driver": "驱动",
+      "driverType": "驱动类型",
+      "connectPolicy": {
+        "title": "连接策略",
+        "connectTimeout": "连接超时",
+        "readTimeout": "读取超时",
+        "writeTimeout": "写入超时",
+        "backoff": {
+          "title": "重试策略",
+          "initialInterval": "初始间隔",
+          "maxInterval": "最大间隔",
+          "randomizationFactor": "随机因子",
+          "multiplier": "倍增系数",
+          "maxElapsedTime": "最大耗时"
+        }
+      },
+      "collectionType": {
+        "title": "采集类型",
+        "collection": "主动采集",
+        "report": "被动上报"
+      },
+      "period": "采集周期",
+      "reportType": {
+        "title": "上报类型",
+        "change": "变更上报",
+        "always": "固定上报"
+      },
+      "subDevice": "子设备",
+      "configView": "配置预览",
+      "importDevicePoints": "设备+点位",
+      "importDevicePointsHint": "请上传设备+点位组合模板文件（.xlsx格式）"
+    },
+    "device": {
+      "title": "设备",
+      "importTitle": "设备",
+      "name": "名称",
+      "type": "设备类型",
+      "basic": "基础配置",
+      "driver": "驱动配置",
+      "pointManagement": "点位管理",
+      "actionManagement": "动作管理"
+    },
+    "point": {
+      "title": "点位",
+      "importTitle": "导入点位",
+      "name": "名称",
+      "key": "键名",
+      "type": "类型",
+      "dataType": "数据类型",
+      "accessMode": "访问模式",
+      "unit": "单位",
+      "minValue": "最小值",
+      "maxValue": "最大值",
+      "scale": "缩放倍率",
+      "basic": "基础配置",
+      "driver": "驱动配置"
+    },
+    "action": {
+      "title": "动作",
+      "importTitle": "导入动作",
+      "name": "名称",
+      "command": "指令",
+      "test": "Debug",
+      "timeoutMs": "Timeout (ms)",
+      "basic": "基础配置",
+      "driver": "驱动配置",
+      "parameter": {
+        "title": "参数列表",
+        "name": "名称",
+        "key": "键名",
+        "dataType": "数据类型",
+        "required": "是否必填",
+        "defaultValue": "默认值",
+        "minValue": "最小值",
+        "maxValue": "最大值",
+        "count": "参数数量"
+      }
+    },
+    "enums": {
+      "dataType": {
+        "boolean": "boolean",
+        "int8": "int8",
+        "uint8": "uint8",
+        "int16": "int16",
+        "uint16": "uint16",
+        "int32": "int32",
+        "uint32": "uint32",
+        "int64": "int64",
+        "uint64": "uint64",
+        "float32": "float32",
+        "float64": "float64",
+        "string": "string",
+        "binary": "binary",
+        "timestamp": "timestamp"
+      },
+      "pointType": {
+        "attribute": "属性",
+        "telemetry": "遥测"
+      },
+      "accessMode": {
+        "read": "只读",
+        "write": "只写",
+        "readWrite": "读写"
+      }
+    },
+    "driver": {
+      "title": "驱动",
+      "name": "名称",
+      "description": "描述",
+      "driverType": "驱动类型",
+      "source": {
+        "title": "来源",
+        "builtIn": "内置",
+        "custom": "自定义"
+      },
+      "version": "版本",
+      "apiVersion": "API版本",
+      "sdkVersion": "SDK版本",
+      "osType": {
+        "title": "操作系统类型",
+        "windows": "Windows",
+        "linux": "Linux",
+        "macos": "Mac OS",
+        "unknown": "Unknown"
+      },
+      "osArch": {
+        "title": "操作系统架构",
+        "x86": "X86",
+        "arm64": "ARM64",
+        "arm": "ARM",
+        "unknown": "Unknown"
+      },
+      "size": "大小",
+      "path": "路径",
+      "checksum": "校验和",
+      "metadata": "元数据",
+      "install": {
+        "uploadText": "请上传驱动文件",
+        "step1": "上传",
+        "step2": "预览",
+        "step3": "安装"
+      },
+      "templateDownload": "模板下载",
+      "templateEntity": {
+        "title": "模板类型",
+        "devicePoints": "设备+点位"
+      },
+      "uninstallTips": "卸载后将删除所有关联的通道、设备、点位和动作数据。"
+    }
+  },
+  "maintenance": {
+    "title": "运维",
+    "monitor": {
+      "title": "监控"
+    },
+    "debug": {
+      "title": "调试"
+    },
+    "branding": {
+      "title": "品牌",
+      "productName": "产品名称",
+      "logo": "Logo",
+      "favicon": "Favicon",
+      "uploadLogo": "上传 Logo",
+      "uploadFavicon": "上传 Favicon",
+      "save": "保存",
+      "fileTypeNotSupported": "文件类型不支持：{type}"
+    }
+  },
+  "monitor": {
+    "title": "监控",
+    "realtime": {
+      "title": "实时数据预览",
+      "channel": "通道",
+      "device": "设备",
+      "searchPlaceholder": "按键值过滤",
+      "status": {
+        "title": "连接状态: {status}",
+        "connecting": "连接中...",
+        "connected": "已连接",
+        "disconnected": "未连接",
+        "reconnecting": "重连中..."
+      },
+      "table": {
+        "deviceName": "设备名称",
+        "deviceId": "设备ID",
+        "key": "键",
+        "value": "值",
+        "sourceType": "类型",
+        "lastUpdate": "更新时间",
+        "sourceTypeMap": {
+          "telemetry": "遥测",
+          "attributes": "属性"
+        }
+      }
+    }
   }
 }

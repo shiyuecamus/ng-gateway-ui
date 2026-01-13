@@ -1,0 +1,20 @@
+{
+  "user": "用户",
+  "role": "角色",
+  "menu": "菜单",
+  "channel": "通道",
+  "device": "设备",
+  "point": "点",
+  "action": "动作",
+  "driver": "驱动",
+  "detail": {
+    "details": "详情",
+    "detailsWithEntityType": "{entityType} - 详情",
+    "properties": "属性",
+    "telemetry": "遥测",
+    "alarms": "告警",
+    "events": "事件",
+    "relations": "关系",
+    "audit": "审计"
+  }
+}

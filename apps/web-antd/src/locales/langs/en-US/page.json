@@ -11,5 +11,312 @@
     "title": "Dashboard",
     "analytics": "Analytics",
     "workspace": "Workspace"
+  },
+  "home": {
+    "title": "Home"
+  },
+  "system": {
+    "title": "System",
+    "user": {
+      "title": "User",
+      "username": "Username",
+      "email": "Email",
+      "nickname": "Nickname",
+      "phone": "Phone",
+      "password": "Password",
+      "newPassword": "New Password",
+      "resetPassword": "Reset Password",
+      "assignRole": "Assign Role"
+    },
+    "role": {
+      "title": "Role"
+    },
+    "menu": {
+      "title": "Menu"
+    }
+  },
+  "northward": {
+    "title": "Northward",
+    "plugin": {
+      "title": "Northward Plugin",
+      "name": "Name",
+      "description": "Description",
+      "pluginType": "Plugin Type",
+      "source": {
+        "title": "Source",
+        "builtIn": "Built In",
+        "custom": "Custom"
+      },
+      "version": "Version",
+      "apiVersion": "API Version",
+      "sdkVersion": "SDK Version",
+      "size": "Size",
+      "checksum": "Checksum",
+      "install": {
+        "uploadText": "Please upload the plugin file",
+        "step1": "Upload",
+        "step2": "Preview",
+        "step3": "Install"
+      },
+      "uninstallTips": "Uninstalling will remove the plugin and related configurations."
+    },
+    "app": {
+      "title": "Northward App",
+      "name": "Name",
+      "plugin": "Plugin",
+      "description": "Description",
+      "subscription": "Subscription",
+      "subscriptionForm": {
+        "target": "Subscription Target",
+        "allDevices": "Subscribe All Devices",
+        "devices": "Select Devices",
+        "priority": "Priority",
+        "empty": "No devices available",
+        "validation": {
+          "deviceRequired": "Please select at least one device."
+        }
+      },
+      "form": {
+        "step1": "Basic Configuration",
+        "step2": "Retry Policy",
+        "step3": "Queue Policy",
+        "step4": "Plugin Configuration"
+      },
+      "retryPolicy": {
+        "maxAttempts": "Max Attempts",
+        "maxAttemptsHelp": "Stop retrying after reaching the maximum number of attempts",
+        "initialInterval": "Initial Interval",
+        "maxInterval": "Max Interval",
+        "randomizationFactor": "Randomization Factor",
+        "randomizationFactorHelp": "Add randomness to retry intervals to avoid simultaneous retries",
+        "multiplier": "Multiplier",
+        "multiplierHelp": "The interval time will be multiplied by this factor on each retry",
+        "maxElapsedTime": "Max Elapsed Time"
+      },
+      "queuePolicy": {
+        "capacity": "Queue Capacity",
+        "capacityHelp": "Maximum number of messages that can be stored in the queue",
+        "dropPolicy": {
+          "title": "Drop Policy",
+          "discard": "Discard",
+          "block": "Block"
+        },
+        "blockDuration": "Block Duration",
+        "buffer": {
+          "title": "Buffer Configuration",
+          "enabled": "Enable Buffer",
+          "capacity": "Buffer Capacity",
+          "capacityHelp": "Maximum number of messages that can be stored in the buffer",
+          "expireTime": "Expire Time"
+        }
+      }
+    }
+  },
+  "southward": {
+    "title": "Southward",
+    "form": {
+      "step1": "Basic Configuration",
+      "step2": "Connection Strategy",
+      "step3": "Channel Configuration"
+    },
+    "channel": {
+      "title": "Channel",
+      "name": "Name",
+      "driver": "Driver",
+      "driverType": "Driver Type",
+      "connectPolicy": {
+        "title": "Connection Policy",
+        "connectTimeout": "Connect Timeout",
+        "readTimeout": "Read Timeout",
+        "writeTimeout": "Write Timeout",
+        "backoff": {
+          "title": "Retry Backoff",
+          "initialInterval": "Initial Interval",
+          "maxInterval": "Max Interval",
+          "randomizationFactor": "Randomization Factor",
+          "multiplier": "Multiplier",
+          "maxElapsedTime": "Max Elapsed Time"
+        }
+      },
+      "collectionType": {
+        "title": "Collection Type",
+        "collection": "Active Collection",
+        "report": "Passive Report"
+      },
+      "period": "Collection Period",
+      "reportType": {
+        "title": "Report Type",
+        "change": "Changed",
+        "always": "Always"
+      },
+      "subDevice": "Sub Device",
+      "configView": "Config View",
+      "importDevicePoints": "Device + Points",
+      "importDevicePointsHint": "Please upload the device + points combined template file (.xlsx format)"
+    },
+    "device": {
+      "title": "Device",
+      "importTitle": "Device",
+      "name": "Name",
+      "type": "Device Type",
+      "basic": "Basic Configuration",
+      "driver": "Driver Configuration",
+      "pointManagement": "Point Management",
+      "actionManagement": "Action Management"
+    },
+    "point": {
+      "title": "Point",
+      "importTitle": "Import Point",
+      "name": "Name",
+      "key": "Key",
+      "type": "Type",
+      "dataType": "Data Type",
+      "accessMode": "Access Mode",
+      "unit": "Unit",
+      "minValue": "Minimum Value",
+      "maxValue": "Maximum Value",
+      "scale": "Scale",
+      "basic": "Basic Configuration",
+      "driver": "Driver Configuration"
+    },
+    "action": {
+      "title": "Action",
+      "importTitle": "Import Action",
+      "name": "Name",
+      "command": "Command",
+      "basic": "Basic Configuration",
+      "driver": "Driver Configuration",
+      "test": "Debug",
+      "timeoutMs": "Timeout (ms)",
+      "parameter": {
+        "title": "Parameters",
+        "name": "Name",
+        "key": "Key",
+        "dataType": "Data Type",
+        "required": "Required",
+        "defaultValue": "Default Value",
+        "minValue": "Minimum Value",
+        "maxValue": "Maximum Value",
+        "count": "Parameter Count"
+      }
+    },
+    "enums": {
+      "dataType": {
+        "boolean": "boolean",
+        "int8": "int8",
+        "uint8": "uint8",
+        "int16": "int16",
+        "uint16": "uint16",
+        "int32": "int32",
+        "uint32": "uint32",
+        "int64": "int64",
+        "uint64": "uint64",
+        "float32": "float32",
+        "float64": "float64",
+        "string": "string",
+        "binary": "binary",
+        "timestamp": "timestamp"
+      },
+      "pointType": {
+        "attribute": "Attribute",
+        "telemetry": "Telemetry"
+      },
+      "accessMode": {
+        "read": "Read",
+        "write": "Write",
+        "readWrite": "Read & Write"
+      }
+    },
+    "driver": {
+      "title": "Driver",
+      "name": "Name",
+      "description": "Description",
+      "driverType": "Driver Type",
+      "source": {
+        "title": "Source",
+        "builtIn": "Built In",
+        "custom": "Custom"
+      },
+      "version": "Version",
+      "apiVersion": "API Version",
+      "sdkVersion": "SDK Version",
+      "osType": {
+        "title": "OS Type",
+        "windows": "Windows",
+        "linux": "Linux",
+        "macos": "Mac OS",
+        "unknown": "Unknown"
+      },
+      "osArch": {
+        "title": "OS Arch",
+        "x86": "X86",
+        "arm64": "ARM64",
+        "arm": "ARM",
+        "unknown": "Unknown"
+      },
+      "size": "Size",
+      "path": "Path",
+      "checksum": "Checksum",
+      "metadata": "Metadata",
+      "install": {
+        "uploadText": "Please upload the driver file",
+        "step1": "Upload",
+        "step2": "Preview",
+        "step3": "Install"
+      },
+      "templateDownload": "Template Download",
+      "templateEntity": {
+        "title": "Template Entity",
+        "devicePoints": "Device + Points"
+      },
+      "uninstallTips": "Uninstalling will delete all associated channel, device, point and action data."
+    }
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "monitor": {
+      "title": "Monitor"
+    },
+    "debug": {
+      "title": "Debug"
+    },
+    "branding": {
+      "title": "Branding",
+      "productName": "Product Name",
+      "logo": "Logo",
+      "favicon": "Favicon",
+      "uploadLogo": "Upload Logo",
+      "uploadFavicon": "Upload Favicon",
+      "save": "Save",
+      "fileTypeNotSupported": "Unsupported file type: {type}"
+    }
+  },
+  "monitor": {
+    "title": "Monitor",
+    "realtime": {
+      "title": "Realtime Data Preview",
+      "channel": "Channel",
+      "device": "Device",
+      "searchPlaceholder": "Filter by key",
+      "status": {
+        "title": "Connection Status: {status}",
+        "connecting": "Connecting...",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "reconnecting": "Reconnecting..."
+      },
+      "table": {
+        "deviceName": "Device Name",
+        "deviceId": "Device ID",
+        "key": "Key",
+        "value": "Value",
+        "sourceType": "Source Type",
+        "lastUpdate": "Update Time",
+        "sourceTypeMap": {
+          "telemetry": "Telemetry",
+          "attributes": "Attributes"
+        }
+      }
+    }
   }
 }

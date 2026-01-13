@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { addDynamicIconSelectors } from '@iconify/tailwind';
 import { getPackagesSync } from '@manypkg/get-packages';
@@ -11,7 +12,17 @@ import { enterAnimationPlugin } from './plugins/entry';
 
 // import defaultTheme from 'tailwindcss/defaultTheme';
 
-const { packages } = getPackagesSync(process.cwd());
+/**
+ * NOTE:
+ * - 使用 `import.meta.url` 计算出当前文件所在目录，而不是依赖 `process.cwd()` 或 CommonJS 的 `__dirname`
+ * - 这样无论是在 `node-grove-gateway-ui` 目录下运行脚本，
+ *   还是在上层 `node-grove-gateway` 作为工作区根目录时通过 VS Code / Prettier 加载，
+ *   `@manypkg/get-packages` 都能正确向上找到包含 `package.json` 的 monorepo 根目录，
+ *   避免 "No package.json could be found upwards from directory ./" 报错，
+ *   同时也满足 ESLint 对 ESM 的 `unicorn/prefer-module` 规则。
+ */
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+const { packages } = getPackagesSync(moduleDir);
 
 const tailwindPackages: string[] = [];
 

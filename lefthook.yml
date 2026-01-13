@@ -46,9 +46,9 @@ pre-commit:
   commands:
     code-workspace:
       run: pnpm vsh code-workspace --auto-commit
-    lint-md:
-      run: pnpm prettier --cache --ignore-unknown --write {staged_files}
-      glob: '*.md'
+    # lint-md:
+    #   run: pnpm prettier --cache --ignore-unknown --write {staged_files}
+    #   glob: '*.md'
     lint-vue:
       run: pnpm prettier --write {staged_files} && pnpm eslint --cache --fix {staged_files} && pnpm stylelint --fix --allow-empty-input {staged_files}
       glob: '*.vue'

@@ -1,10 +1,10 @@
 {
   "welcomeBack": "Welcome Back",
-  "pageTitle": "Plug-and-play Admin system",
-  "pageDesc": "Efficient, versatile frontend template",
+  "pageTitle": "🧠High-Performance Industrial IoT Gateway",
+  "pageDesc": "⚡Single-node support for devices of 10,000+, millisecond-level response, zero downtime operation",
   "loginSuccess": "Login Successful",
   "loginSuccessDesc": "Welcome Back",
-  "loginSubtitle": "Enter your account details to manage your projects",
+  "loginSubtitle": "Welcome to {appName}",
   "selectAccount": "Quick Select Account",
   "username": "Username",
   "password": "Password",

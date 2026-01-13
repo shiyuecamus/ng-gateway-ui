@@ -12,6 +12,15 @@ function isUndefined(value?: unknown): value is undefined {
 }
 
 /**
+ * Determine whether a value is strictly null or undefined.
+ * @param {unknown} value 要检查的值。
+ * @returns 如果值是null或undefined，返回true，否则返回false。
+ */
+function isNullOrUndefined(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
+}
+
+/**
  * 检查传入的值是否为boolean
  * @param value
  * @returns 如果值是布尔值，返回true，否则返回false。
@@ -160,6 +169,7 @@ export {
   isObject,
   isString,
   isUndefined,
+  isNullOrUndefined,
   isWindow,
   isWindowsOs,
 };

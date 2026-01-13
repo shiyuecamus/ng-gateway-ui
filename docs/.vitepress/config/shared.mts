@@ -20,6 +20,7 @@ import {
 } from 'vitepress-plugin-group-icons';
 
 import { demoPreviewPlugin } from './plugins/demo-preview';
+import { mermaidPlugin } from './plugins/mermaid';
 import { search as zhSearch } from './zh.mts';
 
 export const shared = defineConfig({
@@ -30,12 +31,28 @@ export const shared = defineConfig({
       md.use(demoPreviewPlugin);
       md.use(groupIconMdPlugin);
     },
+    /**
+     * Register Mermaid renderer in `config` (instead of `preConfig`) so our fence override
+     * is applied AFTER VitePress internal markdown/highlight plugins.
+     *
+     * This ensures:
+     *   ```mermaid
+     *   ...
+     *   ```
+     * is transformed into:
+     *   <pre class="mermaid">...</pre>
+     *
+     * Then the client-side theme code can render diagrams on navigation.
+     */
+    config(md) {
+      md.use(mermaidPlugin);
+    },
   },
   pwa: pwa(),
   srcDir: 'src',
   themeConfig: {
     i18nRouting: true,
-    logo: 'https://unpkg.com/@vbenjs/static-source@0.1.7/source/logo-v1.webp',
+    logo: 'https://i.postimg.cc/MTkKmT2b/image.png',
     search: {
       options: {
         locales: {
@@ -44,12 +61,15 @@ export const shared = defineConfig({
       },
       provider: 'local',
     },
-    siteTitle: 'Vben Admin',
+    siteTitle: 'NG Gateway',
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/vbenjs/vue-vben-admin' },
+      {
+        icon: 'github',
+        link: 'https://github.com/shiyuecamus/ng-gateway',
+      },
     ],
   },
-  title: 'Vben Admin',
+  title: 'NG Gateway',
   vite: {
     build: {
       chunkSizeWarningLimit: Infinity,
@@ -72,6 +92,11 @@ export const shared = defineConfig({
       stringify: true,
     },
     plugins: [
+      // NOTE: This repo can pull multiple Vite versions via workspace deps.
+      // Some plugins are compiled against a different Vite major, which can cause
+      // TypeScript to report incompatible `Plugin` types. For docs config, we only
+      // need runtime compatibility, so we narrow them to `any` here to keep the
+      // config type-check clean.
       GitChangelog({
         mapAuthors: [
           {
@@ -89,16 +114,22 @@ export const shared = defineConfig({
           },
         ],
         repoURL: () => 'https://github.com/vbenjs/vue-vben-admin',
-      }),
-      GitChangelogMarkdownSection(),
-      viteArchiverPlugin({ outputDir: '.vitepress' }),
-      groupIconVitePlugin(),
-      await viteVxeTableImportsPlugin(),
+      }) as any,
+      GitChangelogMarkdownSection({
+        sections: {
+          disableChangelog: true,
+          disableContributors: true,
+        },
+      }) as any,
+      viteArchiverPlugin({ outputDir: '.vitepress' }) as any,
+      groupIconVitePlugin() as any,
+      (await viteVxeTableImportsPlugin()) as any,
     ],
     server: {
       fs: {
         allow: ['../..'],
       },
+      allowedHosts: true,
       host: true,
       port: 6173,
     },
@@ -111,11 +142,12 @@ export const shared = defineConfig({
 
 function head(): HeadConfig[] {
   return [
-    ['meta', { content: 'Vbenjs Team', name: 'author' }],
+    ['meta', { content: 'Shiyuecamus', name: 'author' }],
     [
       'meta',
       {
-        content: 'vben, vitejs, vite, shacdn-ui, vue',
+        content:
+          'ng-gateway, rust, tokio, driver, plugin, modbus, s7, opcua, iecl04, mc, mqtt, kafka, pulsar, thingsboard',
         name: 'keywords',
       },
     ],
@@ -128,7 +160,7 @@ function head(): HeadConfig[] {
         name: 'viewport',
       },
     ],
-    ['meta', { content: 'vben admin docs', name: 'keywords' }],
+    ['meta', { content: 'ng-gateway docs', name: 'keywords' }],
     ['link', { href: '/favicon.ico', rel: 'icon' }],
     // [
     //   'script',
@@ -143,23 +175,22 @@ function pwa(): PwaOptions {
   return {
     includeManifestIcons: false,
     manifest: {
-      description:
-        'Vben Admin is a modern admin dashboard template based on Vue 3. ',
+      description: 'NG Gateway is a modern gateway for industrial IoT. ',
       icons: [
         {
           sizes: '192x192',
-          src: 'https://unpkg.com/@vbenjs/static-source@0.1.7/source/pwa-icon-192.png',
+          src: 'https://i.postimg.cc/MTkKmT2b/image.png',
           type: 'image/png',
         },
         {
           sizes: '512x512',
-          src: 'https://unpkg.com/@vbenjs/static-source@0.1.7/source/pwa-icon-512.png',
+          src: 'https://i.postimg.cc/MTkKmT2b/image.png',
           type: 'image/png',
         },
       ],
       id: '/',
-      name: 'Vben Admin Doc',
-      short_name: 'vben_admin_doc',
+      name: 'NG Gateway Doc',
+      short_name: 'ng_gateway_doc',
       theme_color: '#ffffff',
     },
     outDir: resolve(process.cwd(), '.vitepress/dist'),

@@ -20,3 +20,24 @@ html.dark {
 .VPNavBarMenuGroup.active {
   border-bottom-color: var(--vp-c-brand-1);
 }
+
+/* Mermaid diagrams: make SVG responsive and readable in docs pages. */
+.vp-doc pre.mermaid {
+  padding: 0;
+  margin: 16px 0;
+  overflow: visible;
+  background: transparent;
+  border: none;
+}
+
+.vp-doc .mermaid {
+  text-align: center;
+}
+
+.vp-doc .mermaid > svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}

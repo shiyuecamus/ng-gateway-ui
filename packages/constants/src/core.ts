@@ -21,3 +21,20 @@ export const SUPPORT_LANGUAGES: LanguageOption[] = [
     value: 'en-US',
   },
 ];
+
+/**
+ * Form open types
+ */
+
+export enum FormOpenType {
+  CREATE = 'create',
+  EDIT = 'edit',
+}
+
+/**
+ * Form open data
+ */
+export interface FormOpenData {
+  id?: number | string;
+  type: FormOpenType;
+}
