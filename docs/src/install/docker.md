@@ -19,8 +19,8 @@ NG Gateway 采用 **All-in-one** 架构，单容器即可运行。
 docker run -d --name ng-gateway \
   --privileged=true \
   --restart unless-stopped \
-  -p 8978:8080 \
-  -p 8979:8443 \
+  -p 8978:5678 \
+  -p 8979:5679 \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
@@ -31,8 +31,8 @@ docker run -d --name ng-gateway \
 
 | 参数 | 说明 |
 | :-- | :-- |
-| `-p 8978:8080` | 映射 Web UI/API 端口（HTTP） |
-| `-p 8979:8443` | 映射 HTTPS 端口 |
+| `-p 8978:5678` | 映射 Web UI/API 端口（HTTP） |
+| `-p 8979:5679` | 映射 HTTPS 端口 |
 | `-v gateway-data:/app/data` | **重要**：持久化核心数据（SQLite 数据库、配置等） |
 | `-v gateway-drivers:/app/drivers/custom` | 持久化自定义驱动 |
 | `-v gateway-plugins:/app/plugins/custom` | 持久化自定义插件 |
@@ -57,8 +57,8 @@ services:
     container_name: ng-gateway
     restart: unless-stopped
     ports:
-      - '8978:8080'
-      - '8979:8443'
+      - '8978:5678'
+      - '8979:5679'
     volumes:
       - gateway-data:/app/data
       - gateway-drivers:/app/drivers/custom

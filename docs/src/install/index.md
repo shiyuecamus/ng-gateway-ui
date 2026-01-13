@@ -26,8 +26,8 @@ NG Gateway 采用 **All-in-one** 架构：
 docker run -d --name ng-gateway \
   --privileged=true \
   --restart unless-stopped \
-  -p 8978:8080 \
-  -p 8979:8443 \
+  -p 8978:5678 \
+  -p 8979:5679 \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
@@ -57,8 +57,8 @@ docker rm -f ng-gateway
 docker run -d --name ng-gateway \
   --privileged=true \
   --restart unless-stopped \
-  -p 8978:8080 \
-  -p 8979:8443 \
+  -p 8978:5678 \
+  -p 8979:5679 \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
