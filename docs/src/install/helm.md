@@ -20,14 +20,14 @@ title: Helm 安装
 
 ```bash
 # 导出配置以便自定义
-helm show values oci://registry.example.com/node-grove-gateway > values.yaml
+helm show values oci://registry.example.com/ng-gateway > values.yaml
 
 # 安装 Release
-helm install ng-gateway oci://registry.example.com/node-grove-gateway \
+helm install ng-gateway oci://registry.example.com/ng-gateway \
   --version 0.1.0 \
   -f values.yaml \
   --create-namespace \
-  --namespace node-grove
+  --namespace ng
 ```
 
 ### 方式二：从本地安装
@@ -35,12 +35,12 @@ helm install ng-gateway oci://registry.example.com/node-grove-gateway \
 如果您下载了源码：
 
 ```bash
-cd deploy/helm/node-grove-gateway
+cd deploy/helm/ng-gateway
 
 # 安装
 helm install ng-gateway . \
   --create-namespace \
-  --namespace node-grove
+  --namespace ng
 ```
 
 ## 3. 验证安装
@@ -48,13 +48,13 @@ helm install ng-gateway . \
 查看 Pod 状态：
 
 ```bash
-kubectl get pods -n node-grove
+kubectl get pods -n ng
 ```
 
 查看 Service（获取访问地址）：
 
 ```bash
-kubectl get svc -n node-grove
+kubectl get svc -n ng
 ```
 
 ## 4. 配置说明
@@ -115,7 +115,7 @@ ingress:
 ## 5. 卸载
 
 ```bash
-helm uninstall ng-gateway -n node-grove
+helm uninstall ng-gateway -n ng
 ```
 
 ::: warning 注意

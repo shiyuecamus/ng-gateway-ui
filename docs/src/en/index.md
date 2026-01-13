@@ -16,7 +16,7 @@ hero:
       link: /en/guide/introduction/vben
     - theme: alt
       text: View on GitHub
-      link: https://github.com/shiyuecamus/node-grove-gateway
+      link: https://github.com/shiyuecamus/ng-gateway
 
 features:
   - icon: ⚡️

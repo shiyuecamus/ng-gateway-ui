@@ -16,7 +16,7 @@ hero:
       link: /install
     - theme: alt
       text: 在 GitHub 查看
-      link: https://github.com/shiyuecamus/node-grove-gateway
+      link: https://github.com/shiyuecamus/ng-gateway
 
 features:
   - icon: ⚡️

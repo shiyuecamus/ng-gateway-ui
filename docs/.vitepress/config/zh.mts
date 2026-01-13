@@ -16,7 +16,7 @@ export const zh = defineConfig({
     },
     editLink: {
       pattern:
-        'https://github.com/shiyuecamus/node-grove-gateway/edit/main/docs/src/:path',
+        'https://github.com/shiyuecamus/ng-gateway/edit/main/docs/src/:path',
       text: '在 GitHub 上编辑此页面',
     },
     footer: {

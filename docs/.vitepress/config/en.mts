@@ -16,7 +16,7 @@ export const en = defineConfig({
     },
     editLink: {
       pattern:
-        'https://github.com/shiyuecamus/node-grove-gateway/edit/main/docs/src/:path',
+        'https://github.com/shiyuecamus/ng-gateway/edit/main/docs/src/:path',
       text: 'Edit this page on GitHub',
     },
     footer: {
