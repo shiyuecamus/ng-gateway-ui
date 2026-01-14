@@ -60,6 +60,12 @@ description: 'Modbus address 的 0/1 基、40001/30001 逻辑地址换算，以�
 | **Timestamp** | **2 或 4** | **2 words**: 视作秒级 (u32 * 1000)<br>**4 words**: 视作毫秒级 (i64) |
 | **String / Binary** | N | 必须指定足够覆盖数据的长度 |
 
+::: warning 
+String/Binary 的 length 不是“字符数”的通用概念 `String/Binary` 的 `quantity` 本质是“读多少个寄存器（word）”，至于这段寄存器里如何编码字符串（UTF-8/ASCII/UTF-16、是否 `\\0` 结束、是否 0 填充、字节序/字序），取决于设备/上位机约定。
+
+为了保证短字符串（如 `"a"` / `"shiyue"`）也能稳定读到“干净”的值，强烈建议设备侧采用**定长块全量覆盖 + `0x00` 填充**；否则可能读到包含 `\\0` 的中间脏数据。详见 [Modbus](./index.md) 文档中 `String` 的 warning。
+:::
+
 ### 3) 写寄存器/线圈 (0x05/0x06/0x0F/0x10)
 
 Action/WritePoint 写入同样使用 `address + quantity`。
