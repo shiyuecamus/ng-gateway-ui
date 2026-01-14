@@ -1,6 +1,6 @@
 ---
 title: 'Modbus'
-description: 'NG Gateway Modbus 南向驱动使用与配置：TCP/RTU、点位建模、字节序/字序、quantity 计算、批量读写与最佳实践。'
+description: 'NG Gateway Modbus 南向驱动使用与配置：TCP/RTU、点位建模、字节序/字序、Smart Cast、批量读写与最佳实践。'
 ---
 
 ## 1. 协议介绍
@@ -12,7 +12,7 @@ Modbus 是一种经典的工业现场通信协议，常见形态包括 **Modbus 
 - **Holding Registers（保持寄存器）**：16-bit 寄存器（通常可读可写）
 - **Input Registers（输入寄存器）**：16-bit 寄存器（通常只读）
 
-NG Gateway Modbus 驱动的目标是：在网关侧以高吞吐、低开销方式批量读取/写入点位，并把结果标准化为统一的 `NGValue` 进入北向链路。
+NG Gateway Modbus 驱动采用**全异步、零拷贝**架构，在网关侧以高吞吐、低开销方式批量读取/写入点位。支持**Smart Cast**（智能类型转换）和**自动批量规划**。
 
 ## 2. 配置模型
 
@@ -75,15 +75,16 @@ Modbus 寄存器为 16-bit word；当点位数据类型为 32/64-bit 时，会�
 
 Device 表示一个从站（Slave）。
 
-- **`slaveId`**：从站 ID
+- **`slaveId`**：从站 ID (0-255)
 
 ### 2.3 Point（点位）配置
 
 - **`functionCode`**：
   - `ReadCoils(0x01)` / `ReadDiscreteInputs(0x02)`
   - `ReadHoldingRegisters(0x03)` / `ReadInputRegisters(0x04)`
-- **`address`**：起始地址（0..65535）
+- **`address`**：起始地址（0..65535，**0基**）
 - **`quantity`**：读取数量（线圈 bit 数或寄存器 word 数）
+- **`scale`**：线性变换参数 `val = raw * scale`（仅对数值类型有效）
 
 ::: tip address 的 0/1 基问题（必读）
 
@@ -104,71 +105,77 @@ Device 表示一个从站（Slave）。
 - **Coils/DiscreteInputs**：单位是 **bit**（线圈数量）
 - **Holding/InputRegisters**：单位是 **word（16-bit）**
 
-对于寄存器类读取，建议按 `data_type` 计算 `quantity`（见 **3. 数据类型映射表**）。例如：
-
-- `Int16/UInt16`：1 word
-- `Int32/UInt32/Float32`：2 words
-- `Int64/UInt64/Float64/Timestamp`：4 words
-- `String/Binary`：按协议定义或设备手册定义长度决定（例如固定 10 words）
-
-> 重要：`quantity` 影响批量合并与解码。如果 quantity 填小了，解码会报“words 不足”；填大了则会读到多余字节（仍可能被正确切片，但会浪费带宽与影响合并策略）。
+对于寄存器类读取，建议按 `data_type` 计算 `quantity`（见 **3. 数据类型映射表**）。如果 quantity 填小了，驱动会尝试进行 **Smart Cast**（如读取 1 个 word 转为 Float32）；填大了则会进行截断或填充。
 :::
 
 ### 2.4 Action（动作）配置
 
-Action 用于封装一组“写线圈/写寄存器”的操作，适合做成可复用的命令（如“复位”“启动”“写参数”）；**Action 本身不承载协议细节配置**。
-
-- **关键语义**：Modbus 的写入目标（functionCode/address/quantity）必须配置在 **Action 的 `inputs(Parameter)` 上**，即每个参数都通过 `Parameter.driver_config` 指定写入目标与长度。
-- **为什么这样设计**：一个 Action 往往需要写多个地址（多个寄存器段/线圈段），Action 只是“操作集合”的抽象；协议字段必须落在 Parameter 本体上。
-
-参数级驱动配置字段（每个 input parameter）：
+Action 用于封装一组“写线圈/写寄存器”的操作。
 
 - **`functionCode`**：
   - `WriteSingleCoil(0x05)` / `WriteMultipleCoils(0x0F)`
   - `WriteSingleRegister(0x06)` / `WriteMultipleRegisters(0x10)`
 - **`address`**：起始地址
-- **`quantity`**：写入数量（线圈 bit 数或寄存器 word 数）
+- **`quantity`**：写入数量
 
-## 3. 数据类型映射表
+::: tip 自动功能码推断
+对于北向的 `write_point`（单点写入）操作，如果点位定义的是读功能码（如 `ReadHoldingRegisters`），驱动会自动根据 `quantity` 推断使用写功能码：
+- `quantity <= 1` -> `WriteSingleRegister` (0x06)
+- `quantity > 1` -> `WriteMultipleRegisters` (0x10)
+:::
 
-### 3.1 寄存器类（0x03/0x04）推荐映射
+## 3. 数据类型映射表 (Smart Codec)
 
-| DataType | 寄存器数量（quantity） | 说明 |
-| --- | ---: | --- |
-| Boolean | 1 | `words[0] != 0`（注意：这不是线圈语义，只是把寄存器当 bool） |
-| Int8 / UInt8 | 1 | 使用低 16-bit 解析并做范围收敛 |
-| Int16 / UInt16 | 1 | 16-bit |
-| Int32 / UInt32 | 2 | 32-bit |
-| Int64 / UInt64 | 4 | 64-bit |
-| Float32 | 2 | IEEE754 |
-| Float64 | 4 | IEEE754 |
-| Timestamp | 4 | 以 **i64 毫秒**表示 |
-| String | N（固定或手册决定） | UTF-8/ASCII，末尾 0 会 trim |
-| Binary | N（固定或手册决定） | 原始 bytes |
+驱动内置了强大的编解码器，支持从寄存器流到强类型值的灵活转换。
 
-### 3.2 线圈类（0x01/0x02）推荐映射
+### 3.1 寄存器类（0x03/0x04）
+
+| DataType | 推荐 quantity (words) | 解码行为 | Smart Cast (降级兼容) |
+| --- | ---: | --- | --- |
+| **Boolean** | 1 | 第一个 word != 0 即为 true | - |
+| **Int16** | 1 | 标准 16-bit 有符号整数 | 读 4 words (i64) 截断为 i16 |
+| **UInt16** | 1 | 标准 16-bit 无符号整数 | 读 4 words (u64) 截断为 u16 |
+| **Int32** | 2 | 标准 32-bit 有符号整数 | 若 quantity=1，读取 i16 并提升为 i32 |
+| **UInt32** | 2 | 标准 32-bit 无符号整数 | 若 quantity=1，读取 u16 并提升为 u32 |
+| **Float32** | 2 | IEEE754 单精度浮点 | 若 quantity=1，读取 i16 并转为 f32 |
+| **Float64** | 4 | IEEE754 双精度浮点 | 若 quantity=2，读取 f32 并转为 f64 |
+| **Int64** | 4 | 标准 64-bit 有符号整数 | 若 quantity=2，读取 i32 并提升为 i64 |
+| **UInt64** | 4 | 标准 64-bit 无符号整数 | 若 quantity=2，读取 u32 并提升为 u64 |
+| **Timestamp** | **2 或 4** | **4 words (8 bytes)**: 解析为 i64 毫秒时间戳<br>**2 words (4 bytes)**: 解析为 u32 秒级时间戳并自动乘 1000 | - |
+| **String** | N | UTF-8 字符串，自动去除末尾 `\0` | - |
+| **Binary** | N | 原始字节流 | - |
+
+::: details Smart Cast 示例
+场景：设备有一个温度值，实际上是 `Int16` (255 = 25.5°C)，但你在平台定义为了 `Float32`。
+- 配置：`DataType=Float32`, `quantity=1`, `scale=0.1`
+- 驱动行为：读取 1 个 word -> 解析为 i16 -> 自动 Cast 为 f32 -> 应用 scale -> 输出 25.5
+:::
+
+### 3.2 线圈类（0x01/0x02）
 
 | DataType | quantity | 说明 |
 | --- | ---: | --- |
-| Boolean | 1 | 单 bit |
-| 其它 | - | 不建议；如需 bitfield/数组，建议建多个点或在边缘计算层聚合 |
+| **Boolean** | 1 | 单 bit 读写 |
+| **Telemetry/Attribute** | N | 驱动会将读取到的 bit 数组映射到对应的点位上。目前建议每个点位 quantity=1 对应一个 bit。 |
 
 ## 4. 批量读写计划算法
-- 按 **functionCode 分组**
-- 组内按 **address 升序排序**
-- 逐点合并为 range read：
-  - 相邻点位间的 gap
-  - 合并后的 span
 
-### 4.1 你应该如何设置 `maxGap` / `maxBatch`
+驱动内置 `Planner` 模块，负责将散列的点位请求聚合为最优的 Modbus PDU。
 
-- **吞吐优先（点位密集、地址连续）**：
-  - `maxGap` 小（0~10），`maxBatch` 贴近协议上限（≤125）
-- **稳定优先（设备质量一般、链路抖动大）**：
-  - `maxBatch` 适当降低（例如 60~100），减少单次失败影响范围
-- **RS-485 多从站**：
-  - 更建议用更大的采集周期 + 合理退避，而不是把单次 batch 拉得很大
+1. **分组**：按 `functionCode` 分组（0x03 和 0x04 不能合并）。
+2. **排序**：组内按 `address` 升序。
+3. **扫描与合并**：
+   - 只要 `(next_addr - current_end) <= maxGap` 且 `(new_end - current_start) <= maxBatch`，就会合并为一个请求。
+   - 合并会产生“空洞数据”，这些数据会被读取但在解码阶段丢弃。
 
-::: warning 注意
-线圈与寄存器、不同寄存器类型不会被合并。
-:::
+### 4.1 性能调优建议
+
+- **高吞吐模式**：
+  - `maxGap` = 10~20
+  - `maxBatch` = 100~120
+  - 适用：点位地址集中，网络质量好（TCP）。
+
+- **高稳定性模式**：
+  - `maxGap` = 0 (不跨越空洞)
+  - `maxBatch` = 60
+  - 适用：RS-485 干扰大，设备响应慢。
