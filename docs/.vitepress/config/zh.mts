@@ -61,11 +61,11 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       text: '安装',
       items: [
         { link: '/install/', text: '快速开始' },
-        { link: '/install/docker', text: 'Docker 安装' },
-        { link: '/install/helm', text: 'Helm 安装' },
-        { link: '/install/macos', text: 'MacOS 安装' },
-        { link: '/install/linux', text: 'Linux 安装' },
-        { link: '/install/windows', text: 'Windows 安装' },
+        { link: '/install/docker', text: 'Docker' },
+        { link: '/install/helm', text: 'Helm' },
+        { link: '/install/macos', text: 'MacOS' },
+        { link: '/install/linux', text: 'Linux' },
+        { link: '/install/source-build', text: '源码编译' },
       ],
     },
     {
@@ -191,6 +191,7 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       collapsed: true,
       text: '开发',
       items: [
+        { link: '/dev/local-dev', text: '本地开发' },
         { link: '/dev/driver-dev', text: '南向驱动开发' },
         { link: '/dev/plugin-dev', text: '北向插件开发' },
       ],
