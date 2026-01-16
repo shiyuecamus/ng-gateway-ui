@@ -12,7 +12,7 @@
     "scripts/*/src/**/*.ts",
     "scripts/*/src/**/*.json"
   ],
-  "globalEnv": ["NODE_ENV"],
+  "globalEnv": ["NODE_ENV", "VITEPRESS_BASE"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
