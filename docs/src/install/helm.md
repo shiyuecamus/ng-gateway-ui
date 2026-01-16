@@ -12,15 +12,17 @@ title: Helm 安装
 
 ## 2. 安装 Chart
 
-### 从 OCI Registry 安装 (推荐)
-
 ```bash
 # 导出配置以便自定义
-helm show values oci://registry-1.docker.io/shiyuecamus/ng-gateway-chart > values.yaml
+CHART_VERSION="<CHART_VERSION>"
+
+helm show values oci://registry-1.docker.io/shiyuecamus/ng-gateway-chart \
+  --version "${CHART_VERSION}" \
+  > values.yaml
 
 # 安装 Release
 helm install ng-gateway oci://registry-1.docker.io/shiyuecamus/ng-gateway-chart \
-  --version 0.1.0 \
+  --version "${CHART_VERSION}" \
   -f values.yaml \
   --create-namespace \
   --namespace ng
