@@ -23,8 +23,21 @@ import { demoPreviewPlugin } from './plugins/demo-preview';
 import { mermaidPlugin } from './plugins/mermaid';
 import { search as zhSearch } from './zh.mts';
 
+/**
+ * The base URL the site will be deployed at.
+ *
+ * - Local dev: default to `/`
+ * - GitHub Pages (project pages): set `VITEPRESS_BASE=/ng-gateway/`
+ *
+ * Notes:
+ * - VitePress expects a leading and trailing slash, e.g. `/repo/`.
+ * - Using an env var keeps the config portable across different repos/domains.
+ */
+const site_base = normalize_base(process.env.VITEPRESS_BASE ?? '/');
+
 export const shared = defineConfig({
   appearance: 'dark',
+  base: site_base,
   head: head(),
   markdown: {
     preConfig(md) {
@@ -151,7 +164,14 @@ function head(): HeadConfig[] {
         name: 'keywords',
       },
     ],
-    ['link', { href: '/favicon.ico', rel: 'icon', type: 'image/svg+xml' }],
+    [
+      'link',
+      {
+        href: with_base(site_base, 'favicon.ico'),
+        rel: 'icon',
+        type: 'image/svg+xml',
+      },
+    ],
     [
       'meta',
       {
@@ -161,7 +181,7 @@ function head(): HeadConfig[] {
       },
     ],
     ['meta', { content: 'ng-gateway docs', name: 'keywords' }],
-    ['link', { href: '/favicon.ico', rel: 'icon' }],
+    ['link', { href: with_base(site_base, 'favicon.ico'), rel: 'icon' }],
     // [
     //   'script',
     //   {
@@ -188,7 +208,9 @@ function pwa(): PwaOptions {
           type: 'image/png',
         },
       ],
-      id: '/',
+      id: site_base,
+      scope: site_base,
+      start_url: site_base,
       name: 'NG Gateway Doc',
       short_name: 'ng_gateway_doc',
       theme_color: '#ffffff',
@@ -200,4 +222,33 @@ function pwa(): PwaOptions {
       maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
     },
   };
+}
+
+/**
+ * Normalize a VitePress base path to always have leading & trailing slashes.
+ *
+ * Examples:
+ * - `ng-gateway`   -> `/ng-gateway/`
+ * - `/ng-gateway`  -> `/ng-gateway/`
+ * - `/ng-gateway/` -> `/ng-gateway/`
+ * - `/`            -> `/`
+ */
+function normalize_base(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed === '' || trimmed === '/') return '/';
+
+  const with_leading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return with_leading.endsWith('/') ? with_leading : `${with_leading}/`;
+}
+
+/**
+ * Join a resource path with VitePress base.
+ *
+ * This avoids double slashes when base is `/`.
+ */
+function with_base(base: string, resource_path: string): string {
+  if (resource_path.startsWith('/')) {
+    return `${base === '/' ? '' : base}${resource_path}`;
+  }
+  return `${base}${resource_path}`;
 }
