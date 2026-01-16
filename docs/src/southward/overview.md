@@ -11,7 +11,7 @@ description: 'NG Gateway 南向体系概览：驱动模型、设备连接、采�
 **南向只解决“如何连接、如何采集、如何编解码、如何容错”**；不要在 driver 里绑定北向协议、业务规则或平台差异。
 :::
 
-## 心智模型：Driver / Channel / Device / Point / Action
+## 心智模型
 
 - **Driver**：协议适配器（Modbus/S7/OPC UA/IEC104…），负责连接管理、协议编解码、读写语义与容错策略。
 
