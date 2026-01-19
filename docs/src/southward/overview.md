@@ -3,6 +3,12 @@ title: '南向总览'
 description: 'NG Gateway 南向体系概览：驱动模型、设备连接、采集策略、解析容错与性能最佳实践。'
 ---
 
+# 南向总览
+
+NG Gateway 的南向体系不仅仅是“把设备接上来”，而是一个专为**工业现场不确定性**、**多协议并存**与**高吞吐采集**设计的接入层。
+
+本文档将帮助你建立南向的正确心智模型，并理解数据如何被采集、归一化并进入核心管线与北向链路。
+
 ## 南向是什么
 
 南向负责把“现实世界的设备/总线/控制器”稳定接入网关，并把读写结果标准化为统一的 `NorthwardData` 进入核心管线与北向。它的目标是**可靠、可观测、可扩展、性能优先**。
@@ -91,77 +97,99 @@ Subscription不是由 `Collector` 调度；它属于 driver 的“会话层/协�
 
 ### Channel 通用属性
 
-- **name**：人类可读名称（日志/监控/诊断的首选标识）。
-- **driver_id**：绑定的 driver 工厂标识。
-- **collection_type**：采集类型
-  - `Collection` 表示该 channel 会被 `Collector` 轮询
-  - `Report` 表示该 channel 不参与轮询，主要依赖 driver 主动 Push（订阅/上报）。
-- **report_type**：上报策略
-  - `Always` 全量上报；
-  - `Change` 由 core 维护 device 快照并做变化过滤（减少北向带宽与计算）。
-- **period**：轮询周期（ms，仅在`collection_type == Collection` 时生效）。
-- **status**：启用/禁用。禁用 channel 不会被启动/轮询/路由。
-- **connection_policy**：连接策略（由 core 提供统一字段，具体行为由 driver 在连接/读/写处使用）
-  - **connect_timeout_ms**：建立连接/会话握手超时（默认 10000ms）。
-  - **read_timeout_ms**：协议读超时（默认 10000ms）。
-  - **write_timeout_ms**：协议写超时（默认 10000ms）。
-  - **backoff（RetryPolicy）**：用于重连/重试的统一指数退避策略（driver 与北向插件复用同一模型）
-    - **max_attempts**：最大重试次数（`Some(0)` 表示不重试；`None` 表示无限重试，需谨慎）。
-    - **initial_interval_ms**：初始退避间隔（默认 1000ms）。
-    - **max_interval_ms**：最大退避上限（默认 30000ms）。
-    - **multiplier**：指数倍率（默认 2.0）。
-    - **randomization_factor**：抖动系数（默认 0.2，代表 ±20% jitter，避免“重连风暴/惊群”）。
-    - **max_elapsed_time_ms**：最大累计重试时长（默认 None，表示不限制；与 max_attempts 同时设置时先到者生效）。
+| 字段 | 类型 | 说明 | 建议 |
+| --- | --- | --- | --- |
+| `name` | `string` | 人类可读名称（日志/监控/诊断的首选标识） | 生产环境保持稳定命名，便于排障 |
+| `driver_id` | `string` | 绑定的 driver 工厂标识 | 与已安装 driver 一致 |
+| `collection_type` | `Collection \| Report` | 采集类型：`Collection` 会被 `Collector` 轮询；`Report` 不参与轮询，主要依赖 driver 主动 Push（订阅/上报） | 协议/现场决定（Modbus/S7 常用 `Collection`） |
+| `report_type` | `Always \| Change` | 上报策略：`Always` 全量上报；`Change` 由 core 维护 device 快照并做变化过滤（减少北向带宽与计算） | 高频点位建议 `Change`（并配合合理采集周期） |
+| `period` | `number` | 轮询周期（ms），仅在 `collection_type == Collection` 时生效 | 结合设备能力与吞吐预算设置 |
+| `status` | `boolean` | 启用/禁用。禁用 channel 不会被启动/轮询/路由 | 变更前先评估影响范围 |
+| `connection_policy` | `object` | 连接与超时/退避策略（字段由 core 提供，driver 在连接/读/写处使用） | 现场弱网建议启用退避并限制累计重试窗口 |
+| `driver_config` | `object` | driver 私有配置（形状由 driver 决定，用于连接/会话/协议层参数等） | 通过 driver 的 UI schema 配置；避免放敏感明文（如密码/密钥） |
+
+#### `connection_policy`
+
+| 字段 | 类型 | 说明 | 建议 |
+| --- | --- | --- | --- |
+| `connect_timeout_ms` | `number` | 建立连接/会话握手超时（默认 10000ms） | 现场链路差可适当放大 |
+| `read_timeout_ms` | `number` | 协议读超时（默认 10000ms） | 与设备响应时间对齐 |
+| `write_timeout_ms` | `number` | 协议写超时（默认 10000ms） | 写入一般要更保守 |
+| `backoff` | `RetryPolicy` | 重连/重试的统一指数退避策略（driver 与北向插件复用同一模型） | 避免“重连风暴/惊群” |
+
+#### `connection_policy.backoff`（RetryPolicy）
+
+| 字段 | 类型 | 说明 | 建议 |
+| --- | --- | --- | --- |
+| `max_attempts` | `number \| null` | 最大重试次数；`null` 表示无限重试。注意：当前实现中多处将 `0` 视为“继续重试/不限制”，请谨慎使用 `0` | 生产建议使用有限次数或有限时长 |
+| `initial_interval_ms` | `number` | 初始退避间隔（默认 1000ms） | 1000~3000 |
+| `max_interval_ms` | `number` | 最大退避上限（默认 30000ms） | 30000~60000 |
+| `multiplier` | `number` | 指数倍率（默认 2.0） | 2.0 |
+| `randomization_factor` | `number` | 抖动系数（默认 0.2，代表 ±20% jitter） | 0.1~0.3 |
+| `max_elapsed_time_ms` | `number \| null` | 最大累计重试时长（默认 `null`，表示不限制；与 `max_attempts` 同时设置时先到者生效） | 建议设置，例如 10~30 分钟 |
 
 ### Device 通用属性
 
-- **device_name**：设备名称（用于 northward 编码与可观测性）。
-- **device_type**：设备类型/机型。
-- **channel_id**：所属 channel ID。
-- **status**：启用/禁用（禁用设备应在 driver 侧与 core 路由侧被跳过）。
+| 字段 | 类型 | 说明 | 建议 |
+| --- | --- | --- | --- |
+| `device_name` | `string` | 设备名称（用于 northward 编码与可观测性） | 与现场标识对齐 |
+| `device_type` | `string` | 设备类型/机型（用于 driver 做模型选择/差异化解析） | 作为 driver 的“分支 key”应稳定 |
+| `channel_id` | `string` | 所属 channel ID | 自动生成即可 |
+| `status` | `boolean` | 启用/禁用（禁用设备应在 driver 侧与 core 路由侧被跳过） | 灰度启用/停用便于排障 |
+| `driver_config` | `object \| null` | device 级 driver 私有配置（可选） | 用于该设备的差异化参数；没需求就留空 |
 
 ### Point 通用属性
 
-- **id**：point 唯一 ID（热路径主键，变化检测/快照索引优先用它）。
-- **device_id**：所属 device ID。
-- **name**：点位名称（人类可读）。
-- **key**：点位稳定 key（对外引用/写回/主题路由的首选标识）。
-- **type**：点位类别（Telemetry / Attribute）。
-- **data_type**：值类型（bool/i32/f64/string/…）。
-- **access_mode**：访问模式（Read / Write / ReadWrite）
-  - **何时使用**：
-    - **采集侧**：core 会按 `access_mode` 过滤可读点位（Read/ReadWrite）用于采集；过滤可写点位（Write/ReadWrite）用于写入能力展示/路由。
-    - **写入侧**：WritePoint 入口会用它做强校验；非 `Write/ReadWrite` 会被直接拒绝并返回 `NotWriteable`。
-  - **注意事项**：
-    - `Read` 并不代表“协议不支持写”，而是产品/现场层面的**安全边界**；应在建模阶段正确配置，避免误写关键点位。
-    - `ReadWrite` 的点位，driver 必须保证读写路径对同一地址/变量的语义一致（单位/比例/编码）。
-- **unit**：展示单位（如 ℃、kPa、A），通常用于 UI 与北向展示，不建议在热路径字符串拼接。
-- **min_value / max_value**：
-  - **何时使用**：反向入口对数值类型做区间校验（仅当 min 与 max 同时存在时生效），超出范围返回 `OutOfRange`，避免危险写入落到设备侧。
-  - **注意事项**：当前 core 的范围校验直接比较写入值与 `[min,max]`，不会自动应用 `scale`；因此 **min/max 必须与外部写入值处于同一“值域”（原始值或工程值）**。
-- **scale**（比例/换算因子）：
-  - **使用场景**：常用于“协议原始值 ↔ 工程值”的换算（例如寄存器值 1234 表示 12.34℃，scale=0.01）。
-  - **注意事项**：在当前实现中，scale 主要作为元数据透传至driver；是否在读写时应用 scale 由 driver 决定。若 driver 选择对外暴露工程值，则应同时保证：
-      - 上行采集输出与下行写入输入都使用同一尺度；
-      - min/max 也按工程尺度配置，才能与 core 的 `OutOfRange` 校验对齐。
+| 字段 | 类型 | 说明 | 建议 |
+| --- | --- | --- | --- |
+| `id` | `string` | point 唯一 ID（热路径主键，变化检测/快照索引优先用它） | 仅内部使用 |
+| `device_id` | `string` | 所属 device ID | 自动生成即可 |
+| `name` | `string` | 点位名称（人类可读） | 与现场图纸/变量名对齐 |
+| `key` | `string` | 点位稳定 key（对外引用/写回/主题路由的首选标识） | **必须稳定**，避免改动破坏对接 |
+| `type` | `Telemetry \| Attribute` | 点位类别 | 按用途正确建模 |
+| `data_type` | `string` | 值类型（bool/i32/f64/string/…） | 与协议真实值域一致 |
+| `access_mode` | `Read \| Write \| ReadWrite` | 访问模式 | 用它表达“安全边界” |
+| `unit` | `string` | 展示单位（如 ℃、kPa、A） | 尽量短；避免在热路径做字符串拼接 |
+| `min_value` / `max_value` | `number \| null` | 写入范围约束（仅当 min 与 max 同时存在时生效） | 用于防误写；与值域保持一致 |
+| `scale` | `number \| null` | 比例/换算因子（协议原始值 ↔ 工程值） | 若启用，务必保证读写一致 |
+| `driver_config` | `object` | point 级 driver 私有配置（地址/寄存器/数据块/订阅项等协议细节） | 按 driver 文档配置；避免把协议细节写进 `key/name` |
+
+#### Point 关键语义（务必读）
+
+- **`access_mode` 的作用**：
+  - **采集侧**：core 会按 `access_mode` 过滤可读点位（Read/ReadWrite）用于采集；过滤可写点位（Write/ReadWrite）用于写入能力展示/路由。
+  - **写入侧**：WritePoint 入口会用它做强校验；非 `Write/ReadWrite` 会被直接拒绝并返回 `NotWriteable`。
+- **`Read` 不是“协议不支持写”**：它是产品/现场层面的**安全边界**；应在建模阶段正确配置，避免误写关键点位。
+- **`ReadWrite` 一致性要求**：driver 必须保证读写路径对同一地址/变量的语义一致（单位/比例/编码）。
+- **`min_value/max_value` 的值域一致性**：当前 core 的范围校验直接比较写入值与 `[min,max]`，不会自动应用 `scale`；因此 **min/max 必须与外部写入值处于同一“值域”（原始值或工程值）**。
+- **`scale` 的一致性要求**：scale 主要作为元数据透传至 driver；是否在读写时应用 scale 由 driver 决定。若 driver 选择对外暴露工程值，则应同时保证：
+  - 上行采集输出与下行写入输入都使用同一尺度；
+  - min/max 也按工程尺度配置，才能与 core 的 `OutOfRange` 校验对齐。
 
 ### Action & Parameter 通用属性
 
-- **Action.id**：动作唯一 ID。
-- **Action.name**：动作名称（人类可读）。
-- **Action.device_id**：所属 device ID。
-- **Action.command**：driver 识别的命令名（协议/实现相关，但对外稳定）
-  - **何时使用**：core 在执行动作时通过 `command` 定位要执行的 action（因此 command 应稳定且同设备内唯一）。
-  - **注意事项**：建议把 “协议动作名/功能码/对象地址” 等编码细节封装在 driver 内部，不直接暴露为不可读字符串；对外提供稳定 command，同时在文档里解释其含义。
-- **Action.input_parameters**：输入参数定义列表（`Parameter`）。
+#### Action
 
-- **Parameter.name/key**：参数展示名/稳定 key。
-- **Parameter.data_type**：参数类型。
-- **Parameter.required**：是否必填。
-- **Parameter.default_value**：默认值（如有）。
-- **Parameter.min_value / max_value**：范围约束（如有）。
+| 字段 | 类型 | 说明 | 建议 |
+| --- | --- | --- | --- |
+| `id` | `string` | 动作唯一 ID | 仅内部使用 |
+| `name` | `string` | 动作名称（人类可读） | 面向运维/现场可读 |
+| `device_id` | `string` | 所属 device ID | 自动生成即可 |
+| `command` | `string` | driver 识别的命令名（协议/实现相关，但对外稳定） | **同设备内唯一且稳定** |
+| `inputs` | `Parameter[]` | 输入参数定义列表 | 用于 UI/校验/解析 |
 
-Parameter 在动作执行时会被 core 统一校验与解析，关键语义如下：
+#### Parameter
+
+| 字段 | 类型 | 说明 | 建议 |
+| --- | --- | --- | --- |
+| `name` / `key` | `string` | 参数展示名/稳定 key | key 必须稳定 |
+| `data_type` | `string` | 参数类型 | 与 driver 解析一致 |
+| `required` | `boolean` | 是否必填 | 必填参数尽量少 |
+| `default_value` | `any \| null` | 默认值（如有） | 非必填建议提供默认值 |
+| `min_value` / `max_value` | `number \| null` | 范围约束（如有） | 用于防误写 |
+| `driver_config` | `object` | 参数级 driver 私有配置（用于 driver 做协议层映射/编码/枚举等） | 通过 driver schema 配置；仅放 driver 必需信息 |
+
+#### Parameter 关键语义（core 统一校验与解析）
 
 - **参数结构**：
   - 多参数动作：`params` 必须是 JSON Object（按 `key` 取值）。

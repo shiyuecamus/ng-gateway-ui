@@ -1,0 +1,54 @@
+---
+title: 'Pulsar（北向插件）'
+description: '把 NG Gateway 数据上送到 Apache Pulsar，并可选从 Pulsar topic 接收下行控制消息（WritePoint/Command/RPC）。'
+---
+
+## 1. 适用场景
+
+- 使用 Pulsar 作为消息总线/数据管道（多租户、Namespace、持久化 topic）
+- 把遥测/属性/上下线事件写入 Pulsar，供流计算/湖仓/告警系统消费
+- （可选）通过 Pulsar 下发控制消息，实现 WritePoint/Command/RPC 回执
+
+---
+
+## 2. 最小可跑配置（建议先跑通 uplink）
+
+```json
+{
+  "connection": {
+    "serviceUrl": "pulsar://127.0.0.1:6650",
+    "auth": { "mode": "none" }
+  },
+  "uplink": {
+    "enabled": true,
+    "telemetry": {
+      "enabled": true,
+      "topic": "persistent://public/default/ng.uplink.telemetry",
+      "key": "{{device_id}}",
+      "payload": { "mode": "envelope_json" }
+    }
+  },
+  "downlink": { "enabled": false }
+}
+```
+
+---
+
+## 3. 目录导航
+
+- 连接与鉴权：[`Pulsar 连接与鉴权`](/northward/pulsar/connection-auth)
+- 上行（Uplink）：[`Pulsar 上行配置与 payload`](/northward/pulsar/uplink)
+- 分区与有序性：[`Pulsar 分区与吞吐（partition_key）`](/northward/pulsar/partitions)
+- 下行（Downlink）：[`Pulsar 下行（ack/nack 语义）`](/northward/pulsar/downlink)
+- 示例：[`Pulsar 配置示例`](/northward/pulsar/examples)
+- 排障：[`Pulsar 排障`](/northward/pulsar/troubleshooting)
+
+---
+
+## 4. 关键限制
+
+::: warning
+- downlink topic 只支持精确 topic（不可模板/不可 wildcard/不可 regex）
+- 当前版本不提供磁盘断网续传（只内存缓冲）：见 [`QueuePolicy`](/northward/policies/queue-policy)
+:::
+

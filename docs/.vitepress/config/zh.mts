@@ -165,13 +165,107 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       text: '北向',
       items: [
         { link: '/northward/overview', text: '北向总览' },
-        { link: '/northward/kafka', text: 'Kafka' },
-        { link: '/northward/pulsar', text: 'Pulsar' },
-        { link: '/northward/thingsboard', text: 'Thingsboard' },
-        { link: '/northward/opcua', text: 'OPC UA Server' },
-        { link: '/northward/mqtt', text: 'MQTT' },
-        { link: '/northward/websocket', text: 'WebSocket' },
-        { link: '/northward/http', text: 'HTTP' },
+        { link: '/northward/quick-start', text: '快速开始' },
+        {
+          text: '上行 Payload',
+          collapsed: true,
+          items: [
+            { link: '/northward/payload/overview', text: '总览' },
+            { link: '/northward/payload/envelope-json', text: 'EnvelopeJson' },
+            { link: '/northward/payload/kv', text: 'Kv' },
+            { link: '/northward/payload/timeseries-rows', text: 'TimeseriesRows' },
+            { link: '/northward/payload/mapped-json', text: 'MappedJson' },
+            { link: '/northward/payload/mapped-json-jmespath', text: 'JMESPath 速查' },
+          ],
+        },
+        {
+          text: '下行 Downlink',
+          collapsed: true,
+          items: [
+            { link: '/northward/downlink/overview', text: '总览' },
+            { link: '/northward/downlink/envelope-json', text: 'EnvelopeJson' },
+            { link: '/northward/downlink/mapped-json', text: 'MappedJson + Filter' },
+          ],
+        },
+        {
+          text: '最佳实践',
+          collapsed: true,
+          items: [
+            { link: '/northward/best-practices/architecture', text: '架构与隔离' },
+            { link: '/northward/best-practices/performance', text: '性能与吞吐' },
+            { link: '/northward/best-practices/reliability', text: '可靠性与弱网' },
+          ],
+        },
+        {
+          text: '排障',
+          collapsed: true,
+          items: [
+            { link: '/northward/troubleshooting/overview', text: '排障索引' },
+            { link: '/northward/troubleshooting/verify-checklist', text: '验证清单' },
+            { link: '/northward/troubleshooting/common-errors', text: '常见错误' },
+          ],
+        },
+        {
+          text: '插件',
+          collapsed: true,
+          items: [
+            {
+              text: 'Kafka',
+              link: '/northward/kafka/',
+              collapsed: true,
+              items: [
+                { link: '/northward/kafka/connection-security', text: '连接与安全' },
+                { link: '/northward/kafka/uplink', text: '上行（Uplink）' },
+                { link: '/northward/kafka/partitions', text: '分区与调优' },
+                { link: '/northward/kafka/downlink', text: '下行（Downlink）' },
+                { link: '/northward/kafka/examples', text: '配置示例' },
+                { link: '/northward/kafka/troubleshooting', text: '排障' },
+              ],
+            },
+            {
+              text: 'Pulsar',
+              link: '/northward/pulsar/',
+              collapsed: true,
+              items: [
+                { link: '/northward/pulsar/connection-auth', text: '连接与鉴权' },
+                { link: '/northward/pulsar/uplink', text: '上行（Uplink）' },
+                { link: '/northward/pulsar/partitions', text: '分区与调优' },
+                { link: '/northward/pulsar/downlink', text: '下行（Downlink）' },
+                { link: '/northward/pulsar/examples', text: '配置示例' },
+                { link: '/northward/pulsar/troubleshooting', text: '排障' },
+              ],
+            },
+            {
+              text: 'ThingsBoard',
+              link: '/northward/thingsboard/',
+              collapsed: true,
+              items: [
+                { link: '/northward/thingsboard/connection-modes', text: '连接模式' },
+                { link: '/northward/thingsboard/provision', text: 'Provision' },
+                { link: '/northward/thingsboard/uplink-format', text: '上行格式' },
+                { link: '/northward/thingsboard/rpc-and-attributes', text: 'RPC/Attributes 下行' },
+                { link: '/northward/thingsboard/protobuf-status', text: 'Protobuf 状态' },
+                { link: '/northward/thingsboard/examples', text: '配置示例' },
+                { link: '/northward/thingsboard/troubleshooting', text: '排障' },
+              ],
+            },
+            {
+              text: 'OPC UA Server',
+              link: '/northward/opcua-server/',
+              collapsed: true,
+              items: [
+                { link: '/northward/opcua-server/node-mapping', text: 'Node 映射' },
+                { link: '/northward/opcua-server/security', text: '安全与证书' },
+                { link: '/northward/opcua-server/writeback', text: '写回' },
+                { link: '/northward/opcua-server/performance', text: '性能调优' },
+                { link: '/northward/opcua-server/troubleshooting', text: '排障' },
+              ],
+            },
+            { link: '/northward/mqtt', text: 'MQTT（占位）' },
+            { link: '/northward/websocket', text: 'WebSocket（占位）' },
+            { link: '/northward/http', text: 'HTTP（占位）' },
+          ],
+        },
       ],
     },
     {
@@ -201,7 +295,7 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       text: '指南',
       items: [
         { link: '/guide/other/release', text: '发布日志' },
-        { link: '/guide/other/roadmap', text: '路线图' },
+        { link: '/guide/introduction/roadmap', text: '路线图' },
       ],
     },
     {
