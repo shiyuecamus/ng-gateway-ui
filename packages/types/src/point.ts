@@ -26,7 +26,10 @@ interface PointInfo extends BaseEntity {
   unit?: string;
   minValue?: number;
   maxValue?: number;
-  scale?: number;
+  transformDataType?: (typeof DataType)[keyof typeof DataType];
+  transformScale?: number;
+  transformOffset?: number;
+  transformNegate?: boolean;
   driverConfig: Recordable<any>;
 }
 

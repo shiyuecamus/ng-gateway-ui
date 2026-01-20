@@ -171,10 +171,42 @@ export function usePointBasicFormSchema(): FormSchema[] {
       controlClass: 'w-full',
     },
     {
+      component: 'Divider',
+      fieldName: 'transformDivider',
+      hideLabel: true,
+      renderComponentContent() {
+        return {
+          default: () => $t('page.southward.point.transform'),
+        };
+      },
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
+        options: dataTypeOptions(),
+      },
+      fieldName: 'transformDataType',
+      label: $t('page.southward.point.logicalDataType'),
+      controlClass: 'w-full',
+    },
+    {
       component: 'InputNumber',
-      fieldName: 'scale',
+      fieldName: 'transformScale',
       label: $t('page.southward.point.scale'),
       controlClass: 'w-full',
+    },
+    {
+      component: 'InputNumber',
+      fieldName: 'transformOffset',
+      label: $t('page.southward.point.transformOffset'),
+      controlClass: 'w-full',
+    },
+    {
+      component: 'Switch',
+      fieldName: 'transformNegate',
+      label: $t('page.southward.point.transformNegate'),
+      defaultValue: false,
     },
   ];
 }
@@ -240,27 +272,37 @@ export function useActionParameterBasicFormSchema(): FormSchema[] {
       },
       dependencies: {
         // 需要在以下字段变化时重新计算默认值的校验规则
-        triggerFields: ['required', 'dataType', 'minValue', 'maxValue'],
+        triggerFields: [
+          'required',
+          'dataType',
+          'transformDataType',
+          'minValue',
+          'maxValue',
+        ],
         rules: (values) => {
-          // 基于 dataType 构建 zod 校验；当 required=false 时，强制必填；当 required=true 时，允许为空
+          // 基于 logical data type 构建 zod 校验；当 required=false 时，强制必填；当 required=true 时，允许为空
           // 注意：仅对存在的值进行类型校验，min/max 仅对数值类型生效
-          const dt = Number(values?.dataType);
+          const wireDt = Number(values?.dataType);
+          const logicalDt =
+            typeof values?.transformDataType === 'number'
+              ? Number(values.transformDataType)
+              : wireDt;
           const isRequired = !values?.required;
 
           // 映射 dataType -> zod 基础类型
           let schema: ZodTypeAny;
           const isNumeric =
-            dt === DataType.Int8 ||
-            dt === DataType.UInt8 ||
-            dt === DataType.Int16 ||
-            dt === DataType.UInt16 ||
-            dt === DataType.Int32 ||
-            dt === DataType.UInt32 ||
-            dt === DataType.Int64 ||
-            dt === DataType.UInt64 ||
-            dt === DataType.Float32 ||
-            dt === DataType.Float64 ||
-            dt === DataType.Timestamp;
+            logicalDt === DataType.Int8 ||
+            logicalDt === DataType.UInt8 ||
+            logicalDt === DataType.Int16 ||
+            logicalDt === DataType.UInt16 ||
+            logicalDt === DataType.Int32 ||
+            logicalDt === DataType.UInt32 ||
+            logicalDt === DataType.Int64 ||
+            logicalDt === DataType.UInt64 ||
+            logicalDt === DataType.Float32 ||
+            logicalDt === DataType.Float64 ||
+            logicalDt === DataType.Timestamp;
 
           // 为数值类型收集范围
           const min =
@@ -268,7 +310,7 @@ export function useActionParameterBasicFormSchema(): FormSchema[] {
           const max =
             typeof values?.maxValue === 'number' ? values.maxValue : undefined;
 
-          switch (dt) {
+          switch (logicalDt) {
             case DataType.Binary:
             case DataType.String: {
               // Binary 也按字符串校验（默认视作 base64/hex 等字符串表达）
@@ -355,6 +397,44 @@ export function useActionParameterBasicFormSchema(): FormSchema[] {
       controlClass: 'w-full',
       fieldName: 'maxValue',
       label: $t('page.southward.action.parameter.maxValue'),
+    },
+    {
+      component: 'Divider',
+      fieldName: 'actionParamTransformDivider',
+      hideLabel: true,
+      renderComponentContent() {
+        return {
+          default: () => $t('page.southward.action.parameter.transform'),
+        };
+      },
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
+        options: dataTypeOptions(),
+      },
+      controlClass: 'w-full',
+      fieldName: 'transformDataType',
+      label: $t('page.southward.action.parameter.logicalDataType'),
+    },
+    {
+      component: 'InputNumber',
+      controlClass: 'w-full',
+      fieldName: 'transformScale',
+      label: $t('page.southward.action.parameter.scale'),
+    },
+    {
+      component: 'InputNumber',
+      controlClass: 'w-full',
+      fieldName: 'transformOffset',
+      label: $t('page.southward.action.parameter.transformOffset'),
+    },
+    {
+      component: 'Switch',
+      fieldName: 'transformNegate',
+      label: $t('page.southward.action.parameter.transformNegate'),
+      defaultValue: false,
     },
   ];
 }

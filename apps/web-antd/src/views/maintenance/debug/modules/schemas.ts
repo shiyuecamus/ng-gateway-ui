@@ -5,10 +5,26 @@ import { z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 import { DataType } from '@vben/types';
 
+type ParameterDataType = (typeof DataType)[keyof typeof DataType];
+
 /**
  * Build dynamic form schema for action debug.
  */
 export function buildActionDebugSchema(info: ActionInfo): FormSchema[] {
+  /**
+   * Resolve the "logical" data type for UI input rendering.
+   *
+   * - `dataType` is the wire/raw type used by drivers
+   * - `transformDataType` (if present) is the logical type exposed to users
+   *
+   * When `transformDataType` is `undefined`, logical type follows wire type.
+   */
+  function resolveLogicalDataType(
+    p: ActionInfo['inputs'][number],
+  ): ParameterDataType {
+    return (p.transformDataType ?? p.dataType) as ParameterDataType;
+  }
+
   const timeoutItem: FormSchema = {
     component: 'InputNumber',
     fieldName: 'timeoutMs',
@@ -22,7 +38,9 @@ export function buildActionDebugSchema(info: ActionInfo): FormSchema[] {
   };
 
   const inputItems: FormSchema[] = (info.inputs || []).map((p) => {
-    if (p.dataType === DataType.Boolean) {
+    const logicalDataType = resolveLogicalDataType(p);
+
+    if (logicalDataType === DataType.Boolean) {
       return {
         component: 'Switch',
         fieldName: p.key,
@@ -32,7 +50,7 @@ export function buildActionDebugSchema(info: ActionInfo): FormSchema[] {
     }
 
     const isFloat = ([DataType.Float32, DataType.Float64] as number[]).includes(
-      p.dataType as number,
+      logicalDataType as number,
     );
     const isInteger = (
       [
@@ -46,7 +64,7 @@ export function buildActionDebugSchema(info: ActionInfo): FormSchema[] {
         DataType.UInt64,
         DataType.Timestamp,
       ] as number[]
-    ).includes(p.dataType as number);
+    ).includes(logicalDataType as number);
 
     if (isFloat || isInteger) {
       return {

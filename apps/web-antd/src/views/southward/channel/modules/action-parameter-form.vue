@@ -62,12 +62,16 @@ watch(
           name: current.name,
           key: current.key,
           dataType: current.dataType,
+          transformDataType: current.transformDataType,
+          transformScale: current.transformScale,
+          transformOffset: current.transformOffset,
+          transformNegate: current.transformNegate,
           required: current.required ?? false,
           defaultValue: current.defaultValue,
           minValue: current.minValue,
           maxValue: current.maxValue,
         }
-      : { required: false };
+      : { required: false, transformDataType: undefined, transformScale: undefined, transformOffset: undefined, transformNegate: false };
     await parameterFormApi.resetForm({ values: baseValues });
   },
   { immediate: true },

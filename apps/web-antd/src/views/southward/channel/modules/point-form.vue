@@ -109,7 +109,10 @@ async function init() {
           unit: point.unit,
           minValue: point.minValue,
           maxValue: point.maxValue,
-          scale: point.scale,
+          transformDataType: point.transformDataType,
+          transformScale: point.transformScale,
+          transformOffset: point.transformOffset,
+          transformNegate: point.transformNegate,
         });
         await driverFormApi.setValues(point.driverConfig as Recordable<any>);
       },

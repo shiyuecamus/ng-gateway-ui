@@ -29,6 +29,10 @@ interface Parameter {
   defaultValue: any;
   minValue?: number;
   maxValue?: number;
+  transformDataType?: (typeof DataType)[keyof typeof DataType];
+  transformScale?: number;
+  transformOffset?: number;
+  transformNegate?: boolean;
   driverConfig: Recordable<any>;
 }
 
