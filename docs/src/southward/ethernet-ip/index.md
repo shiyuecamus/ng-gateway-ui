@@ -26,6 +26,10 @@ slot 的语义取决于 PLC 型号/机架结构；若不确定，保持默认并
 
 驱动层 device 配置为空（device 用于逻辑分组）。
 
+:::: tip Grouped collection（分组采集）
+当同一 Channel 下存在多个业务 Device 时，Ethernet/IP driver 会启用 **grouped collection**：Collector 会把这些 Device 的点位合并成一次 `collect_data(items)` 调用，驱动会合并 Tag 执行批量读（chunked batch read），再按 `device_id` 拆分为各自的 `NorthwardData` 输出。
+::::
+
 ### 2.3 Point（点位）配置
 
 - **`tagName`**：Tag 名称（必填），例如：

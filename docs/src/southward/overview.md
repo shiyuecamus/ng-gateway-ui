@@ -39,14 +39,40 @@ NG Gateway 的南向体系不仅仅是“把设备接上来”，而是一个专
 - **适用场景**：Modbus/S7 等“读寄存器/读变量”为主的协议；或现场要求固定周期采集。
 - **触发机制**：当且仅当 channel 的 `collection_type == Collection` 时，该 channel 才会被 `Collector` 拉起轮询任务；`period` 决定 tick 周期。
 - **核心链路**：
-  - `Collector` 按 channel tick → 并发遍历 device（`buffer_unordered` + 全局 `Semaphore` 做有界并发）  
-  - 每个 device：调用 `driver.collect_data(device, points)`  
-  - 返回 `Vec<NorthwardData>` → 逐条发送到 core 的 **bounded mpsc**（数据转发队列）
+  - `Collector` 按 channel tick → 拉取 device/points → 按 `driver.collection_group_key()` 做物理分组（同 driver 实例内）  
+  - 每个 group：调用 `driver.collect_data(items_in_group)`（批量采集）  
+  - 返回 `Vec<NorthwardData>`（仍按业务 device 输出）→ 逐条发送到 core 的 **bounded mpsc**（数据转发队列）
   - `Gateway` forwarding task 从队列 `recv` → 广播给实时监控（realtime hub）→ `NorthwardManager::route`（快照/变化过滤 + 按“北向 app 订阅”路由到各 app）
 
 ::: tip 关键语义
 Polling 的“调度者”是 core 的 `Collector`，driver 只实现“如何高效读点位与解析”。
 :::
+
+#### 1.1 Grouped collection（分组采集 / 批量采集）的语义（必读）
+
+Grouped collection 用于解决一个常见建模场景：**同一条物理会话/连接下，为了业务组织把点位拆成多个 Device**（例如同一 PLC / 同一 OPC UA endpoint、或同一 Modbus slave 被拆为多个业务设备）。
+
+`Collector` 会调用 driver 提供的 `collection_group_key(device)` 来决定“哪些 Device 应该在一次 `collect_data(items)` 调用里合并采集”：
+
+- **`collection_group_key(device) -> None`**：不做物理分组。`Collector` 会保证 `collect_data(items)` 的 `items.len() == 1`（单设备采集）。
+- **`collection_group_key(device) -> Some(key)`**：做物理分组。`Collector` 会把同一 `key` 下的多个 device 合并成一次 `collect_data(items)` 调用。
+
+**输入不变量**（由 core 保证）：
+
+- `items` **永不为空**（空调用属于 bug）。
+- 如果 `collection_group_key == None`，则 `items.len() == 1`。
+- 如果 `collection_group_key == Some(key)`，则 `items` 中所有 device 都属于同一个 `key`。
+- `items` 内部会按 `device_id` 升序构造，确保行为稳定、便于排障。
+
+**输出语义**（driver 必须遵守）：
+
+- 即使一次调用合并采集了多个 device，driver **仍然必须按业务 device 输出** `NorthwardData`（Telemetry/Attributes 的 `device_id/device_name` 不能混淆）。
+- 通常建议：同一 group 使用同一个 `timestamp`（保证本轮数据一致性）。
+
+**当前内置驱动的分组策略（Polling 路径）**：
+
+- **Modbus**：按 `slaveId` 分组（同一 `slaveId` 的业务设备会合并批读，然后再按业务 device 拆分输出）。
+- **S7 / MC / OPC UA / Ethernet-IP**：按 `channel_id` 分组（同一 channel 下的多个业务 device 会被合并为一次批读/批量请求，再按业务 device 拆分输出）。
 
 ### 2) Driver Push（订阅/上报，由 Driver 自己驱动）
 

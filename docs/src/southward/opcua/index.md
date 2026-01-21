@@ -77,6 +77,10 @@ OPC UA 驱动的 device 驱动配置为空。
 - 你可以把“一个生产线/一个工段/一个子系统”建模为一个 Device，用于组织点位与北向主题路由。
 :::
 
+:::: tip Grouped collection（分组采集）
+当 OPC UA 采用 Read（周期采集）模式，且同一 Channel 下存在多个业务 Device 时，OPC UA driver 会启用 **grouped collection**：Collector 会把这些 Device 的点位合并成一次 `collect_data(items)` 调用，驱动会合并 NodeId 做一次批量 Read，再按 `device_id` 拆分为各自的 `NorthwardData` 输出。
+::::
+
 ### 2.3 Point（点位）配置
 
 - **`nodeId`**：OPC UA NodeId 字符串

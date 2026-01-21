@@ -75,6 +75,10 @@ S7 驱动的 device 驱动配置为空。
 - 如果你希望对同一 PLC 做“业务分组”（例如按产线/工段拆分点位集合），可以建多个 Device（逻辑分组），但它们共享同一连接会话。
 :::
 
+:::: tip Grouped collection（分组采集）
+当同一 Channel 下存在多个业务 Device 时，S7 driver 会启用 **grouped collection**：Collector 会把这些 Device 的点位合并成一次 `collect_data(items)` 调用，驱动在一次批读中读取所有地址，再按 `device_id` 拆分为各自的 `NorthwardData` 输出。
+::::
+
 ### 2.3 Point（点位）配置
 
 Point 的驱动配置字段：

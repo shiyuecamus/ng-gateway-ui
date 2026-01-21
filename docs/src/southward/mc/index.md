@@ -30,6 +30,10 @@ MC 的 Channel 配置（可编辑字段）由 `@ng-gateway-southward/mc/src/meta
 
 驱动层 device 配置为空（device 用于逻辑分组）。
 
+:::: tip Grouped collection（分组采集）
+当同一 Channel 下存在多个业务 Device 时，MC driver 会启用 **grouped collection**：Collector 会把这些 Device 的点位合并成一次 `collect_data(items)` 调用，驱动会合并点位并执行批量读，再按 `device_id` 拆分为各自的 `NorthwardData` 输出。
+::::
+
 ### 2.3 Point（点位）配置
 
 Point 驱动配置字段：

@@ -76,6 +76,15 @@ Device 表示一个从站（Slave）。
 
 - **`slaveId`**：从站 ID (0-255)
 
+#### 2.2.1 Grouped collection（分组采集）
+
+Modbus driver 在 Polling 采集路径下启用 **grouped collection**，分组 key 为 `slaveId`：
+
+- **同一 `slaveId`**：Collector 会把多个业务 Device 合并成一次 `collect_data(items)` 调用，驱动会合并点位并执行批量读（读请求数更接近理论最小），随后再按业务 `device_id` 拆分为各自的 `NorthwardData` 输出。
+- **不同 `slaveId`**：会被拆成不同的 group 分别采集。
+
+::::
+
 ### 2.3 Point（点位）配置
 
 - **`functionCode`**：
