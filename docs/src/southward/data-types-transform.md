@@ -12,7 +12,7 @@ description: '解释点位/参数的 wire data type（协议/内存布局语义�
 - **wire data type（协议/内存布局语义）**：协议帧/寄存器/变量在现场设备上的**真实编码方式**，决定 driver 如何从字节/寄存器中解析与如何写回。
 - **logical data type（北向语义）**：网关对外输出（上行 NorthwardData）以及下行校验/写入（WritePoint/ExecuteAction）使用的**对外语义类型**。
 
-并且现在引入了统一的 **`Transform`**（变换）链路，用于把 wire 值转换成 logical 值（上行），以及把 logical 值逆变换成 wire 值（下行）。
+并且现在引入了统一的  **`Transform`** 链路，用于把 wire 值转换成 logical 值（上行），以及把 logical 值逆变换成 wire 值（下行）。
 
 ---
 
@@ -20,7 +20,7 @@ description: '解释点位/参数的 wire data type（协议/内存布局语义�
 
 ### 1.1 wire data type 是什么
 
-**wire data type** 等价于 Point/Parameter 的 `dataType`（或内部字段 `data_type`）。
+**wire data type** 等价于 Point/Parameter 的 `data_type`。
 
 - 对 Modbus 来说：它描述“寄存器/线圈在内存布局中的解码方式”，例如 `Int16`、`UInt16`、`Float32`、`Boolean` 等。
 - 对 S7/MC/EtherNet/IP/OPC UA 来说：它描述 driver 在编码/写回时应使用的协议级类型（例如 OPC UA 写 Variant 时用到的目标类型）。
@@ -85,12 +85,13 @@ description: '解释点位/参数的 wire data type（协议/内存布局语义�
 3. **driver 输出 NorthwardData（按业务 device 组织）**
    - 注意：即使采集时做了 group collection（见下一章），也必须按业务 device 输出
 
-#### 上行的关键规则（非常重要）
+::: warning 上行的关键规则
 
 - **logical_data_type 决定最终输出 NGValue 的类型**。  
   例如 wire 是 `Int16`，logical 配成 `Float64`，最终上行值会是 `NGValue::Float64`。
 - **Transform 的 scale/offset/negate 在上行会真正影响值**。  
   例如 wire=100，scale=0.1 → logical=10.0
+:::
 
 ### 2.2 下行（Downlink）：北向 → 网关 → 现场
 
@@ -145,9 +146,7 @@ Action 的每个输入参数（Parameter）也有同样的 Transform 语义：
 
 ---
 
-## 4. 使用场景：什么情况下必须用 Transform
-
-这一节给你“直接可复制”的配置心智模型。
+## 4. 使用场景
 
 ### 4.1 典型场景 A：寄存器是“放大整数”，北向要工程值
 
@@ -193,7 +192,7 @@ Action 的每个输入参数（Parameter）也有同样的 Transform 语义：
 
 ---
 
-## 5. 重要限制与常见坑（避免踩雷）
+## 5. 重要限制与常见坑
 
 ### 5.1 非数值类型（String/Binary/Boolean/Timestamp）不是“随便能映射”
 
@@ -216,17 +215,30 @@ SDK 的策略是“可预测 + 不 silent corruption”：
 
 下行需要做 \(x=(y-o)/s\)，因此：
 
-- `transformScale = 0` 会导致写回失败（配置错误）
+- `transformScale = 0` 会导致写回失败
 
-### 5.3 大整数安全：超过 2^53 的 Int64/UInt64 会被拒绝做数值 Transform
+### 5.3 大整数安全：超过 2^53 的 Int64/UInt64 + “会改变数值的 Transform”会被拒绝
 
-当 Transform 非 identity 时，上/下行转换需要 `f64` 中间值。为了避免精度丢失导致“写错值/算错值”，SDK 会拒绝这种场景：
+- **identity（恒等变换）**：Transform **不会改变数值本身**。在当前实现里等价于：
+  - `transformScale` 没配（或等价于 1）
+  - `transformOffset` 没配（或等价于 0）
+  - `transformNegate = false`
+  - （注意：`transformDataType` 只影响“对外类型/装箱与校验”，不属于“数值变换”本身）
+- **non-identity（非恒等变换）**：只要你配置了会改变数值的任意一项，例如：
+  - `transformScale = 0.1`
+  - `transformOffset = -101.3`
+  - `transformNegate = true`
 
-- `UInt64 > 2^53` 或 `Int64` 的绝对值 `> 2^53` + Transform 非 identity → 转换失败
+为什么会有 2^53 的限制？
+
+当 Transform 需要改变数值时，SDK 的上/下行转换会用 `f64` 作为中间计算类型；但 `f64` 只能“精确表示”到 2^53 级别的整数。超过这个范围时，**可能发生不可见的舍入**，导致“算出来的值/写回的值”被悄悄改动。为了满足“绝不 silent corruption”的安全策略，SDK 会直接拒绝这种情况：
+
+- `UInt64 > 2^53` 或 `Int64` 的绝对值 `> 2^53` + **会改变数值的 Transform** → 转换失败
 
 建议：
 
-- 对超大计数器（例如脉冲累计）尽量保持 identity Transform，或选择不会走 f64 的表达方式。
+- 对超大计数器（例如累计脉冲/累计电量）尽量保持 **恒等变换**（不配 scale/offset/negate）。
+- 如果确实需要工程换算，建议在北向侧/业务侧做可控的整数运算，或换用更适合的值域表达方式。
 
 ### 5.4 rounding 行为：写回整数时会 round
 
