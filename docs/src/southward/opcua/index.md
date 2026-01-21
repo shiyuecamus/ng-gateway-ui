@@ -118,8 +118,8 @@ NodeId 的格式与选取方式见，见 [NodeId语法](./nodeid.md)。
 ### 3.1 读路径
 
 - 数值型 Variant（`SByte/Int16/Int32/Int64/Float/Double 等`）：
-  - 先转为 f64 再按 `DataType` 与 `scale` 做强制转换
-- `Variant::Boolean`：按 `DataType` 与 `scale` 转换（推荐 `Boolean`）
+  - 先按 wire data type 解码，再按 logical data type + Transform 做 wire→logical 转换
+- `Variant::Boolean`：同上（推荐 logical 为 `Boolean`，避免非数值映射限制）
 - `Variant::String`：
   - `DataType::String`：直接输出字符串
   - `DataType::Timestamp`：尝试解析 RFC3339

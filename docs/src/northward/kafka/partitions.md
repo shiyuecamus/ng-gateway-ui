@@ -44,9 +44,3 @@ Kafka 插件默认启用幂等 producer（`enableIdempotence=true`）。
 - `batchSizeBytes` / `batchNumMessages`：提高吞吐但增加内存占用
 - `compression`：压缩可以省带宽，但会吃 CPU
 
-### 3.3 观察队列与丢弃
-
-结合 `QueuePolicy` 与 dropped 指标做闭环：
-
-- [`QueuePolicy（队列与缓冲）`](/northward/policies/queue-policy)
-

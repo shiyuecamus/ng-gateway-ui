@@ -39,8 +39,3 @@ description: 'NG Gateway 插件化扩展指南：北向连接器、转换/增强
 - 定义稳定的 `plugin_id` 与 `schema_version`
 - 兼容旧配置（或提供迁移工具/指南）
 - 对外暴露最少但足够的关键参数（超时、并发、队列容量、重试）
-
-## 下一步阅读
-
-- [`架构概览`](../overview/architecture.md)：插件在体系结构中的位置与职责边界
-- [`北向 MQTT v5`](../northward/mqtt-v5.md)：北向对接语义参考（非插件专属）

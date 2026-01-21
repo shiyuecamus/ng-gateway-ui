@@ -59,15 +59,28 @@ Modbus 寄存器为 16-bit word；当点位数据类型为 32/64-bit 时，会�
 建议在上位机/厂家手册中确认；如果读到的 float 值“明显离谱”，优先排查字节序/字序。
 :::
 
-#### 2.1.5 `maxGap` / `maxBatch`（批量读取规划参数）
+#### 2.1.5 `tcpPoolSize`
 
-驱动会对可读点位做批量合并（见 **4. 批量读写计划算法**），以减少 Modbus 请求次数并提升吞吐。
+`tcpPoolSize` 用于提升 Modbus TCP 的吞吐：驱动会维护一个 TCP 连接池，采集时在池内做 round-robin 选择连接，从而允许多个请求并发在飞（仍受 core 并发与驱动内部计划约束）。
 
-- **`maxGap`**：允许合并的最大地址间隙（默认 10）
-- **`maxBatch`**：每个批次的最大 span（寄存器数/线圈数，默认 100）
+- **默认值**：`1`
+- **推荐范围**：`1..=8`（过大收益通常不明显，且会增加 PLC/网关资源消耗）
 
 ::: warning 
-注意这里的 `maxBatch` 表示“一个 range read 的总数量”，不是“点位个数”。
+仅对 `connection.kind=tcp` 生效；RTU 会强制单飞（有效值=1）。当你配置 `tcpPoolSize > 8` 时，驱动会在运行时 clamp 到 `8`。
+:::
+
+#### 2.1.6 批量读取规划参数
+
+| 字段 | 作用范围 | 默认值 | 说明 |
+| --- | --- | ---: | --- |
+| `maxBatchRegisters` | 0x03/0x04（寄存器读） | 120 | 单次读请求的最大 span（word 数）。**协议硬上限 <=125**，驱动会 clamp |
+| `maxGapRegisters` | 0x03/0x04（寄存器读） | 1 | 合并相邻点位允许跨越的最大“空洞”（word 地址差） |
+| `maxBatchBits` | 0x01/0x02（bit 读） | 2000 | 单次读请求的最大 span（bit 数）。**协议硬上限 <=2000** |
+| `maxGapBits` | 0x01/0x02（bit 读） | 500 | 合并相邻点位允许跨越的最大“空洞”（bit 地址差） |
+
+::: warning
+`maxBatch*` 表示“一个 range read 的总数量”（span），不是“点位个数”。
 :::
 
 ### 2.2 Device（设备）配置
@@ -76,14 +89,12 @@ Device 表示一个从站（Slave）。
 
 - **`slaveId`**：从站 ID (0-255)
 
-#### 2.2.1 Grouped collection（分组采集）
+#### 2.2.1 Group collection
 
-Modbus driver 在 Polling 采集路径下启用 **grouped collection**，分组 key 为 `slaveId`：
+Modbus driver 在 Polling 采集路径下启用 **group collection**，分组 key 为 `slaveId`：
 
 - **同一 `slaveId`**：Collector 会把多个业务 Device 合并成一次 `collect_data(items)` 调用，驱动会合并点位并执行批量读（读请求数更接近理论最小），随后再按业务 `device_id` 拆分为各自的 `NorthwardData` 输出。
 - **不同 `slaveId`**：会被拆成不同的 group 分别采集。
-
-::::
 
 ### 2.3 Point（点位）配置
 
@@ -92,7 +103,20 @@ Modbus driver 在 Polling 采集路径下启用 **grouped collection**，分组 
   - `ReadHoldingRegisters(0x03)` / `ReadInputRegisters(0x04)`
 - **`address`**：起始地址（0..65535，**0基**）
 - **`quantity`**：读取数量（线圈 bit 数或寄存器 word 数）
-- **`scale`**：线性变换参数 `val = raw * scale`（仅对数值类型有效）
+
+#### 2.3.1 wire/logical data type 与 Transform（必读）
+
+Modbus 的 `dataType` 是 **wire data type（协议/内存布局语义）**：它决定 driver 如何从寄存器/线圈解码与如何写回。
+
+如果你希望北向看到的是“工程值”（例如寄存器里是放大整数），请使用 Point 的 **Transform**（logical 语义）：
+
+- `transformDataType`：logical data type（不填则 logical=wire）
+- `transformScale/transformOffset/transformNegate`：数值仿射变换
+
+::: tip 推荐阅读
+完整解释、上行/下行链路、min/max 值域、以及大整数/非数值限制，见：  
+[数据类型与Transform 配置](../data-types-transform.md)。
+:::
 
 ::: tip address 的 0/1 基问题（必读）
 
@@ -172,8 +196,12 @@ Modbus 协议本身并没有“字符串寄存器”类型，`String` 的读取�
 ::: details 
 Smart Cast 示例场景：设备有一个温度值，实际上是 `Int16` (255 = 25.5°C)，但你在平台定义为了 `Float32`。
 
-- 配置：`DataType=Float32`, `quantity=1`, `scale=0.1`
-- 驱动行为：读取 1 个 word -> 解析为 i16 -> 自动 Cast 为 f32 -> 应用 scale -> 输出 25.5 
+- 配置（推荐的“wire/logical 语义分离”）：
+  - `dataType=Int16`（wire）
+  - `transformDataType=Float64`（logical）
+  - `quantity=1`
+  - `transformScale=0.1`
+- 驱动行为：读取 1 个 word -> 解析为 i16(wire) -> wire→logical 应用 Transform -> 输出 25.5 
 :::
 
 ### 3.2 线圈类（0x01/0x02）
@@ -190,17 +218,18 @@ Smart Cast 示例场景：设备有一个温度值，实际上是 `Int16` (255 =
 1. **分组**：按 `functionCode` 分组（0x03 和 0x04 不能合并）。
 2. **排序**：组内按 `address` 升序。
 3. **扫描与合并**：
-   - 只要 `(next_addr - current_end) <= maxGap` 且 `(new_end - current_start) <= maxBatch`，就会合并为一个请求。
+   - 寄存器读（0x03/0x04）：只要 `(next_addr - current_end) <= maxGapRegisters` 且 `(new_end - current_start) <= maxBatchRegisters`，就会合并为一个请求（并受协议上限 clamp）。
+   - bit 读（0x01/0x02）：只要 `(next_addr - current_end) <= maxGapBits` 且 `(new_end - current_start) <= maxBatchBits`，就会合并为一个请求。
    - 合并会产生“空洞数据”，这些数据会被读取但在解码阶段丢弃。
 
 ### 4.1 性能调优建议
 
 - **高吞吐模式**：
-  - `maxGap` = 10~20
-  - `maxBatch` = 100~120
+  - 寄存器：`maxGapRegisters` = 1~10，`maxBatchRegisters` = 100~125
+  - bit：`maxGapBits` = 16~200，`maxBatchBits` = 512~2000
   - 适用：点位地址集中，网络质量好（TCP）。
 
 - **高稳定性模式**：
-  - `maxGap` = 0 (不跨越空洞)
-  - `maxBatch` = 60
+  - 寄存器：`maxGapRegisters` = 0（不跨越空洞），`maxBatchRegisters` = 40~80
+  - bit：`maxGapBits` = 0（不跨越空洞），`maxBatchBits` = 128~512
   - 适用：RS-485 干扰大，设备响应慢。

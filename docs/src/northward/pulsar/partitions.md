@@ -27,5 +27,3 @@ Pulsar 的 `partition_key` 类似于 Kafka 的 record key：
 见：
 
 - [`Pulsar 上行（Uplink）`](/northward/pulsar/uplink)
-- [`QueuePolicy`](/northward/policies/queue-policy)
-

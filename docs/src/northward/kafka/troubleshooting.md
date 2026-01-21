@@ -42,7 +42,6 @@ description: 'Kafka 插件常见问题定位：连接失败、ACL、TLS/SASL、t
 - 优先检查平台侧消费与 broker 负载（是否出现拥塞/限流）
 - 拆分 App（遥测与控制面分开）
 - 调整 producer batch/linger（降低发送压力或提高吞吐）
-- 配合 `QueuePolicy` 做可预测背压：[`QueuePolicy`](/northward/policies/queue-policy)
 
 ---
 

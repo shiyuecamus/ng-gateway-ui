@@ -30,7 +30,7 @@ description: '从 0 到 1 跑通北向：创建 App、配置连接与 payload、
 - **无磁盘断网续传**：仅有 `QueuePolicy.bufferEnabled` 的**内存缓冲**，重启/掉电会丢失缓冲数据。
 - **满队列策略较粗**：目前主要通过 `QueuePolicy.dropPolicy`（Discard/Block）实现背压保护。
 - **ThingsBoard Protobuf**：配置存在但当前版本未实现（会报错）。
-更多计划能力见路线图：[`路线图`](/guide/other/roadmap)
+更多计划能力见路线图：[`路线图`](/guide/introduction/roadmap)
 :::
 
 ---
@@ -55,16 +55,7 @@ description: '从 0 到 1 跑通北向：创建 App、配置连接与 payload、
 
 ---
 
-## 2. 配置通用策略（强烈建议至少了解一次）
-
-- **重试策略**：[`RetryPolicy` 指南](/northward/policies/retry-policy)
-- **队列与缓冲**：[`QueuePolicy` 指南](/northward/policies/queue-policy)
-
-<!-- TODO screenshot: northward-policy-config -->
-
----
-
-## 3. 创建 AppSubscription（订阅设备数据）
+## 2. 创建 AppSubscription（订阅设备数据）
 
 北向 App 默认不会收到任何数据，你必须创建订阅来告诉路由器：哪些设备/哪些数据要扇出给该 App。
 
@@ -76,9 +67,9 @@ description: '从 0 到 1 跑通北向：创建 App、配置连接与 payload、
 
 ---
 
-## 4. 验证“上行”是否工作（推荐顺序）
+## 3. 验证“上行”是否工作（推荐顺序）
 
-### 4.1 看连接状态
+### 3.1 看连接状态
 
 进入 App 页面，观察连接状态：
 
@@ -89,7 +80,7 @@ description: '从 0 到 1 跑通北向：创建 App、配置连接与 payload、
 连接状态只代表“插件的连接已建立”，不代表“消息一定已被平台消费成功”。消费/订阅验证仍然必须做。
 :::
 
-### 4.2 验证 topic / payload
+### 3.2 验证 topic / payload
 
 按你选择的平台执行验证：
 
@@ -105,7 +96,7 @@ description: '从 0 到 1 跑通北向：创建 App、配置连接与 payload、
 
 ---
 
-## 5. 验证“下行/写回”（可选）
+## 4. 验证“下行/写回”（可选）
 
 取决于插件能力：
 
@@ -121,7 +112,7 @@ description: '从 0 到 1 跑通北向：创建 App、配置连接与 payload、
 
 ---
 
-## 6. 常见问题（快速定位）
+## 5. 常见问题（快速定位）
 
 - **App 状态 Connected，但没有消息**：
   - 是否创建了 `AppSubscription`？
@@ -137,4 +128,3 @@ description: '从 0 到 1 跑通北向：创建 App、配置连接与 payload、
 更完整排障见：
 
 - [`北向排障索引`](/northward/troubleshooting/overview)
-

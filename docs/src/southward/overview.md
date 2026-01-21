@@ -13,7 +13,7 @@ NG Gateway 的南向体系不仅仅是“把设备接上来”，而是一个专
 
 南向负责把“现实世界的设备/总线/控制器”稳定接入网关，并把读写结果标准化为统一的 `NorthwardData` 进入核心管线与北向。它的目标是**可靠、可观测、可扩展、性能优先**。
 
-::: tip 设计原则
+::: warning 设计原则
 **南向只解决“如何连接、如何采集、如何编解码、如何容错”**；不要在 driver 里绑定北向协议、业务规则或平台差异。
 :::
 
@@ -34,7 +34,7 @@ NG Gateway 的南向体系不仅仅是“把设备接上来”，而是一个专
 
 当前网关有且仅有两条“南向 → 核心 → 北向”的数据路径；两条路径在进入 core 之后**完全复用同一条转发/路由链路**。
 
-### 1) Polling（轮询采集，由 Collector 调度）
+### 1. Polling（轮询采集，由 Collector 调度）
 
 - **适用场景**：Modbus/S7 等“读寄存器/读变量”为主的协议；或现场要求固定周期采集。
 - **触发机制**：当且仅当 channel 的 `collection_type == Collection` 时，该 channel 才会被 `Collector` 拉起轮询任务；`period` 决定 tick 周期。
@@ -48,14 +48,24 @@ NG Gateway 的南向体系不仅仅是“把设备接上来”，而是一个专
 Polling 的“调度者”是 core 的 `Collector`，driver 只实现“如何高效读点位与解析”。
 :::
 
-#### 1.1 Grouped collection（分组采集 / 批量采集）的语义（必读）
+#### 1.1 Grouped collection 的语义
 
-Grouped collection 用于解决一个常见建模场景：**同一条物理会话/连接下，为了业务组织把点位拆成多个 Device**（例如同一 PLC / 同一 OPC UA endpoint、或同一 Modbus slave 被拆为多个业务设备）。
+::: warning 强烈建议
+把本小节当成“概览入口”，详细设计、并发/超时语义、以及各驱动实际用法请阅读：  
+[Group Collection（分组采集）设计与各驱动用法](./group-collection.md)。
+:::
 
-`Collector` 会调用 driver 提供的 `collection_group_key(device)` 来决定“哪些 Device 应该在一次 `collect_data(items)` 调用里合并采集”：
+Grouped collection（也称 **Group Collection**）用于解决一个常见建模场景：**同一条物理会话/连接下，为了业务组织把点位拆成多个业务 Device**（例如同一 PLC / 同一 OPC UA endpoint、或同一 Modbus slave 被拆为多个业务设备）。
+
+`Collector` 会调用 driver 提供的 `collection_group_key(device)` 来决定“哪些业务 Device 应该在同一批次 `collect_data(items)` 调用里合并采集”：
 
 - **`collection_group_key(device) -> None`**：不做物理分组。`Collector` 会保证 `collect_data(items)` 的 `items.len() == 1`（单设备采集）。
 - **`collection_group_key(device) -> Some(key)`**：做物理分组。`Collector` 会把同一 `key` 下的多个 device 合并成一次 `collect_data(items)` 调用。
+
+其中 `key` 是一个固定大小的 `CollectionGroupKey([u8;16])`，包含：
+
+- `kind`（4 bytes 命名空间，用于跨驱动隔离）
+- `payload`（12 bytes 协议自定义负载，用于表达“物理会话语义”）
 
 **输入不变量**（由 core 保证）：
 
@@ -69,12 +79,7 @@ Grouped collection 用于解决一个常见建模场景：**同一条物理会�
 - 即使一次调用合并采集了多个 device，driver **仍然必须按业务 device 输出** `NorthwardData`（Telemetry/Attributes 的 `device_id/device_name` 不能混淆）。
 - 通常建议：同一 group 使用同一个 `timestamp`（保证本轮数据一致性）。
 
-**当前内置驱动的分组策略（Polling 路径）**：
-
-- **Modbus**：按 `slaveId` 分组（同一 `slaveId` 的业务设备会合并批读，然后再按业务 device 拆分输出）。
-- **S7 / MC / OPC UA / Ethernet-IP**：按 `channel_id` 分组（同一 channel 下的多个业务 device 会被合并为一次批读/批量请求，再按业务 device 拆分输出）。
-
-### 2) Driver Push（订阅/上报，由 Driver 自己驱动）
+### 2. Driver Push（订阅/上报，由 Driver 自己驱动）
 
 - **适用场景**：OPC UA subscription、IEC104 主动上送、DNP3 SOE、任何协议的异步事件/变化上报。
 - **触发机制**：driver 在 `start()` 后自行建立订阅/监听/接收循环，遇到数据时直接 publish。
@@ -91,7 +96,7 @@ Subscription不是由 `Collector` 调度；它属于 driver 的“会话层/协�
 
 反向路径的共同目标是：**在尽可能靠近入口处做“可判定”的校验与限流**，避免把非法/高风险/洪峰请求直接打到现场设备。
 
-### WritePoint（点位写入）
+### 点位写入
 
 - **入口**：北向插件下行事件 `NorthwardEvent::WritePoint`。
 - **core 侧校验**：
@@ -107,7 +112,7 @@ Subscription不是由 `Collector` 调度；它属于 driver 的“会话层/协�
 - **执行**：通过 `driver.write_point(device, point, value, timeout_ms)` 进入 driver。
 - **响应**：写入完成后回传 `NorthwardData::WritePointResponse`（控制面响应不会被“数据背压”丢弃）。
 
-### ExecuteAction（动作/命令）
+### 动作/命令
 
 - **入口**：北向插件下行事件 `NorthwardEvent::CommandReceived`。
 - **core 侧校验**：
@@ -177,20 +182,24 @@ Subscription不是由 `Collector` 调度；它属于 driver 的“会话层/协�
 | `access_mode` | `Read \| Write \| ReadWrite` | 访问模式 | 用它表达“安全边界” |
 | `unit` | `string` | 展示单位（如 ℃、kPa、A） | 尽量短；避免在热路径做字符串拼接 |
 | `min_value` / `max_value` | `number \| null` | 写入范围约束（仅当 min 与 max 同时存在时生效） | 用于防误写；与值域保持一致 |
-| `scale` | `number \| null` | 比例/换算因子（协议原始值 ↔ 工程值） | 若启用，务必保证读写一致 |
+| `transform_data_type` | `string \| null` | 参数 logical data type。为空则 logical=wire | 影响下行输入校验类型 |
+| `transform_scale` | `number \| null` | 比例系数 \(s\)。上行 wire→logical、下行 logical→wire 逆变换 | 下行要求 \(s != 0\) |
+| `transform_offset` | `number \| null` | 偏移量 \(o\) | 与工程零点对齐 |
+| `transform_negate` | `boolean` | 是否取反（顺序同 Point） | 用于方向相反/符号翻转 |
 | `driver_config` | `object` | point 级 driver 私有配置（地址/寄存器/数据块/订阅项等协议细节） | 按 driver 文档配置；避免把协议细节写进 `key/name` |
 
-#### Point 关键语义（务必读）
+#### Point 关键语义
 
 - **`access_mode` 的作用**：
   - **采集侧**：core 会按 `access_mode` 过滤可读点位（Read/ReadWrite）用于采集；过滤可写点位（Write/ReadWrite）用于写入能力展示/路由。
   - **写入侧**：WritePoint 入口会用它做强校验；非 `Write/ReadWrite` 会被直接拒绝并返回 `NotWriteable`。
 - **`Read` 不是“协议不支持写”**：它是产品/现场层面的**安全边界**；应在建模阶段正确配置，避免误写关键点位。
 - **`ReadWrite` 一致性要求**：driver 必须保证读写路径对同一地址/变量的语义一致（单位/比例/编码）。
-- **`min_value/max_value` 的值域一致性**：当前 core 的范围校验直接比较写入值与 `[min,max]`，不会自动应用 `scale`；因此 **min/max 必须与外部写入值处于同一“值域”（原始值或工程值）**。
-- **`scale` 的一致性要求**：scale 主要作为元数据透传至 driver；是否在读写时应用 scale 由 driver 决定。若 driver 选择对外暴露工程值，则应同时保证：
-  - 上行采集输出与下行写入输入都使用同一尺度；
-  - min/max 也按工程尺度配置，才能与 core 的 `OutOfRange` 校验对齐。
+- **`min_value/max_value` 的值域一致性**：当前 core 的范围校验发生在 **logical 值域**（北向语义）。因此 **min/max 必须与北向输入/输出处于同一值域**（工程值）。
+- **Transform 的一致性要求**：一旦启用 `transformScale/transformOffset/transformNegate` 或 `transformDataType`，就必须同时保证：
+  - 上行输出与下行写入使用同一套 logical 语义；
+  - `min/max` 按 logical 值域配置；
+  - 避免在 driver 内重复应用 Transform（双重缩放会直接写错值）。
 
 ### Action & Parameter 通用属性
 
@@ -213,6 +222,10 @@ Subscription不是由 `Collector` 调度；它属于 driver 的“会话层/协�
 | `required` | `boolean` | 是否必填 | 必填参数尽量少 |
 | `default_value` | `any \| null` | 默认值（如有） | 非必填建议提供默认值 |
 | `min_value` / `max_value` | `number \| null` | 范围约束（如有） | 用于防误写 |
+| `transform_data_type` | `string \| null` | 参数 logical data type。为空则 logical=wire | 影响下行输入校验类型 |
+| `transform_scale` | `number \| null` | 比例系数 \(s\)。上行 wire→logical、下行 logical→wire 逆变换 | 下行要求 \(s != 0\) |
+| `transform_offset` | `number \| null` | 偏移量 \(o\) | 与工程零点对齐 |
+| `transform_negate` | `boolean` | 是否取反（顺序同 Point） | 用于方向相反/符号翻转 |
 | `driver_config` | `object` | 参数级 driver 私有配置（用于 driver 做协议层映射/编码/枚举等） | 通过 driver schema 配置；仅放 driver 必需信息 |
 
 #### Parameter 关键语义（core 统一校验与解析）
@@ -233,9 +246,8 @@ Subscription不是由 `Collector` 调度；它属于 driver 的“会话层/协�
 - **publisher.try_publish 是非阻塞的**：当 core 转发队列满时会返回 `QueueFull`（背压信号）。driver 必须决定策略：丢弃、聚合、降采样、重试（带退避），而不是在热路径里无界堆积。
 - **批量优先**：Polling 场景下，driver 应尽量将一次采集结果组成少量 `NorthwardData`（例如按 device 分组），减少发送次数与调度开销。
 
-### 轮询采集（Polling）
+### 轮询采集
 
-- **避免每设备 `tokio::spawn`**：当前 `Collector` 已采用 `buffer_unordered` + `Semaphore`，driver 侧也应避免在单次采集里产生大量短生命周期 task。
 - **超时/重试/退避要可配置**：使用 `connection_policy` 提供的超时与 backoff；连续失败要指数退避，避免重连风暴。
 - **批量读取策略**：按协议能力将点位拆成批次（上限/对齐/地址连续性），并将批大小、并发度、超时做成可调参数。
 

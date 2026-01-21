@@ -50,8 +50,13 @@ Action 用于封装一组“写入 Tag”的操作；**Action 本身不承载协
 
 ## 3. 值类型转换
 
-- **读（uplink）**：PLC 返回的 `PlcValue` 会按 Point 声明的 `data_type` 与 `scale` 做 coercion（带范围检查/字符串解析）。
-- **写（downlink）**：输入的 `NGValue` 会按 Point/Parameter 声明的 `data_type` 做 cast（带范围检查/字符串解析），再编码成要写入 PLC 的 `PlcValue`。
+- **读（uplink）**：PLC 返回的 `PlcValue` 会先按 Point 的 **wire data type** 解码，再应用 Point 的 **logical data type + Transform**（`transformDataType/transformScale/transformOffset/transformNegate`）输出 `NGValue`。
+- **写（downlink）**：北向下发的值被视为 **logical 值**，core 会先执行 logical→wire（含 Transform 逆变换），driver 再按 wire data type 编码为要写入 PLC 的 `PlcValue`。
+
+::: tip 推荐阅读
+Transform 的完整链路、非数值限制、min/max 的值域一致性，见：  
+[数据类型与Transform 配置](../data-types-transform.md)。
+:::
 
 ::: tip 解释
 网关侧会尽力按 `data_type` 做转换，但 **PLC 侧仍会对 Tag 的真实 CIP 类型做检查**。因此 `data_type` 选错时，写入仍可能失败（类型不匹配/越界/截断等）。
@@ -85,20 +90,19 @@ Action 用于封装一组“写入 Tag”的操作；**Action 本身不承载协
 
 ::: tip 核心语义
 - **按 `data_type` coercion（带范围检查）**：例如 PLC 返回 `UDINT=42`，点位声明 `Int32`，则会上报 `NGValue::Int32(42)`；如果超出范围（例如 `UDINT > i32::MAX`）会报错并跳过该点位。
-- **按 `scale` 缩放（仅读路径）**：仅对数值转换生效，语义为 `value * scale`。例如 PLC `INT=10`，点位 `data_type=Float64`，`scale=0.1`，则上报为 `1.0`。
-  - 提醒：`Timestamp` 也是数值（i64 ms）。除非你非常确定，否则**不要**给时间戳配置 `scale`，否则会把时间戳本身缩放导致语义错误。
+- **按 Transform 缩放/偏移/取反（读写一致）**：如果你需要工程值语义（例如放大整数、零点偏移），请使用 Point 的 Transform（上行 wire→logical、下行 logical→wire 都会生效）。
 - **当 PLC 返回 `STRING` 时的特殊规则**：
   - `data_type=String`：原样上报字符串
   - `data_type=Boolean`：按 SDK 规则解析（`true/false/1/0/on/off/yes/no/y/n/t/f`，忽略大小写与首尾空白）
   - `data_type=Timestamp`：优先解析 RFC3339；否则把字符串当作“数字型时间戳”解析为 epoch ms（带范围检查）
-  - 其它数值类型：先 `parse f64`，再按 `data_type` 强制转换并应用 `scale`
+  - 其它数值类型：先 `parse f64`，再按 logical data type + Transform 输出
 :::
 
 ### 3.3 Downlink转换规则
 
 ::: tip 核心语义
 - **按 `data_type` cast + range check**：例如参数声明 `Int32`，输入是 `"123"`（String），会尝试解析并写入 `DINT(123)`。
-- **不会自动应用 `scale`**：`scale` 是点位上行（读）语义；写入时请直接写 PLC 期望的“真实值”。
+- **写入会应用 Transform 的逆变换**：北向写入的是 logical 值，写到 PLC 的是 wire 值（经过 inverse）。
 - **转换失败会返回 ValidationError**：例如越界、NaN/Inf、无法解析字符串等。
 - **Boolean 的兼容输入**（写入 `data_type=Boolean` 时）：
   - `true/false`
@@ -134,8 +138,8 @@ Action 用于封装一组“写入 Tag”的操作；**Action 本身不承载协
   - **含义**：PLC 返回了复杂类型（例如 UDT/结构体/数组），当前驱动无法映射为 `NGValue`。
   - **处理**：按 [Tag建模](./tag.md) 的建议在 PLC/Server 侧提供标量镜像 Tag，再在网关侧建模。
 - **typed conversion failed ...**
-  - **含义**：读路径按 `data_type/scale` 转换失败（常见原因：越界、字符串无法解析为数字/布尔、Timestamp 越界）。
-  - **处理**：检查 Point 的 `data_type` 是否与 PLC Tag 对齐；检查 `scale` 是否合理（尤其避免给 `Timestamp` 配 `scale`）。
+  - **含义**：读路径 wire→logical 转换失败（常见原因：越界、字符串无法解析为数字/布尔、Timestamp 越界、Transform 约束不满足）。
+  - **处理**：检查 wire/logical 类型是否对齐；检查 Transform 配置（尤其 scale=0、非数值类型映射、超大整数 + 非 identity Transform）。
 - **write value cast failed ... / ValidationError**
   - **含义**：写入前的 cast 失败（越界、NaN/Inf、字符串无法解析等）。
   - **处理**：检查 Parameter/Point 的 `data_type` 与输入 value；必要时先用数值类型输入而不是字符串。

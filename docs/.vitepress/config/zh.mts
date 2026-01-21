@@ -74,6 +74,11 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       items: [
         { link: '/southward/overview', text: '南向总览' },
         {
+          link: '/southward/data-types-transform',
+          text: '数据类型 与 Transform',
+        },
+        { link: '/southward/group-collection', text: '分组采集' },
+        {
           link: '/southward/driver-metadata-schema',
           text: 'Driver Metadata Schema',
         },

@@ -29,5 +29,5 @@ description: 'ThingsBoard 插件虽提供 message_format=protobuf 配置，但�
 
 ## 3. Roadmap
 
-Protobuf/二进制 payload 属于后续能力计划，见：[`路线图`](/guide/other/roadmap)
+Protobuf/二进制 payload 属于后续能力计划，见：[`路线图`](/guide/introduction/roadmap)
 

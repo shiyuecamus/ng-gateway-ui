@@ -27,7 +27,7 @@ description: '北向 uplink topic/key 模板可用变量：app/device/event/time
 | `channel_name` | string | 通道名称 | Telemetry/Attributes 通过 point meta 推断，缺 meta 或 values 为空时可能取不到 |
 
 ::: tip
-对于可能为空的变量，建议用 `{{default channel_name "unknown"}}` 兜底，避免 topic/key 里出现空段。
+对于可能为空的变量，建议用 `&#123;&#123;default channel_name "unknown"&#125;&#125;` 兜底，避免 topic/key 里出现空段。
 :::
 
 ### 1.3 时间分区变量（UTC）

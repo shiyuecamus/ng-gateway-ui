@@ -22,7 +22,6 @@ description: '对接 ThingsBoard 平台：支持 Gateway Telemetry/Attributes/Co
 
 ::: warning 当前限制
 - `message_format=protobuf` 当前版本未实现（会报错），详见：[`Protobuf 状态说明`](/northward/thingsboard/protobuf-status)
-- 当前版本无磁盘断网续传（只内存缓冲）：[`QueuePolicy`](/northward/policies/queue-policy)
 :::
 
 ---

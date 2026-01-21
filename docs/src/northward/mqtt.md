@@ -17,5 +17,5 @@ description: '侧边栏入口占位：当前仓库版本未提供北向 MQTT 插
 
 ## Roadmap
 
-请关注：[`路线图`](/guide/other/roadmap)
+请关注：[`路线图`](/guide/introduction/roadmap)
 

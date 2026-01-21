@@ -27,7 +27,7 @@ description: '北向可靠性不是越多越好：如何用 RetryPolicy/QueuePol
 - 精细化丢弃/采样/合并（latest merge 等）
 :::
 
-路线图见：[`路线图`](/guide/other/roadmap)
+路线图见：[`路线图`](/guide/introduction/roadmap)
 
 ---
 

@@ -12,7 +12,7 @@ description: '把北向内部数据映射为你平台想要的 JSON：compile on
 - 想把 `EnvelopeJson`/`Kv` 的某些字段重排成平台需要的 shape
 
 ::: tip 未来演进
-后续计划支持 Lua Transform（更强表达力/可测试/可热更新），见：`document/ng-lua-transform-sandbox-design.md` 与 [`路线图`](/guide/other/roadmap)。
+后续计划支持 Lua Transform（更强表达力/可测试/可热更新），见：`document/ng-lua-transform-sandbox-design.md` 与 [`路线图`](/guide/introduction/roadmap)。
 :::
 
 ---
