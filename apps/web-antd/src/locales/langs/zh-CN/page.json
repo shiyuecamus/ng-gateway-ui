@@ -10,7 +10,85 @@
   "dashboard": {
     "title": "概览",
     "analytics": "分析页",
-    "workspace": "工作台"
+    "workspace": "工作台",
+    "gatewayOverview": {
+      "title": "NG Gateway 总览",
+      "header": {
+        "host": "Host",
+        "os": "OS",
+        "uptime": "Uptime",
+        "net": "Net",
+        "status": "状态"
+      },
+      "ws": {
+        "connected": "实时连接正常",
+        "connecting": "正在连接...",
+        "reconnecting": "连接中断，正在重连...",
+        "disconnected": "未连接"
+      },
+      "ping": {
+        "action": "Ping",
+        "sending": "正在 Ping 网关...",
+        "pong": "Pong：{ms}ms",
+        "timeout": "Ping 超时"
+      },
+      "kpi": {
+        "southwardChannel": "南向通道",
+        "connectionRate": "连接率",
+        "device": "设备",
+        "activeRate": "活跃率",
+        "cpu": "CPU",
+        "memory": "内存",
+        "northwardApp": "北向应用",
+        "running": "运行中",
+        "connectedChannels": "已连通道",
+        "totalChannels": "总通道",
+        "activeDevices": "活跃设备",
+        "totalDevices": "总设备",
+        "totalPoints": "点位总数",
+        "avgPerDevice": "平均/设备",
+        "runningApps": "运行应用",
+        "totalApps": "总应用",
+        "cpuUsage": "CPU使用率",
+        "memoryUsage": "内存使用率",
+        "diskUsage": "磁盘使用率",
+        "processRssMb": "进程RSS内存(MB)",
+        "networkRx": "网络接收",
+        "networkTx": "网络发送",
+        "collectorAvgMs": "采集平均耗时",
+        "collectorActiveTasks": "活跃采集任务"
+      },
+      "series": {
+        "cpu": "CPU",
+        "memory": "内存",
+        "disk": "磁盘",
+        "tx": "TX",
+        "rx": "RX",
+        "collectorAvgMs": "平均采集耗时"
+      },
+      "charts": {
+        "resources": "资源趋势",
+        "network": "网络吞吐",
+        "collector": "采集性能"
+      },
+      "drilldown": {
+        "south": {
+          "title": "南向",
+          "desc": "进入通道列表查看连接状态、采集耗时与点位读取情况。",
+          "action": "打开南向通道"
+        },
+        "north": {
+          "title": "北向",
+          "desc": "进入应用列表查看连接、吞吐、重试与错误信息。",
+          "action": "打开北向应用"
+        },
+        "monitor": {
+          "title": "实时监控",
+          "desc": "打开设备实时监控（/api/ws/monitor）定位具体点位变化。",
+          "action": "打开实时监控"
+        }
+      }
+    }
   },
   "home": {
     "title": "首页"

@@ -10,6 +10,14 @@ const SvgDownloadIcon = createIconifyIcon('svg:download');
 const SvgCardIcon = createIconifyIcon('svg:card');
 const SvgBellIcon = createIconifyIcon('svg:bell');
 const SvgCakeIcon = createIconifyIcon('svg:cake');
+const SvgChannelIcon = createIconifyIcon('svg:channel');
+const SvgDeviceIcon = createIconifyIcon('svg:device');
+const SvgPointsIcon = createIconifyIcon('svg:points');
+const SvgAppIcon = createIconifyIcon('svg:app');
+const SvgCpuIcon = createIconifyIcon('svg:cpu');
+const SvgDiskIcon = createIconifyIcon('svg:disk');
+const SvgNetworkIcon = createIconifyIcon('svg:network');
+const SvgCollectorIcon = createIconifyIcon('svg:collector');
 const SvgAntdvLogoIcon = createIconifyIcon('svg:antdv-logo');
 const SvgGithubIcon = createIconifyIcon('svg:github');
 const SvgGoogleIcon = createIconifyIcon('svg:google');
@@ -20,6 +28,7 @@ const SvgTDesignIcon = createIconifyIcon('svg:tdesign-logo');
 
 export {
   SvgAntdvLogoIcon,
+  SvgAppIcon,
   SvgAvatar1Icon,
   SvgAvatar2Icon,
   SvgAvatar3Icon,
@@ -27,10 +36,17 @@ export {
   SvgBellIcon,
   SvgCakeIcon,
   SvgCardIcon,
+  SvgChannelIcon,
+  SvgCollectorIcon,
+  SvgCpuIcon,
+  SvgDeviceIcon,
   SvgDingDingIcon,
+  SvgDiskIcon,
   SvgDownloadIcon,
   SvgGithubIcon,
   SvgGoogleIcon,
+  SvgNetworkIcon,
+  SvgPointsIcon,
   SvgQQChatIcon,
   SvgTDesignIcon,
   SvgWeChatIcon,

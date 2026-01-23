@@ -10,7 +10,85 @@
   "dashboard": {
     "title": "Dashboard",
     "analytics": "Analytics",
-    "workspace": "Workspace"
+    "workspace": "Workspace",
+    "gatewayOverview": {
+      "title": "NG Gateway Overview",
+      "header": {
+        "host": "Host",
+        "os": "OS",
+        "uptime": "Uptime",
+        "net": "Net",
+        "status": "Status"
+      },
+      "ws": {
+        "connected": "Realtime connected",
+        "connecting": "Connecting...",
+        "reconnecting": "Disconnected, reconnecting...",
+        "disconnected": "Disconnected"
+      },
+      "ping": {
+        "action": "Ping",
+        "sending": "Pinging gateway...",
+        "pong": "Pong: {ms}ms",
+        "timeout": "Ping timed out"
+      },
+      "kpi": {
+        "southwardChannel": "Southward Channels",
+        "connectionRate": "Connection rate",
+        "device": "Devices",
+        "activeRate": "Active rate",
+        "cpu": "CPU",
+        "memory": "Memory",
+        "northwardApp": "Northward Apps",
+        "running": "Running",
+        "connectedChannels": "Connected channels",
+        "totalChannels": "Total channels",
+        "activeDevices": "Active devices",
+        "totalDevices": "Total devices",
+        "totalPoints": "Total points",
+        "avgPerDevice": "Avg / device",
+        "runningApps": "Running apps",
+        "totalApps": "Total apps",
+        "cpuUsage": "CPU usage",
+        "memoryUsage": "Memory usage",
+        "diskUsage": "Disk usage",
+        "processRssMb": "Process RSS (MB)",
+        "networkRx": "Network RX",
+        "networkTx": "Network TX",
+        "collectorAvgMs": "Avg collection time",
+        "collectorActiveTasks": "Active collection tasks"
+      },
+      "series": {
+        "cpu": "CPU",
+        "memory": "Memory",
+        "disk": "Disk",
+        "tx": "TX",
+        "rx": "RX",
+        "collectorAvgMs": "Avg collection time"
+      },
+      "charts": {
+        "resources": "Resource trends",
+        "network": "Network throughput",
+        "collector": "Collection performance"
+      },
+      "drilldown": {
+        "south": {
+          "title": "Southward",
+          "desc": "Open channels to view connection status, collection latency, and point reads.",
+          "action": "Open southward channels"
+        },
+        "north": {
+          "title": "Northward",
+          "desc": "Open apps to view connectivity, throughput, retries, and errors.",
+          "action": "Open northward apps"
+        },
+        "monitor": {
+          "title": "Realtime monitor",
+          "desc": "Open realtime monitor (/api/ws/monitor) to inspect point-level changes.",
+          "action": "Open realtime monitor"
+        }
+      }
+    }
   },
   "home": {
     "title": "Home"
