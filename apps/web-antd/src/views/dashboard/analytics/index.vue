@@ -28,15 +28,15 @@ import {
   formatMs,
   formatRate,
   parseChronoDurationToMs,
-} from './modules/gateway-metrics-types';
-import { useGatewayMetricsWs } from './modules/use-gateway-metrics-ws';
+} from './modules/metrics-types';
+import { useMetricsWs } from './modules/use-metrics-ws';
 import GatewayKpiGrid from './widgets/gateway-kpi-grid.vue';
 import GatewayLineChart from './widgets/gateway-line-chart.vue';
 
 const router = useRouter();
 const { isDark } = usePreferences();
 
-const metrics = useGatewayMetricsWs({
+const metrics = useMetricsWs({
   intervalMs: 1000,
   uiTriggerMinIntervalMs: 200,
   trendPoints: 60,

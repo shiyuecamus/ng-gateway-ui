@@ -4,7 +4,7 @@ import type {
   MetricsClientMessage,
   MetricsServerMessage,
   TrendPoint,
-} from './gateway-metrics-types';
+} from './metrics-types';
 
 import { computed, ref, shallowRef, triggerRef } from 'vue';
 
@@ -14,7 +14,7 @@ import { useWebSocket } from '@vueuse/core';
 
 import { baseRequestClient } from '#/api/request';
 
-import { clamp } from './gateway-metrics-types';
+import { clamp } from './metrics-types';
 
 function buildWsUrl(): string {
   const baseURL = (baseRequestClient as any).defaults?.baseURL as
@@ -40,7 +40,7 @@ function pushPoint(
   return next;
 }
 
-export function useGatewayMetricsWs(options?: {
+export function useMetricsWs(options?: {
   intervalMs?: number;
   /**
    * Number of trend points to keep (sliding window).

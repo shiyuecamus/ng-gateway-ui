@@ -1,4 +1,4 @@
-import type { TrendPoint } from './gateway-metrics-types';
+import type { TrendPoint } from './metrics-types';
 
 function tsLabel(ts: number): string {
   const d = new Date(ts);
