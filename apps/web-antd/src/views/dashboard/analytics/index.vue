@@ -317,13 +317,20 @@ function navTo(path: string) {
   <div class="p-5">
     <!-- Neon header -->
     <div
-      class="rounded-xl border border-cyan-500/20 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-4 ring-1 ring-purple-500/10">
-      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      class="rounded-xl border border-cyan-500/20 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-4 ring-1 ring-purple-500/10"
+    >
+      <div
+        class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+      >
         <div class="flex items-center gap-3">
-          <div class="h-3 w-3 rounded-full" :class="metrics.isConnected
-              ? 'bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.7)]'
-              : 'bg-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.6)]'
-            "></div>
+          <div
+            class="h-3 w-3 rounded-full"
+            :class="
+              metrics.isConnected
+                ? 'bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.7)]'
+                : 'bg-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.6)]'
+            "
+          ></div>
           <div class="flex flex-col">
             <div class="text-base font-semibold text-white">
               {{ $t('page.dashboard.gatewayOverview.title') }}
@@ -342,31 +349,35 @@ function navTo(path: string) {
           <div class="rounded-md bg-white/5 px-2 py-1 ring-1 ring-white/10">
             <span class="text-white/50">{{
               $t('page.dashboard.gatewayOverview.header.host')
-              }}</span>
+            }}</span>
             {{ header?.hostname ?? '-' }}
           </div>
           <div class="rounded-md bg-white/5 px-2 py-1 ring-1 ring-white/10">
             <span class="text-white/50">{{
               $t('page.dashboard.gatewayOverview.header.os')
-              }}</span>
+            }}</span>
             {{ header?.os ?? '-' }}
           </div>
           <div class="rounded-md bg-white/5 px-2 py-1 ring-1 ring-white/10">
             <span class="text-white/50">{{
               $t('page.dashboard.gatewayOverview.header.uptime')
-              }}</span>
+            }}</span>
             {{ quickFacts?.uptime ?? '-' }}
           </div>
           <div class="rounded-md bg-white/5 px-2 py-1 ring-1 ring-white/10">
             <span class="text-white/50">{{
               $t('page.dashboard.gatewayOverview.header.net')
-              }}</span>
+            }}</span>
             RX {{ quickFacts?.netRx ?? '-' }} · TX
             {{ quickFacts?.netTx ?? '-' }}
           </div>
 
-          <VbenButton size="sm" variant="secondary" class="bg-white/5 text-white/80 hover:bg-white/10"
-            @click="onPingClick">
+          <VbenButton
+            size="sm"
+            variant="secondary"
+            class="bg-white/5 text-white/80 hover:bg-white/10"
+            @click="onPingClick"
+          >
             <VbenIcon icon="lucide:send" class="mr-2 size-4" />
             {{ $t('page.dashboard.gatewayOverview.ping.action') }}
           </VbenButton>
@@ -381,23 +392,31 @@ function navTo(path: string) {
 
     <!-- Charts -->
     <div class="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <AnalysisChartCard :title="$t('page.dashboard.gatewayOverview.charts.resources')"
-        class="dark:border-cyan-500/10 dark:bg-slate-950/40">
+      <AnalysisChartCard
+        :title="$t('page.dashboard.gatewayOverview.charts.resources')"
+        class="dark:border-cyan-500/10 dark:bg-slate-950/40"
+      >
         <GatewayLineChart :option="chartSystem" />
       </AnalysisChartCard>
-      <AnalysisChartCard :title="$t('page.dashboard.gatewayOverview.charts.network')"
-        class="dark:border-cyan-500/10 dark:bg-slate-950/40">
+      <AnalysisChartCard
+        :title="$t('page.dashboard.gatewayOverview.charts.network')"
+        class="dark:border-cyan-500/10 dark:bg-slate-950/40"
+      >
         <GatewayLineChart :option="chartNetwork" />
       </AnalysisChartCard>
-      <AnalysisChartCard :title="$t('page.dashboard.gatewayOverview.charts.collector')"
-        class="dark:border-cyan-500/10 dark:bg-slate-950/40">
+      <AnalysisChartCard
+        :title="$t('page.dashboard.gatewayOverview.charts.collector')"
+        class="dark:border-cyan-500/10 dark:bg-slate-950/40"
+      >
         <GatewayLineChart :option="chartCollector" />
       </AnalysisChartCard>
     </div>
 
     <!-- Drilldown -->
     <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div class="rounded-xl border p-4 dark:border-white/10 dark:bg-slate-950/40">
+      <div
+        class="rounded-xl border p-4 dark:border-white/10 dark:bg-slate-950/40"
+      >
         <div class="flex items-center justify-between">
           <div class="text-sm font-semibold">
             {{ $t('page.dashboard.gatewayOverview.drilldown.south.title') }}
@@ -414,7 +433,9 @@ function navTo(path: string) {
         </VbenButton>
       </div>
 
-      <div class="rounded-xl border p-4 dark:border-white/10 dark:bg-slate-950/40">
+      <div
+        class="rounded-xl border p-4 dark:border-white/10 dark:bg-slate-950/40"
+      >
         <div class="flex items-center justify-between">
           <div class="text-sm font-semibold">
             {{ $t('page.dashboard.gatewayOverview.drilldown.north.title') }}
@@ -433,7 +454,9 @@ function navTo(path: string) {
         </VbenButton>
       </div>
 
-      <div class="rounded-xl border p-4 dark:border-white/10 dark:bg-slate-950/40">
+      <div
+        class="rounded-xl border p-4 dark:border-white/10 dark:bg-slate-950/40"
+      >
         <div class="flex items-center justify-between">
           <div class="text-sm font-semibold">
             {{ $t('page.dashboard.gatewayOverview.drilldown.monitor.title') }}

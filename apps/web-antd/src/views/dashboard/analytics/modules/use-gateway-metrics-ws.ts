@@ -221,7 +221,7 @@ export function useGatewayMetricsWs(options?: {
         collectorCyclesPerSec.value = Math.max(
           0,
           (data.collector_metrics.total_collections - prevCollectorTotal) /
-          dtSec,
+            dtSec,
         );
       }
       if (
@@ -251,7 +251,7 @@ export function useGatewayMetricsWs(options?: {
         northwardRoutedPerSec.value = Math.max(
           0,
           (data.northward_metrics.total_data_routed - prevNorthwardRouted) /
-          dtSec,
+            dtSec,
         );
       }
       if (prevNorthwardErrors !== null) {

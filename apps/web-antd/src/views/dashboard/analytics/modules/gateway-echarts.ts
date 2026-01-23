@@ -52,19 +52,19 @@ export function buildLineChartOption(args: {
     itemStyle: { color: s.color },
     areaStyle: s.area
       ? {
-        opacity: 0.22,
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: s.color },
-            { offset: 1, color: 'rgba(0,0,0,0)' },
-          ],
-        },
-      }
+          opacity: 0.22,
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: s.color },
+              { offset: 1, color: 'rgba(0,0,0,0)' },
+            ],
+          },
+        }
       : undefined,
     // Use time axis so we can correctly render last 1 minute even if samples
     // arrive faster/slower than 1Hz.
