@@ -84,10 +84,10 @@ export type MetricsServerMessage =
  * - object { secs, nanos } / { seconds, nanoseconds }
  */
 export type ChronoDurationJson =
-  | number
   | [number, number]
-  | { nanos?: number; nanoseconds?: number; secs?: number; seconds?: number }
-  | null;
+  | null
+  | number
+  | { nanos?: number; nanoseconds?: number; seconds?: number; secs?: number };
 
 export interface GatewayStatusSnapshot {
   state: string;
