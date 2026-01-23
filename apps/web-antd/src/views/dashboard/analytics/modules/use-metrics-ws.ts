@@ -17,14 +17,18 @@ import { baseRequestClient } from '#/api/request';
 import { clamp } from './metrics-types';
 
 function buildWsUrl(): string {
-  const baseURL = (baseRequestClient as any).defaults?.baseURL as
-    | string
-    | undefined;
-  const url = baseURL ?? window.location.origin;
-  const wsScheme = url.startsWith('https') ? 'wss' : 'ws';
-  const httpScheme = url.startsWith('https') ? 'https' : 'http';
-  const normalized = url.replace(`${httpScheme}:`, `${wsScheme}:`);
-  return `${normalized}/api/ws/metrics`;
+  // NOTE: `baseURL` may include a path prefix like "https://host/api" or be
+  // relative like "/api". The metrics WS endpoint is always rooted at origin.
+  const baseURL = (baseRequestClient as { defaults?: { baseURL?: string } })
+    .defaults?.baseURL;
+  const httpBase = new URL(
+    baseURL ?? window.location.origin,
+    window.location.origin,
+  );
+
+  const wsUrl = new URL('/api/ws/metrics', httpBase.origin);
+  wsUrl.protocol = httpBase.protocol === 'https:' ? 'wss:' : 'ws:';
+  return wsUrl.toString();
 }
 
 function pushPoint(

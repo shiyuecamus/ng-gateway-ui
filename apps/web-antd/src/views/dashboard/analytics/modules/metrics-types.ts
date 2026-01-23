@@ -57,7 +57,7 @@ export interface MetricsErrorMessage {
   type: 'error';
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 export interface MetricsPongMessage {
@@ -75,6 +75,20 @@ export type MetricsServerMessage =
 // ---- Snapshot DTOs (TS mirror of backend ng-gateway-models/src/core/metrics.rs) ----
 // We only model fields that the dashboard uses; keep these narrow on purpose.
 
+/**
+ * Best-effort chrono::Duration JSON shapes we accept from backend.
+ *
+ * chrono serde formats can vary across feature flags; this code accepts multiple shapes:
+ * - number (seconds / milliseconds / nanoseconds - heuristics)
+ * - tuple [secs, nanos]
+ * - object { secs, nanos } / { seconds, nanoseconds }
+ */
+export type ChronoDurationJson =
+  | number
+  | [number, number]
+  | { nanos?: number; nanoseconds?: number; secs?: number; seconds?: number }
+  | null;
+
 export interface GatewayStatusSnapshot {
   state: string;
   metrics: GatewayMetricsSnapshot;
@@ -86,7 +100,7 @@ export interface GatewayStatusSnapshot {
 }
 
 export interface GatewayMetricsSnapshot {
-  uptime: unknown;
+  uptime: ChronoDurationJson;
   total_channels: number;
   connected_channels: number;
   total_devices: number;
@@ -207,9 +221,10 @@ export function formatMs(ms: number): string {
  *
  * chrono serde formats can vary across feature flags; we accept multiple shapes:
  * - number (seconds / milliseconds / nanoseconds - heuristics)
+ * - tuple [secs, nanos]
  * - { secs, nanos } like std::time::Duration-ish objects (best-effort)
  */
-export function parseChronoDurationToMs(input: unknown): number {
+export function parseChronoDurationToMs(input: ChronoDurationJson): number {
   // chrono::Duration in this codebase often serializes as tuple [secs, nanos]
   if (Array.isArray(input) && input.length >= 2) {
     const secs = Number(input[0]);
@@ -232,9 +247,11 @@ export function parseChronoDurationToMs(input: unknown): number {
     return n * 1000;
   }
   if (input && typeof input === 'object') {
-    const anyObj = input as any;
-    const secs = Number(anyObj.secs ?? anyObj.seconds ?? 0);
-    const nanos = Number(anyObj.nanos ?? anyObj.nanoseconds ?? 0);
+    const anyObj = input as Record<string, unknown>;
+    const secs = Number(((anyObj.secs ?? anyObj.seconds) as unknown) ?? 0);
+    const nanos = Number(
+      ((anyObj.nanos ?? anyObj.nanoseconds) as unknown) ?? 0,
+    );
     if (Number.isFinite(secs) || Number.isFinite(nanos)) {
       return secs * 1000 + nanos / 1e6;
     }
