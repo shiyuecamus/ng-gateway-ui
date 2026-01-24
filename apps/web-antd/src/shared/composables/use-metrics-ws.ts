@@ -418,7 +418,6 @@ export function useMetricsWs(options?: {
         }
         if (msg.scope === 'device') {
           applyDeviceRows(msg);
-          return;
         }
         break;
       }

@@ -28,9 +28,7 @@ export function buildWsUrl(endpoint: string): string {
   return wsUrl.toString();
 }
 
-export interface UseGatewayWsOptions<
-  ServerMsg extends { type: string },
-> {
+export interface UseGatewayWsOptions<ServerMsg extends { type: string }> {
   endpoint: string;
   autoReconnectDelay?: number;
   /**
