@@ -52,7 +52,7 @@
         "cpuUsage": "CPU usage",
         "memoryUsage": "Memory usage",
         "diskUsage": "Disk usage",
-        "processRssMb": "Process RSS (MB)",
+        "processRssMb": "Process memory",
         "networkRx": "Network RX",
         "networkTx": "Network TX",
         "collectorAvgMs": "Avg collection time",

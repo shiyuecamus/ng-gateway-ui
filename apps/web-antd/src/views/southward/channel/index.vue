@@ -4,6 +4,8 @@ import type { ChannelInfo, IdType, Recordable } from '@vben/types';
 
 import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
+import { useRouter } from 'vue-router';
+
 import { confirm, Page, useVbenDrawer, useVbenModal } from '@vben/common-ui';
 import { FormOpenType } from '@vben/constants';
 import { useRequestHandler } from '@vben/hooks';
@@ -27,6 +29,7 @@ import { searchFormSchema, useColumns } from './modules/schemas';
 import SubDeviceModal from './modules/sub-device-manager.vue';
 
 const { handleRequest } = useRequestHandler();
+const router = useRouter();
 
 const formOptions: VbenFormProps = {
   // 默认展开
@@ -102,6 +105,10 @@ function onActionClick({ code, row }: OnActionClickParams<ChannelInfo>) {
     }
     case 'edit': {
       handleEdit(row);
+      break;
+    }
+    case 'observability': {
+      router.push(`/southward/channel/${row.id}/observability`);
       break;
     }
     case 'subDevice': {

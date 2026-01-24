@@ -6,9 +6,12 @@ import type {
   PointInfo,
 } from '@vben/types';
 
+import type { DeviceObservabilityRow } from './types';
+
 import type { OnActionClickFn } from '#/adapter/vxe-table';
 
 import { $t } from '@vben/locales';
+import { formatBytesHuman } from '@vben/utils';
 
 import {
   accessModeOptions,
@@ -88,6 +91,11 @@ export function useChannelColumns(
             code: 'subDevice',
             icon: 'mdi:devices',
             tooltip: $t('page.southward.channel.subDevice'),
+          },
+          {
+            code: 'observability',
+            icon: 'mdi:chart-line',
+            tooltip: 'Observability',
           },
           {
             code: 'edit',
@@ -316,6 +324,62 @@ export function useActionParameterColumns(
       showOverflow: false,
       title: $t('common.actions'),
       width: 160,
+    },
+  ];
+}
+
+export function useDeviceObservabilityColumns(): VxeTableGridOptions<DeviceObservabilityRow>['columns'] {
+  return [
+    { field: 'deviceName', title: 'Device', minWidth: 180 },
+    { field: 'deviceType', title: 'Type', minWidth: 140 },
+    {
+      field: 'bytesSent',
+      title: 'Bytes Out',
+      width: 140,
+      formatter: ({ row }) => formatBytesHuman(row.bytesSent, { zero: '0 B' }),
+    },
+    {
+      field: 'bytesReceived',
+      title: 'Bytes In',
+      width: 140,
+      formatter: ({ row }) =>
+        formatBytesHuman(row.bytesReceived, { zero: '0 B' }),
+    },
+    {
+      field: 'collectSuccessTotal',
+      title: 'OK',
+      width: 80,
+    },
+    {
+      field: 'collectFailTotal',
+      title: 'Fail',
+      width: 80,
+    },
+    {
+      field: 'collectTimeoutTotal',
+      title: 'Timeout',
+      width: 90,
+    },
+    {
+      field: 'avgCollectLatencyMs',
+      title: 'Avg Lat(ms)',
+      width: 120,
+      formatter: ({ row }) => row.avgCollectLatencyMs.toFixed(1),
+    },
+    {
+      field: 'lastCollectLatencyMs',
+      title: 'Last Lat(ms)',
+      width: 130,
+      formatter: ({ row }) => row.lastCollectLatencyMs.toFixed(1),
+    },
+    {
+      field: 'lastActivityMs',
+      title: 'Last Activity',
+      width: 170,
+      formatter: ({ row }) =>
+        row.lastActivityMs
+          ? new Date(row.lastActivityMs).toLocaleString()
+          : '-',
     },
   ];
 }

@@ -17,19 +17,20 @@ import {
 } from '@vben/icons';
 import { $t } from '@vben/locales';
 import { usePreferences } from '@vben/preferences';
+import {
+  formatBytesHuman,
+  formatMs,
+  formatRate,
+  parseChronoDurationToMs,
+} from '@vben/utils';
 
 import { VbenButton, VbenIcon } from '@vben-core/shadcn-ui';
 
 import { message } from 'ant-design-vue';
 
+import { useMetricsWs } from '#/shared/composables/use-metrics-ws';
+
 import { buildLineChartOption } from './modules/gateway-echarts';
-import {
-  formatBytes,
-  formatMs,
-  formatRate,
-  parseChronoDurationToMs,
-} from './modules/metrics-types';
-import { useMetricsWs } from './modules/use-metrics-ws';
 import GatewayKpiGrid from './widgets/gateway-kpi-grid.vue';
 import GatewayLineChart from './widgets/gateway-line-chart.vue';
 
@@ -89,6 +90,9 @@ watch(
 );
 
 onMounted(() => {
+  // Subscribe first so the WS `onConnected` hook can re-send it reliably.
+  // The server does NOT push anything until it receives a subscribe message.
+  metrics.subscribeGlobal();
   metrics.connect();
 });
 
@@ -108,23 +112,23 @@ const header = computed(() => {
     state: s.state,
     version: s.version,
     uptimeMs,
-    hostname: s.system_info.hostname ?? '-',
-    os: `${s.system_info.os_type} / ${s.system_info.os_arch}`,
+    hostname: s.systemInfo.hostname ?? '-',
+    os: `${s.systemInfo.osType} / ${s.systemInfo.osArch}`,
   };
 });
 
 const connectedRate = computed(() => {
   const s = snap.value;
   if (!s) return 0;
-  const total = s.metrics.total_channels || 0;
-  return total > 0 ? s.metrics.connected_channels / total : 0;
+  const total = s.metrics.totalChannels || 0;
+  return total > 0 ? s.metrics.connectedChannels / total : 0;
 });
 
 const activeDeviceRate = computed(() => {
   const s = snap.value;
   if (!s) return 0;
-  const total = s.metrics.total_devices || 0;
-  return total > 0 ? s.metrics.active_devices / total : 0;
+  const total = s.metrics.totalDevices || 0;
+  return total > 0 ? s.metrics.activeDevices / total : 0;
 });
 
 const overviewItems = computed<AnalysisOverviewItem[]>(() => {
@@ -136,28 +140,36 @@ const overviewItems = computed<AnalysisOverviewItem[]>(() => {
         title: $t('page.dashboard.gatewayOverview.kpi.southwardChannel'),
         totalTitle: $t('page.dashboard.gatewayOverview.kpi.connectionRate'),
         totalValue: 0,
+        totalSuffix: '',
         value: 0,
+        valueSuffix: '',
       },
       {
         icon: SvgDeviceIcon,
         title: $t('page.dashboard.gatewayOverview.kpi.device'),
         totalTitle: $t('page.dashboard.gatewayOverview.kpi.activeRate'),
         totalValue: 0,
+        totalSuffix: '',
         value: 0,
+        valueSuffix: '',
       },
       {
         icon: SvgCpuIcon,
         title: $t('page.dashboard.gatewayOverview.kpi.cpu'),
         totalTitle: $t('page.dashboard.gatewayOverview.kpi.memory'),
         totalValue: 0,
+        totalSuffix: '%',
         value: 0,
+        valueSuffix: '%',
       },
       {
         icon: SvgAppIcon,
         title: $t('page.dashboard.gatewayOverview.kpi.northwardApp'),
         totalTitle: $t('page.dashboard.gatewayOverview.kpi.running'),
         totalValue: 0,
+        totalSuffix: '个',
         value: 0,
+        valueSuffix: '个',
       },
     ];
   }
@@ -167,59 +179,74 @@ const overviewItems = computed<AnalysisOverviewItem[]>(() => {
       icon: SvgChannelIcon,
       title: $t('page.dashboard.gatewayOverview.kpi.connectedChannels'),
       totalTitle: $t('page.dashboard.gatewayOverview.kpi.totalChannels'),
-      totalValue: s.metrics.total_channels,
-      value: s.metrics.connected_channels,
+      totalValue: s.metrics.totalChannels,
+      totalSuffix: '个',
+      value: s.metrics.connectedChannels,
+      valueSuffix: '个',
     },
     {
       icon: SvgDeviceIcon,
       title: $t('page.dashboard.gatewayOverview.kpi.activeDevices'),
       totalTitle: $t('page.dashboard.gatewayOverview.kpi.totalDevices'),
-      totalValue: s.metrics.total_devices,
-      value: s.metrics.active_devices,
+      totalValue: s.metrics.totalDevices,
+      totalSuffix: '个',
+      value: s.metrics.activeDevices,
+      valueSuffix: '个',
     },
     {
       icon: SvgPointsIcon,
       title: $t('page.dashboard.gatewayOverview.kpi.totalPoints'),
       totalTitle: $t('page.dashboard.gatewayOverview.kpi.avgPerDevice'),
-      totalValue: Math.round(
-        s.southward_metrics.average_points_per_device ?? 0,
-      ),
-      value: s.metrics.total_data_points,
+      totalValue: Math.round(s.southwardMetrics.averagePointsPerDevice ?? 0),
+      totalSuffix: '个',
+      value: s.metrics.totalDataPoints,
+      valueSuffix: '个',
     },
     {
       icon: SvgAppIcon,
       title: $t('page.dashboard.gatewayOverview.kpi.runningApps'),
       totalTitle: $t('page.dashboard.gatewayOverview.kpi.totalApps'),
-      totalValue: s.northward_metrics.total_apps,
-      value: s.northward_metrics.active_apps,
+      totalValue: s.northwardMetrics.totalApps,
+      totalSuffix: '个',
+      value: s.northwardMetrics.activeApps,
+      valueSuffix: '个',
     },
     {
       icon: SvgCpuIcon,
       title: $t('page.dashboard.gatewayOverview.kpi.cpuUsage'),
       totalTitle: $t('page.dashboard.gatewayOverview.kpi.memoryUsage'),
-      totalValue: Math.round(s.system_info.memory_usage_percent),
-      value: Math.round(s.system_info.cpu_usage_percent),
+      totalValue: Math.round(s.systemInfo.memoryUsagePercent),
+      totalSuffix: '%',
+      value: Math.round(s.systemInfo.cpuUsagePercent),
+      valueSuffix: '%',
     },
     {
       icon: SvgDiskIcon,
       title: $t('page.dashboard.gatewayOverview.kpi.diskUsage'),
       totalTitle: $t('page.dashboard.gatewayOverview.kpi.processRssMb'),
-      totalValue: Math.round((s.metrics.memory_usage ?? 0) / 1024 / 1024),
-      value: Math.round(s.system_info.disk_usage_percent),
+      totalValue: Math.round((s.metrics.memoryUsage ?? 0) / 1024 / 1024),
+      totalSuffix: 'MB',
+      value: Math.round(s.systemInfo.diskUsagePercent),
+      valueSuffix: '%',
     },
     {
       icon: SvgNetworkIcon,
       title: $t('page.dashboard.gatewayOverview.kpi.networkRx'),
       totalTitle: $t('page.dashboard.gatewayOverview.kpi.networkTx'),
-      totalValue: Math.round(metrics.networkTxBps.value / 1024),
-      value: Math.round(metrics.networkRxBps.value / 1024),
+      // `network*Bps` are bytes/sec; convert to kilobits/sec.
+      totalValue: Math.round((metrics.networkTxBps.value * 8) / 1024),
+      totalSuffix: 'Kb/s',
+      value: Math.round((metrics.networkRxBps.value * 8) / 1024),
+      valueSuffix: 'Kb/s',
     },
     {
       icon: SvgCollectorIcon,
       title: $t('page.dashboard.gatewayOverview.kpi.collectorAvgMs'),
       totalTitle: $t('page.dashboard.gatewayOverview.kpi.collectorActiveTasks'),
-      totalValue: s.metrics.active_tasks,
-      value: Math.round(s.collector_metrics.average_collection_time_ms ?? 0),
+      totalValue: s.metrics.activeTasks,
+      totalSuffix: '个',
+      value: Math.round(s.collectorMetrics.averageCollectionTimeMs ?? 0),
+      valueSuffix: 'ms',
     },
   ];
 });
@@ -298,13 +325,13 @@ const quickFacts = computed(() => {
   const s = snap.value;
   if (!s) return null;
   return {
-    channels: `${s.metrics.connected_channels}/${s.metrics.total_channels} (${Math.round(connectedRate.value * 100)}%)`,
-    devices: `${s.metrics.active_devices}/${s.metrics.total_devices} (${Math.round(activeDeviceRate.value * 100)}%)`,
+    channels: `${s.metrics.connectedChannels}/${s.metrics.totalChannels} (${Math.round(connectedRate.value * 100)}%)`,
+    devices: `${s.metrics.activeDevices}/${s.metrics.totalDevices} (${Math.round(activeDeviceRate.value * 100)}%)`,
     uptime: formatMs(header.value?.uptimeMs ?? 0),
     netTx: formatRate(metrics.networkTxBps.value),
     netRx: formatRate(metrics.networkRxBps.value),
-    procMem: formatBytes(s.metrics.memory_usage ?? 0),
-    collectorMs: formatMs(s.collector_metrics.average_collection_time_ms ?? 0),
+    procMem: formatBytesHuman(s.metrics.memoryUsage ?? 0),
+    collectorMs: formatMs(s.collectorMetrics.averageCollectionTimeMs ?? 0),
   };
 });
 
@@ -441,8 +468,8 @@ function navTo(path: string) {
             {{ $t('page.dashboard.gatewayOverview.drilldown.north.title') }}
           </div>
           <div class="text-xs text-muted-foreground">
-            {{ snap?.northward_metrics.active_apps ?? 0 }}/{{
-              snap?.northward_metrics.total_apps ?? 0
+            {{ snap?.northwardMetrics.activeApps ?? 0 }}/{{
+              snap?.northwardMetrics.totalApps ?? 0
             }}
           </div>
         </div>

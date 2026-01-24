@@ -52,7 +52,7 @@
         "cpuUsage": "CPU使用率",
         "memoryUsage": "内存使用率",
         "diskUsage": "磁盘使用率",
-        "processRssMb": "进程RSS内存(MB)",
+        "processRssMb": "进程内存",
         "networkRx": "网络接收",
         "networkTx": "网络发送",
         "collectorAvgMs": "采集平均耗时",

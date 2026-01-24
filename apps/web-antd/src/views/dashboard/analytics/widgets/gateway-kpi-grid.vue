@@ -58,6 +58,7 @@ function numberGradientClass(index: number): string {
             :start-val="1"
             :class="`${numberGradientClass(idx)} text-2xl font-semibold`"
             prefix=""
+            :suffix="item.valueSuffix ?? ''"
           />
           <!-- Bigger icon + subtle glow -->
           <VbenIcon
@@ -75,6 +76,7 @@ function numberGradientClass(index: number): string {
             :start-val="1"
             :class="`${numberGradientClass(idx)} text-sm font-medium`"
             prefix=""
+            :suffix="item.totalSuffix ?? ''"
           />
         </CardFooter>
       </Card>

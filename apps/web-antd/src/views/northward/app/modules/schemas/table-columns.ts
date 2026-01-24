@@ -6,7 +6,7 @@ import type { OnActionClickFn } from '#/adapter/vxe-table';
 import { $t } from '@vben/locales';
 /**
  * Build VXE grid column definitions for northward apps.
- * @param params - Column factory parameters.
+ * @param onActionClick - Row action callback.
  */
 export function useColumns(
   onActionClick: OnActionClickFn<AppInfo>,
@@ -55,6 +55,11 @@ export function useColumns(
             code: 'subscription',
             icon: 'mdi:bell-outline',
             tooltip: $t('page.northward.app.subscription'),
+          },
+          {
+            code: 'observability',
+            icon: 'mdi:chart-line',
+            tooltip: 'Observability',
           },
           {
             code: 'edit',

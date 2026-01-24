@@ -22,9 +22,9 @@ import { Input, Select, Tag } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { fetchChannelList, getSubDevicesById } from '#/api';
+import { useMonitorWs } from '#/shared/composables/use-monitor-ws';
 
 import { useMonitorColumns } from './modules/schemas';
-import { useMonitorWs } from './modules/use-monitor-ws';
 
 const channelOptions = ref<ChannelInfo[]>([]);
 const deviceOptions = ref<DeviceInfo[]>([]);

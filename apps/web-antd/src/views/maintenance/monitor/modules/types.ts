@@ -1,3 +1,5 @@
+import type { GatewayWsConnectionStatus } from '@vben/types';
+
 export type MonitorSourceType = 'attributes' | 'telemetry';
 
 export interface MonitorUpdateHint {
@@ -45,8 +47,4 @@ export interface MonitorDeviceSnapshot {
   lastUpdate: string;
 }
 
-export type MonitorConnectionStatus =
-  | 'connected'
-  | 'connecting'
-  | 'disconnected'
-  | 'reconnecting';
+export type MonitorConnectionStatus = GatewayWsConnectionStatus;

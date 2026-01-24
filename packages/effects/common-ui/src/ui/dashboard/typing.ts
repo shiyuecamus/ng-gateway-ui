@@ -5,7 +5,9 @@ interface AnalysisOverviewItem {
   title: string;
   totalTitle: string;
   totalValue: number;
+  totalSuffix?: string;
   value: number;
+  valueSuffix?: string;
 }
 
 interface WorkbenchProjectItem {

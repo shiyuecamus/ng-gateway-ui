@@ -5,6 +5,7 @@ import type { AppInfo, IdType, PluginInfo, Recordable } from '@vben/types';
 import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { confirm, Page, useVbenDrawer, useVbenModal } from '@vben/common-ui';
 import { FormOpenType } from '@vben/constants';
@@ -44,6 +45,7 @@ interface SelectOption {
 }
 
 const { handleRequest } = useRequestHandler();
+const router = useRouter();
 
 const pluginRecords = ref<PluginInfo[]>([]);
 const pluginOptions = reactive<SelectOption[]>([]);
@@ -126,8 +128,11 @@ const [SubModal, subModalApi] = useVbenModal({
 /**
  * Handle table action button clicks.
  * @param payload - Event payload.
+ * @param payload.code - Action code.
+ * @param payload.row - Target row.
  */
-function onActionClick({ code, row }: OnActionClickParams<AppInfo>) {
+function onActionClick(payload: OnActionClickParams<AppInfo>) {
+  const { code, row } = payload;
   switch (code) {
     case 'delete': {
       handleDelete(row);
@@ -135,6 +140,10 @@ function onActionClick({ code, row }: OnActionClickParams<AppInfo>) {
     }
     case 'edit': {
       handleEdit(row);
+      break;
+    }
+    case 'observability': {
+      router.push(`/northward/app/${row.id}/observability`);
       break;
     }
     case 'subscription': {

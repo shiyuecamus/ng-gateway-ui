@@ -38,6 +38,7 @@ withDefaults(defineProps<Props>(), {
             :start-val="1"
             class="text-xl"
             prefix=""
+            :suffix="item.valueSuffix ?? ''"
           />
           <VbenIcon :icon="item.icon" class="size-8 flex-shrink-0" />
         </CardContent>
@@ -47,6 +48,7 @@ withDefaults(defineProps<Props>(), {
             :end-val="item.totalValue"
             :start-val="1"
             prefix=""
+            :suffix="item.totalSuffix ?? ''"
           />
         </CardFooter>
       </Card>

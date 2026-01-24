@@ -1,36 +1,30 @@
 import type {
-  MonitorConnectionStatus,
+  BaseClientMessage,
+  WsPingMessage,
+  WsPongMessage,
+  WsUnsubscribeMessage,
+} from '@vben/types';
+
+import type {
   MonitorDeviceSnapshot,
   MonitorUpdateHint,
-} from './types';
+} from '#/views/maintenance/monitor/modules/types';
 
-import { ref, shallowRef, triggerRef } from 'vue';
+import { shallowRef, triggerRef } from 'vue';
 
-import { useWebSocket } from '@vueuse/core';
+import { useGatewayWs } from './use-gateway-ws';
 
-import { baseRequestClient } from '#/api/request';
-
-interface SubscribePayload {
+interface SubscribePayload extends BaseClientMessage {
   type: 'subscribe';
   channelId?: number;
   deviceId?: number;
   deviceIds?: number[];
-  requestId?: string;
 }
 
-interface UnsubscribePayload {
-  type: 'unsubscribe';
-  requestId?: string;
-}
-
-interface PingPayload {
-  type: 'ping';
-  ts: number;
-}
-
-type ClientMessage = PingPayload | SubscribePayload | UnsubscribePayload;
+type ClientMessage = SubscribePayload | WsPingMessage | WsUnsubscribeMessage;
 
 type ServerMessage =
+  | WsPongMessage
   | {
       attributes: {
         client: Record<string, unknown>;
@@ -48,6 +42,7 @@ type ServerMessage =
     }
   | {
       code: string;
+
       details?: any;
       message: string;
       type: 'error';
@@ -58,110 +53,58 @@ type ServerMessage =
       scope?: string;
       timestamp: string;
       type: 'update';
+
       values: any;
     }
   | {
       deviceIds: number[];
       requestId?: string;
       type: 'subscribed';
-    }
-  | {
-      ts: number;
-      type: 'pong';
     };
 
-function buildWsUrl(): string {
-  const baseURL = (baseRequestClient as any).defaults?.baseURL as
-    | string
-    | undefined;
-  const url = baseURL ?? window.location.origin;
-  const wsScheme = url.startsWith('https') ? 'wss' : 'ws';
-  const httpScheme = url.startsWith('https') ? 'https' : 'http';
-
-  const normalized = url.replace(`${httpScheme}:`, `${wsScheme}:`);
-  return `${normalized}/api/ws/monitor`;
-}
-
 export function useMonitorWs() {
-  const status = ref<MonitorConnectionStatus>('disconnected');
   const snapshots = shallowRef<Map<number, MonitorDeviceSnapshot>>(new Map());
-  const subscribedDeviceIds = ref<number[]>([]);
+  const subscribedDeviceIds = shallowRef<number[]>([]);
   // Hints about which keys changed since last UI trigger.
-  // Used by monitor table to append new keys without scanning all snapshots.
   const updateHints = shallowRef<MonitorUpdateHint[]>([]);
   const pendingHintKeys = new Map<string, Set<string>>();
 
-  // Throttle UI notifications: avoid triggering reactive updates per WS frame.
+  // Throttle UI notifications
   let triggerScheduled = false;
   let lastTriggerAt = 0;
   const TRIGGER_MIN_INTERVAL_MS = 200;
 
-  const {
-    status: wsStatus,
-    open: openWs,
-    close: closeWs,
-    send,
-  } = useWebSocket(buildWsUrl(), {
-    immediate: false,
-    autoReconnect: {
-      delay: 1000,
-    },
+  const { status, connect, disconnect, sendMessage, ping } = useGatewayWs<
+    ServerMessage,
+    ClientMessage
+  >({
+    endpoint: '/api/ws/monitor',
     onConnected() {
-      status.value = 'connected';
       if (subscribedDeviceIds.value.length > 0) {
-        subscribe(subscribedDeviceIds.value);
+        // Re-subscribe on reconnect
+        const ids = subscribedDeviceIds.value;
+        const payload: SubscribePayload = {
+          type: 'subscribe',
+          deviceIds: ids,
+          requestId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        };
+        sendMessage(payload);
       }
     },
-    onDisconnected() {
-      status.value =
-        subscribedDeviceIds.value.length > 0 ? 'reconnecting' : 'disconnected';
-    },
-    onMessage(_, event) {
-      try {
-        const msg = JSON.parse(event.data) as ServerMessage;
-        handleServerMessage(msg);
-      } catch {
-        // ignore invalid messages
-      }
+    onMessage(msg) {
+      handleServerMessage(msg);
     },
   });
-
-  function connect() {
-    if (wsStatus.value === 'OPEN' || wsStatus.value === 'CONNECTING') return;
-    status.value =
-      status.value === 'disconnected' ? 'connecting' : 'reconnecting';
-    openWs();
-  }
-
-  function disconnect() {
-    subscribedDeviceIds.value = [];
-    snapshots.value = new Map();
-    updateHints.value = [];
-    pendingHintKeys.clear();
-    status.value = 'disconnected';
-    closeWs();
-  }
-
-  function sendMessage(payload: ClientMessage) {
-    if (wsStatus.value !== 'OPEN') {
-      console.warn(
-        '[monitor-ws] Skip send, socket is not open:',
-        wsStatus.value,
-        payload.type,
-      );
-      return;
-    }
-    send(JSON.stringify(payload));
-  }
 
   function subscribe(deviceIds: number | number[], channelId?: number) {
     const ids = Array.isArray(deviceIds) ? deviceIds : [deviceIds];
     subscribedDeviceIds.value = [...ids];
-    // Clear stale snapshots when updating the subscription set so that
-    // the grid only reflects the currently subscribed devices.
+
+    // Clear stale snapshots
     snapshots.value = new Map();
     updateHints.value = [];
     pendingHintKeys.clear();
+
     const payload: SubscribePayload = {
       type: 'subscribe',
       channelId,
@@ -173,26 +116,21 @@ export function useMonitorWs() {
 
   function unsubscribe() {
     subscribedDeviceIds.value = [];
-    // When fully unsubscribing, clear all cached snapshots.
     snapshots.value = new Map();
     updateHints.value = [];
     pendingHintKeys.clear();
     sendMessage({ type: 'unsubscribe', requestId: `${Date.now()}` });
   }
 
-  function ping() {
-    sendMessage({ type: 'ping', ts: Date.now() });
-  }
-
   function handleServerMessage(msg: ServerMessage) {
     switch (msg.type) {
       case 'error': {
         // 这里只做简单日志，具体 UI 提示交给调用方
+
         console.error('[monitor-ws] error', msg.code, msg.message, msg.details);
         break;
       }
       case 'pong': {
-        // no-op
         break;
       }
       case 'snapshot': {
@@ -219,7 +157,6 @@ export function useMonitorWs() {
         if (!existing) break;
 
         if (msg.dataType === 'telemetry') {
-          // In-place merge to reduce allocations/GC pressure under high frequency updates.
           Object.assign(existing.telemetry, msg.values ?? {});
           addHint(
             msg.deviceId,
@@ -253,12 +190,6 @@ export function useMonitorWs() {
         }
 
         existing.lastUpdate = msg.timestamp;
-        // snapshots.value.set(existing.deviceId, { ...existing });
-        // Map holds reference, no need to set again if we modified object in place.
-        // But wait, existing is a reference to the object inside the map?
-        // Yes, existing = snapshots.value.get(...) returns reference.
-        // But we modified existing in place above (existing.telemetry = ...).
-        // So we just need to trigger.
         scheduleTrigger();
         break;
       }
