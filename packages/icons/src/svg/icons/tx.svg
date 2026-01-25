@@ -7,10 +7,18 @@
     </linearGradient>
   </defs>
   <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#tx_grad)" />
-  <path
-    d="M24 12c.6 0 1 .4 1 1v14.6l4.3-4.3a1 1 0 0 1 1.4 1.4l-6 6a1 1 0 0 1-1.4 0l-6-6a1 1 0 1 1 1.4-1.4l4.3 4.3V13c0-.6.4-1 1-1z"
-    fill="#fff"
-    fill-opacity="0.95"
-  />
+  <g
+    fill="none"
+    stroke="#fff"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity="0.95"
+    stroke-width="2.8"
+  >
+    <!-- TX: upload arrow (centered) -->
+    <path d="M24 32V18" />
+    <path d="M19.5 22.5L24 18l4.5 4.5" />
+    <path d="M18.5 34h11" stroke-opacity="0.7" />
+  </g>
 </svg>
 

@@ -24,6 +24,17 @@ const SvgCollectIcon = createIconifyIcon('svg:collect');
 const SvgReportIcon = createIconifyIcon('svg:report');
 const SvgReliabilityIcon = createIconifyIcon('svg:reliability');
 const SvgWriteIcon = createIconifyIcon('svg:write');
+const SvgSendIcon = createIconifyIcon('svg:send');
+const SvgDropIcon = createIconifyIcon('svg:drop');
+const SvgErrorIcon = createIconifyIcon('svg:error');
+const SvgLatencyIcon = createIconifyIcon('svg:latency');
+const SvgTimeoutIcon = createIconifyIcon('svg:timeout');
+const SvgSuccessRateIcon = createIconifyIcon('svg:success-rate');
+const SvgExecuteIcon = createIconifyIcon('svg:execute');
+const SvgReconnectIcon = createIconifyIcon('svg:reconnect');
+const SvgPublishOkIcon = createIconifyIcon('svg:publish-ok');
+const SvgPublishDropIcon = createIconifyIcon('svg:publish-drop');
+const SvgClockIcon = createIconifyIcon('svg:clock');
 const SvgAntdvLogoIcon = createIconifyIcon('svg:antdv-logo');
 const SvgGithubIcon = createIconifyIcon('svg:github');
 const SvgGoogleIcon = createIconifyIcon('svg:google');
@@ -43,6 +54,7 @@ export {
   SvgCakeIcon,
   SvgCardIcon,
   SvgChannelIcon,
+  SvgClockIcon,
   SvgCollectIcon,
   SvgCollectorIcon,
   SvgCpuIcon,
@@ -50,15 +62,25 @@ export {
   SvgDingDingIcon,
   SvgDiskIcon,
   SvgDownloadIcon,
+  SvgDropIcon,
+  SvgErrorIcon,
+  SvgExecuteIcon,
   SvgGithubIcon,
   SvgGoogleIcon,
+  SvgLatencyIcon,
   SvgNetworkIcon,
   SvgPointsIcon,
+  SvgPublishDropIcon,
+  SvgPublishOkIcon,
   SvgQQChatIcon,
+  SvgReconnectIcon,
   SvgReliabilityIcon,
   SvgReportIcon,
   SvgRxIcon,
+  SvgSendIcon,
+  SvgSuccessRateIcon,
   SvgTDesignIcon,
+  SvgTimeoutIcon,
   SvgTxIcon,
   SvgWeChatIcon,
   SvgWriteIcon,

@@ -14,10 +14,15 @@ import { useRoute } from 'vue-router';
 
 import { AnalysisChartCard, Page } from '@vben/common-ui';
 import {
-  SvgCollectIcon,
-  SvgReliabilityIcon,
-  SvgReportIcon,
+  SvgClockIcon,
+  SvgExecuteIcon,
+  SvgLatencyIcon,
+  SvgPublishDropIcon,
+  SvgPublishOkIcon,
+  SvgReconnectIcon,
   SvgRxIcon,
+  SvgSuccessRateIcon,
+  SvgTimeoutIcon,
   SvgTxIcon,
   SvgWriteIcon,
 } from '@vben/icons';
@@ -475,7 +480,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
   const qualityItems: AnalysisOverviewItem[] = isReportChannel.value
     ? [
         {
-          icon: SvgReportIcon,
+          icon: SvgPublishOkIcon,
           title: $t('page.southward.channel.observability.publishSuccess'),
           totalTitle: $t('page.southward.channel.observability.publishTotal'),
           totalValue: publishOk.value,
@@ -484,7 +489,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
           valueSuffix: '%',
         },
         {
-          icon: SvgReportIcon,
+          icon: SvgPublishDropIcon,
           title: $t('page.southward.channel.observability.publishDropped'),
           totalTitle: $t('page.southward.channel.observability.totals'),
           totalValue: publishDropped.value,
@@ -493,7 +498,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
           valueSuffix: '',
         },
         {
-          icon: SvgReportIcon,
+          icon: SvgClockIcon,
           title: $t('page.southward.channel.observability.lastReportAge'),
           totalTitle: $t('page.southward.channel.observability.lastReportAge'),
           totalValue: Math.max(0, lastReportAgeSec.value ?? 0),
@@ -504,7 +509,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
       ]
     : [
         {
-          icon: SvgCollectIcon,
+          icon: SvgLatencyIcon,
           title: $t('page.southward.channel.observability.avg'),
           totalTitle: $t('page.southward.channel.observability.last'),
           totalValue: Math.max(
@@ -516,7 +521,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
           valueSuffix: ` ${$t('page.southward.channel.observability.unit.ms')}`,
         },
         {
-          icon: SvgCollectIcon,
+          icon: SvgSuccessRateIcon,
           title: $t('page.southward.channel.observability.collectPointSuccess'),
           totalTitle: $t('page.southward.channel.observability.collectPoints'),
           totalValue: pointReadOk.value,
@@ -525,7 +530,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
           valueSuffix: '%',
         },
         {
-          icon: SvgCollectIcon,
+          icon: SvgTimeoutIcon,
           title: $t('page.southward.channel.observability.collectPointTimeout'),
           totalTitle: $t('page.southward.channel.observability.totals'),
           totalValue: pointReadTimeout.value,
@@ -537,7 +542,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
 
   const reliabilityItems: AnalysisOverviewItem[] = [
     {
-      icon: SvgReliabilityIcon,
+      icon: SvgReconnectIcon,
       title: $t('page.southward.channel.observability.reconnects'),
       totalTitle: $t('page.southward.channel.observability.totals'),
       totalValue: reconnects.value,
@@ -576,7 +581,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
       valueSuffix: '%',
     },
     {
-      icon: SvgWriteIcon,
+      icon: SvgExecuteIcon,
       title: $t('page.southward.channel.observability.executeSuccess'),
       totalTitle: $t('page.southward.channel.observability.executeTotal'),
       totalValue: execOk.value,

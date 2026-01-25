@@ -7,18 +7,19 @@
     </linearGradient>
   </defs>
   <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#collect_grad)" />
-  <path
-    d="M15 30a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0-8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0-8a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"
-    fill="#fff"
-    fill-opacity="0.95"
-  />
-  <path
-    d="M21 30h12a2 2 0 0 0 2-2v-3.5a2 2 0 0 0-2-2H24a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2h11"
+  <g
+    fill="none"
     stroke="#fff"
     stroke-linecap="round"
-    stroke-width="2.2"
+    stroke-linejoin="round"
     stroke-opacity="0.95"
-    fill="none"
-  />
+    stroke-width="2.6"
+  >
+    <!-- Collect: arrow into tray (strictly centered) -->
+    <path d="M24 16.5v11.5" />
+    <path d="M19.5 23.5L24 28l4.5-4.5" />
+    <path d="M17 30.5v2.3a2.7 2.7 0 0 0 2.7 2.7h8.6A2.7 2.7 0 0 0 31 32.8v-2.3" />
+    <path d="M17 30.5h14" />
+  </g>
 </svg>
 

@@ -4,8 +4,8 @@ import { addIcon } from '@vben-core/icons';
 
 let loaded = false;
 if (!loaded) {
-  loadSvgIcons();
   loaded = true;
+  loadSvgIcons();
 }
 
 function parseSvg(svgData: string): IconifyIconStructure {
@@ -56,24 +56,28 @@ function parseSvg(svgData: string): IconifyIconStructure {
  * @example ./svg/avatar.svg
  * <Icon icon="svg:avatar"></Icon>
  */
-async function loadSvgIcons() {
-  const svgEagers = import.meta.glob('./icons/**', {
+function loadSvgIcons() {
+  // Prevent SSR / non-browser evaluation from crashing.
+  if (typeof DOMParser === 'undefined') return;
+
+  // `eager: true` already loads modules synchronously. Keep this sync so icons
+  // are registered before first render; otherwise Iconify may render an empty
+  // `<svg>` and never update when icons arrive later.
+  const svgEagers = import.meta.glob('./icons/**/*.svg', {
     eager: true,
     query: '?raw',
   });
 
-  await Promise.all(
-    Object.entries(svgEagers).map((svg) => {
-      const [key, body] = svg as [string, string | { default: string }];
+  for (const [key, body] of Object.entries(svgEagers) as Array<
+    [string, string | { default: string }]
+  >) {
+    // ./icons/xxxx.svg => xxxxxx
+    const start = key.lastIndexOf('/') + 1;
+    const end = key.lastIndexOf('.');
+    const iconName = key.slice(start, end);
 
-      // ./icons/xxxx.svg => xxxxxx
-      const start = key.lastIndexOf('/') + 1;
-      const end = key.lastIndexOf('.');
-      const iconName = key.slice(start, end);
-
-      return addIcon(`svg:${iconName}`, {
-        ...parseSvg(typeof body === 'object' ? body.default : body),
-      });
-    }),
-  );
+    addIcon(`svg:${iconName}`, {
+      ...parseSvg(typeof body === 'object' ? body.default : body),
+    });
+  }
 }

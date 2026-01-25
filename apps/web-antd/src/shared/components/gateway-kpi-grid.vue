@@ -60,11 +60,12 @@ function numberGradientClass(index: number): string {
             prefix=""
             :suffix="item.valueSuffix ?? ''"
           />
-          <!-- Bigger icon + subtle glow -->
-          <VbenIcon
-            :icon="item.icon"
-            class="size-12 flex-shrink-0 dark:drop-shadow-[0_0_14px_rgba(255,255,255,0.18)]"
-          />
+          <!-- Icon: fixed box + strict center -->
+          <div
+            class="flex size-12 flex-shrink-0 items-center justify-center dark:drop-shadow-[0_0_14px_rgba(255,255,255,0.18)]"
+          >
+            <VbenIcon :icon="item.icon" class="size-12" />
+          </div>
         </CardContent>
 
         <CardFooter class="justify-between">

@@ -1,0 +1,23 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lat_grad" x1="4" x2="44" y1="4" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60a5fa" />
+      <stop offset="0.5" stop-color="#38bdf8" />
+      <stop offset="1" stop-color="#34d399" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#lat_grad)" />
+  <g
+    fill="none"
+    stroke="#fff"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity="0.95"
+    stroke-width="2.6"
+  >
+    <!-- Clock (centered) -->
+    <circle cx="24" cy="24" r="10.5" />
+    <path d="M24 18.5v6.4l4.6 2.7" />
+  </g>
+</svg>
+

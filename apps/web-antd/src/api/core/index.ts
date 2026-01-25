@@ -7,6 +7,7 @@ export * from './channel';
 export * from './device';
 export * from './driver';
 export * from './menu';
+export * from './net-debug';
 export * from './plugin';
 export * from './point';
 export * from './user';

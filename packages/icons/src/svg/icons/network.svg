@@ -19,13 +19,14 @@
   <rect x="10" y="10" width="108" height="108" rx="26" fill="url(#shine)" />
   <rect x="14" y="14" width="100" height="100" rx="22" fill="none" stroke="#ffffff" stroke-opacity="0.18" />
 
-  <!-- Network in/out glyph (centered) -->
-  <g transform="translate(0 -2)" fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">
-    <path d="M40 52h44" />
-    <path d="M72 40l12 12-12 12" />
-    <path d="M88 76H44" />
-    <path d="M56 64L44 76l12 12" />
-    <path d="M42 92h44" stroke-opacity="0.55" />
+  <!-- Two equal arrows (strictly centered) -->
+  <g fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">
+    <!-- Left arrow (same size as right) -->
+    <path d="M56 64H34" />
+    <path d="M42 56l-8 8 8 8" />
+    <!-- Right arrow -->
+    <path d="M72 64h22" />
+    <path d="M86 56l8 8-8 8" />
   </g>
 </svg>
 

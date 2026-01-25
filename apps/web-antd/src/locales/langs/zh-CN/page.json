@@ -464,8 +464,41 @@
     "monitor": {
       "title": "监控"
     },
-    "debug": {
-      "title": "调试"
+    "action-debug": {
+      "title": "动作调试"
+    },
+    "netDebug": {
+      "title": "网络调试",
+      "hint": "从网关侧发起 Ping / 端口连通性 / HTTP 请求，用于快速定位网络可达性问题。",
+      "tabs": {
+        "ping": "Ping",
+        "tcp": "端口连通性",
+        "http": "HTTP 请求"
+      },
+      "targetHost": "目标主机/IP",
+      "count": "次数",
+      "timeoutMs": "超时 (ms)",
+      "intervalMs": "间隔 (ms)",
+      "mode": "模式",
+      "modeIcmp": "ICMP",
+      "modeTcp": "TCP",
+      "tcpPort": "TCP 端口",
+      "port": "端口",
+      "readBanner": "读取 Banner",
+      "bannerBytes": "Banner 字节数",
+      "method": "方法",
+      "url": "URL",
+      "headers": "Headers",
+      "addHeader": "添加 Header",
+      "body": "Body",
+      "followRedirects": "跟随重定向",
+      "insecureTls": "跳过 TLS 校验",
+      "maxResponseBytes": "响应上限 (bytes)",
+      "run": "运行",
+      "history": "历史记录",
+      "clearHistory": "清空历史",
+      "resultSummary": "摘要",
+      "resultRaw": "Raw JSON"
     },
     "branding": {
       "title": "品牌",

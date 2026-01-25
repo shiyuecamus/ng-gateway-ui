@@ -1,0 +1,23 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="send_grad" x1="4" x2="44" y1="4" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22c55e" />
+      <stop offset="0.5" stop-color="#38bdf8" />
+      <stop offset="1" stop-color="#a78bfa" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#send_grad)" />
+  <g
+    fill="none"
+    stroke="#fff"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity="0.95"
+    stroke-width="2.6"
+  >
+    <!-- Paper plane (centered) -->
+    <path d="M14 24l20-8-8 20-3.6-10.4L14 24z" />
+    <path d="M22.4 25.6L34 16" />
+  </g>
+</svg>
+

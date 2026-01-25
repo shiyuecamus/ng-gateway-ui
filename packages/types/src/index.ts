@@ -15,6 +15,7 @@ export * from './driver';
 export type * from './driver';
 export type * from './import';
 export type * from './metrics';
+export type * from './net-debug';
 export * from './plugin';
 export type * from './plugin';
 export type * from './point';

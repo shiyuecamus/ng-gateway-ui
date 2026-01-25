@@ -1,0 +1,23 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sr_grad" x1="4" x2="44" y1="4" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34d399" />
+      <stop offset="0.5" stop-color="#22c55e" />
+      <stop offset="1" stop-color="#60a5fa" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#sr_grad)" />
+  <g
+    fill="none"
+    stroke="#fff"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity="0.95"
+    stroke-width="2.6"
+  >
+    <!-- Success rate: ring + check (clean & centered) -->
+    <circle cx="24" cy="24" r="10.5" />
+    <path d="M19.2 24.6l3.2 3.2 7.6-7.6" />
+  </g>
+</svg>
+

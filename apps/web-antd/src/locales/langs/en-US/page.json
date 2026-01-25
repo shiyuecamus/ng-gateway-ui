@@ -464,8 +464,41 @@
     "monitor": {
       "title": "Monitor"
     },
-    "debug": {
-      "title": "Debug"
+    "action-debug": {
+      "title": "Action Debug"
+    },
+    "netDebug": {
+      "title": "Network Debug",
+      "hint": "Run Ping / TCP connectivity / HTTP requests from the gateway to quickly diagnose reachability issues.",
+      "tabs": {
+        "ping": "Ping",
+        "tcp": "TCP Connect",
+        "http": "HTTP Request"
+      },
+      "targetHost": "Target host / IP",
+      "count": "Count",
+      "timeoutMs": "Timeout (ms)",
+      "intervalMs": "Interval (ms)",
+      "mode": "Mode",
+      "modeIcmp": "ICMP",
+      "modeTcp": "TCP",
+      "tcpPort": "TCP port",
+      "port": "Port",
+      "readBanner": "Read banner",
+      "bannerBytes": "Banner bytes",
+      "method": "Method",
+      "url": "URL",
+      "headers": "Headers",
+      "addHeader": "Add header",
+      "body": "Body",
+      "followRedirects": "Follow redirects",
+      "insecureTls": "Skip TLS verification",
+      "maxResponseBytes": "Max response bytes",
+      "run": "Run",
+      "history": "History",
+      "clearHistory": "Clear history",
+      "resultSummary": "Summary",
+      "resultRaw": "Raw JSON"
     },
     "branding": {
       "title": "Branding",

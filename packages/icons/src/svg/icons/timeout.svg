@@ -1,0 +1,23 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="timeout_grad" x1="4" x2="44" y1="4" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fbbf24" />
+      <stop offset="0.5" stop-color="#fb7185" />
+      <stop offset="1" stop-color="#a78bfa" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#timeout_grad)" />
+  <g
+    fill="none"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2.6"
+  >
+    <!-- Clock ring -->
+    <circle cx="24" cy="24" r="10.5" stroke="#fff" stroke-opacity="0.95" />
+    <!-- Timeout mark (centered X) -->
+    <path d="M20.5 20.5l7 7" stroke="#0f172a" stroke-opacity="0.85" />
+    <path d="M27.5 20.5l-7 7" stroke="#0f172a" stroke-opacity="0.85" />
+  </g>
+</svg>
+

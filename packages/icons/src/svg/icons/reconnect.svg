@@ -1,0 +1,28 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="reconn_grad" x1="4" x2="44" y1="4" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22c55e" />
+      <stop offset="0.5" stop-color="#60a5fa" />
+      <stop offset="1" stop-color="#a78bfa" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#reconn_grad)" />
+  <g
+    fill="none"
+    stroke="#fff"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity="0.95"
+    stroke-width="2.6"
+  >
+    <!-- Reconnect: two symmetric circular arrows (centered) -->
+    <path d="M30 18A10 10 0 0 1 30 30" />
+    <path d="M18 30A10 10 0 0 1 18 18" />
+    <!-- Arrowheads -->
+    <path d="M30 30l-2.8-1.6" />
+    <path d="M30 30l-1.6-2.8" />
+    <path d="M18 18l2.8 1.6" />
+    <path d="M18 18l1.6 2.8" />
+  </g>
+</svg>
+

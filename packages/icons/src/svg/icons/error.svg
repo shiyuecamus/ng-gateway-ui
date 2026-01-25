@@ -1,0 +1,30 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="error_grad" x1="4" x2="44" y1="4" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ef4444" />
+      <stop offset="0.5" stop-color="#f97316" />
+      <stop offset="1" stop-color="#f472b6" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#error_grad)" />
+  <path
+    d="M24 13.5l11.4 19.8c.5.8-.1 1.7-1 1.7H13.6c-.9 0-1.5-.9-1-1.7L24 13.5z"
+    fill="#fff"
+    fill-opacity="0.92"
+  />
+  <path
+    d="M24 20.5v7"
+    stroke="#0f172a"
+    stroke-linecap="round"
+    stroke-width="2.6"
+    stroke-opacity="0.85"
+  />
+  <path
+    d="M24 31.8h.01"
+    stroke="#0f172a"
+    stroke-linecap="round"
+    stroke-width="4.2"
+    stroke-opacity="0.85"
+  />
+</svg>
+

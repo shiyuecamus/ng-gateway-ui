@@ -6,7 +6,12 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
-import { SvgAppIcon, SvgCollectorIcon, SvgPointsIcon } from '@vben/icons';
+import {
+  SvgDropIcon,
+  SvgErrorIcon,
+  SvgLatencyIcon,
+  SvgSendIcon,
+} from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import { Card, Descriptions, DescriptionsItem, Tag } from 'ant-design-vue';
@@ -67,7 +72,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
   const m = snapMetrics.value;
   return [
     {
-      icon: SvgAppIcon,
+      icon: SvgSendIcon,
       title: $t('page.northward.app.observability.messagesSent'),
       totalTitle: $t('page.northward.app.observability.messagesDropped'),
       totalValue: Number(m?.messagesDropped ?? 0),
@@ -76,7 +81,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
       valueSuffix: '',
     },
     {
-      icon: SvgPointsIcon,
+      icon: SvgDropIcon,
       title: $t('page.northward.app.observability.messagesDropped'),
       totalTitle: $t('page.northward.app.observability.retries'),
       totalValue: Number(m?.retries ?? 0),
@@ -85,7 +90,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
       valueSuffix: '',
     },
     {
-      icon: SvgCollectorIcon,
+      icon: SvgErrorIcon,
       title: $t('page.northward.app.observability.errors'),
       totalTitle: $t('page.northward.app.observability.retries'),
       totalValue: Number(m?.retries ?? 0),
@@ -94,7 +99,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
       valueSuffix: '',
     },
     {
-      icon: SvgCollectorIcon,
+      icon: SvgLatencyIcon,
       title: $t('page.northward.app.observability.avgLatencyMs'),
       totalTitle: $t('page.northward.app.observability.connected'),
       totalValue: appSnapshot.value?.isConnected ? 1 : 0,
