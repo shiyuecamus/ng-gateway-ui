@@ -20,11 +20,15 @@ watch(
   () => props.option,
   (opt) => {
     const inst = getChartInstance();
-    if (inst) {
-      inst.setOption(opt as any);
-    } else {
+    if (!inst) {
       renderEcharts(opt as any, true);
+      return;
     }
+
+    // Smooth updates: merge into existing option (no "full redraw").
+    // The previous duplicated-tooltip issue was caused by duplicate reactive triggers,
+    // which is now fixed in `use-metrics-ws.ts`.
+    inst.setOption(opt as any, { lazyUpdate: true });
   },
   // Avoid deep-watching a large option object; parent already produces a new option
   // reference when data changes.

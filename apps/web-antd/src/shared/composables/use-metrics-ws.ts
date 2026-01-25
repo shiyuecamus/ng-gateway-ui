@@ -13,7 +13,7 @@ import type {
   TrendPoint,
 } from '@vben/types';
 
-import { computed, ref, shallowRef, triggerRef } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import { $t } from '@vben/locales';
 import { clamp } from '@vben/utils';
@@ -58,11 +58,17 @@ export function useMetricsWs(options?: {
   const intervalMs = clamp(options?.intervalMs ?? 1000, 200, 5000);
   const trendPoints = clamp(options?.trendPoints ?? 60, 30, 600);
   const trendWindowMs = 60_000;
-  const TRIGGER_MIN_INTERVAL_MS = clamp(
-    options?.uiTriggerMinIntervalMs ?? 200,
-    100,
-    1000,
+  const uiTriggerMinIntervalMs = clamp(
+    options?.uiTriggerMinIntervalMs ?? 0,
+    0,
+    2000,
   );
+  // NOTE:
+  // We previously attempted to throttle UI updates via `triggerRef`, but since we already
+  // assign new values to refs on every WS message, that approach caused duplicate reactive
+  // notifications (set -> triggerRef), which in turn can duplicate chart points/tooltip rows.
+  // If we need throttling in the future, implement it by buffering data and committing to
+  // refs at a controlled cadence (instead of "set + triggerRef").
 
   // One connection can keep multiple active subscriptions (at most one per scope).
   const subscriptions = shallowRef<
@@ -80,6 +86,8 @@ export function useMetricsWs(options?: {
   // ---- channel/app snapshots (observability pages) ----
   const channelSnapshot = shallowRef<ChannelStatsSnapshot | null>(null);
   const appSnapshot = shallowRef<NorthwardAppStatsSnapshot | null>(null);
+  const channelSnapshotTs = ref<number>(0);
+  const appSnapshotTs = ref<number>(0);
 
   // Derived rates from counters (best-effort, for global snapshot)
   const networkTxBps = ref<number>(0);
@@ -102,9 +110,6 @@ export function useMetricsWs(options?: {
   const rowsByDeviceId = shallowRef<Map<number, DeviceStatsSnapshot>>(
     new Map(),
   );
-
-  let triggerScheduled = false;
-  let lastTriggerAt = 0;
 
   const {
     status,
@@ -132,25 +137,49 @@ export function useMetricsWs(options?: {
       }
     },
     onMessage(msg) {
-      handleServerMessage(msg);
+      handleServerMessageThrottled(msg);
     },
   });
 
-  function scheduleTrigger(refs: Array<{ value: unknown }>) {
-    if (triggerScheduled) return;
-    const now = Date.now();
-    const elapsed = now - lastTriggerAt;
-    const delay = Math.max(0, TRIGGER_MIN_INTERVAL_MS - elapsed);
-    triggerScheduled = true;
+  // UI throttling: buffer snapshot/update per scope and commit at a controlled cadence.
+  const pendingByScope = new Map<MetricsScope, MetricsServerMessage>();
+  let pendingTimer: null | ReturnType<typeof setTimeout> = null;
+  let lastUiCommitAt = 0;
 
-    window.setTimeout(() => {
-      triggerScheduled = false;
-      lastTriggerAt = Date.now();
-      for (const r of refs) {
-        // Vue's `triggerRef` type is generic; we only need runtime triggering here.
-        triggerRef(r as never);
-      }
-    }, delay);
+  function flushPending() {
+    pendingTimer = null;
+    lastUiCommitAt = Date.now();
+    // Apply in stable order to minimize flicker.
+    const order: MetricsScope[] = ['global', 'channel', 'device', 'app'];
+    for (const scope of order) {
+      const m = pendingByScope.get(scope);
+      if (!m) continue;
+      pendingByScope.delete(scope);
+      handleServerMessage(m);
+    }
+  }
+
+  function scheduleFlush() {
+    if (pendingTimer) return;
+    const now = Date.now();
+    const nextAt = lastUiCommitAt + uiTriggerMinIntervalMs;
+    const delay = Math.max(0, nextAt - now);
+    pendingTimer = setTimeout(flushPending, delay);
+  }
+
+  function handleServerMessageThrottled(msg: MetricsServerMessage) {
+    // Always apply non-snapshot data immediately (pong/error/subscribed).
+    if (msg.type !== 'snapshot' && msg.type !== 'update') {
+      handleServerMessage(msg);
+      return;
+    }
+    // Throttling disabled.
+    if (uiTriggerMinIntervalMs <= 0) {
+      handleServerMessage(msg);
+      return;
+    }
+    pendingByScope.set(msg.scope, msg);
+    scheduleFlush();
   }
 
   function subscribe(
@@ -367,15 +396,6 @@ export function useMetricsWs(options?: {
     }
 
     prevAt = now;
-    scheduleTrigger([
-      snapshot,
-      trendCpu,
-      trendMem,
-      trendDisk,
-      trendTx,
-      trendRx,
-      trendCollectorMs,
-    ]);
   }
 
   function applyDeviceRows(msg: MetricsSnapshotMessage | MetricsUpdateMessage) {
@@ -385,19 +405,18 @@ export function useMetricsWs(options?: {
     const next = new Map<number, DeviceStatsSnapshot>();
     for (const row of rows) next.set(row.deviceId, row);
     rowsByDeviceId.value = next;
-    scheduleTrigger([rowsByDeviceId]);
   }
 
   function applyChannelSnapshot(ts: number, data: ChannelStatsSnapshot) {
     channelSnapshot.value = data;
+    channelSnapshotTs.value = ts;
     lastMessageTs.value = ts;
-    scheduleTrigger([channelSnapshot]);
   }
 
   function applyAppSnapshot(ts: number, data: NorthwardAppStatsSnapshot) {
     appSnapshot.value = data;
+    appSnapshotTs.value = ts;
     lastMessageTs.value = ts;
-    scheduleTrigger([appSnapshot]);
   }
 
   function handleServerMessage(msg: MetricsServerMessage) {
@@ -471,6 +490,8 @@ export function useMetricsWs(options?: {
     lastMessageTs,
     channelSnapshot,
     appSnapshot,
+    channelSnapshotTs,
+    appSnapshotTs,
     networkTxBps,
     networkRxBps,
     collectorCyclesPerSec,

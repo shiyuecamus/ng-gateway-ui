@@ -11,7 +11,7 @@ import type { DeviceObservabilityRow } from './types';
 import type { OnActionClickFn } from '#/adapter/vxe-table';
 
 import { $t } from '@vben/locales';
-import { formatBytesHuman } from '@vben/utils';
+import { CollectionType } from '@vben/types';
 
 import {
   accessModeOptions,
@@ -95,7 +95,7 @@ export function useChannelColumns(
           {
             code: 'observability',
             icon: 'mdi:chart-line',
-            tooltip: 'Observability',
+            tooltip: $t('page.southward.channel.observability.title'),
           },
           {
             code: 'edit',
@@ -329,57 +329,98 @@ export function useActionParameterColumns(
 }
 
 export function useDeviceObservabilityColumns(): VxeTableGridOptions<DeviceObservabilityRow>['columns'] {
-  return [
-    { field: 'deviceName', title: 'Device', minWidth: 180 },
-    { field: 'deviceType', title: 'Type', minWidth: 140 },
+  return useDeviceObservabilityColumnsByType();
+}
+
+export function useDeviceObservabilityColumnsByType(
+  collectionType: ChannelInfo['collectionType'] = (CollectionType as any)
+    .Collection,
+): VxeTableGridOptions<DeviceObservabilityRow>['columns'] {
+  const isReport = collectionType === (CollectionType as any).Report;
+
+  type Columns = NonNullable<
+    VxeTableGridOptions<DeviceObservabilityRow>['columns']
+  >;
+
+  const base = [
     {
-      field: 'bytesSent',
-      title: 'Bytes Out',
-      width: 140,
-      formatter: ({ row }) => formatBytesHuman(row.bytesSent, { zero: '0 B' }),
+      field: 'deviceName',
+      title: $t('page.southward.channel.observability.table.device'),
+      minWidth: 180,
     },
     {
-      field: 'bytesReceived',
-      title: 'Bytes In',
-      width: 140,
-      formatter: ({ row }) =>
-        formatBytesHuman(row.bytesReceived, { zero: '0 B' }),
+      field: 'deviceType',
+      title: $t('page.southward.channel.observability.table.type'),
+      minWidth: 140,
     },
+  ] as Columns;
+
+  const collectionCols = [
     {
       field: 'collectSuccessTotal',
-      title: 'OK',
-      width: 80,
-    },
-    {
-      field: 'collectFailTotal',
-      title: 'Fail',
-      width: 80,
-    },
-    {
-      field: 'collectTimeoutTotal',
-      title: 'Timeout',
+      title: $t('page.southward.channel.observability.table.ok'),
       width: 90,
     },
     {
+      field: 'collectFailTotal',
+      title: $t('page.southward.channel.observability.table.fail'),
+      width: 90,
+    },
+    {
+      field: 'collectTimeoutTotal',
+      title: $t('page.southward.channel.observability.table.timeout'),
+      width: 100,
+    },
+    {
       field: 'avgCollectLatencyMs',
-      title: 'Avg Lat(ms)',
-      width: 120,
-      formatter: ({ row }) => row.avgCollectLatencyMs.toFixed(1),
+      title: $t('page.southward.channel.observability.table.avgLatencyMs'),
+      width: 140,
+      formatter: ({ row }) => Number(row.avgCollectLatencyMs ?? 0).toFixed(1),
     },
     {
       field: 'lastCollectLatencyMs',
-      title: 'Last Lat(ms)',
-      width: 130,
-      formatter: ({ row }) => row.lastCollectLatencyMs.toFixed(1),
+      title: $t('page.southward.channel.observability.table.lastLatencyMs'),
+      width: 140,
+      formatter: ({ row }) => Number(row.lastCollectLatencyMs ?? 0).toFixed(1),
+    },
+  ] as Columns;
+
+  const reportCols = [
+    {
+      field: 'reportSuccessTotal',
+      title: $t('page.southward.channel.observability.table.reportOk'),
+      width: 110,
     },
     {
+      field: 'reportDroppedTotal',
+      title: $t('page.southward.channel.observability.table.reportDropped'),
+      width: 110,
+    },
+    {
+      field: 'reportFailTotal',
+      title: $t('page.southward.channel.observability.table.reportFail'),
+      width: 110,
+    },
+    {
+      field: 'lastReportMs',
+      title: $t('page.southward.channel.observability.table.lastReport'),
+      width: 170,
+      formatter: ({ row }) =>
+        row.lastReportMs ? new Date(row.lastReportMs).toLocaleString() : '-',
+    },
+  ] as Columns;
+
+  const tail = [
+    {
       field: 'lastActivityMs',
-      title: 'Last Activity',
+      title: $t('page.southward.channel.observability.table.lastActivity'),
       width: 170,
       formatter: ({ row }) =>
         row.lastActivityMs
           ? new Date(row.lastActivityMs).toLocaleString()
           : '-',
     },
-  ];
+  ] as Columns;
+
+  return [...base, ...(isReport ? reportCols : collectionCols), ...tail];
 }

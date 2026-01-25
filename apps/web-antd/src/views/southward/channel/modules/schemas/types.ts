@@ -9,15 +9,17 @@ export interface DeviceObservabilityRow {
   status: number;
   runtimeState?: number;
 
-  bytesSent: number;
-  bytesReceived: number;
-  bytesAttributed: boolean;
-
   collectSuccessTotal: number;
   collectFailTotal: number;
   collectTimeoutTotal: number;
 
   avgCollectLatencyMs: number;
   lastCollectLatencyMs: number;
+
+  reportSuccessTotal: number;
+  reportDroppedTotal: number;
+  reportFailTotal: number;
+  lastReportMs: number;
+
   lastActivityMs: number;
 }

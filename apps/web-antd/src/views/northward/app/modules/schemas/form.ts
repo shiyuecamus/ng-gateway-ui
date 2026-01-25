@@ -81,8 +81,8 @@ export function useRetryPolicyFormSchema(): FormSchema[] {
       label: $t('page.northward.app.retryPolicy.maxAttempts'),
       help: $t('page.northward.app.retryPolicy.maxAttemptsHelp'),
       controlClass: 'w-full',
-      componentProps: { min: 1 },
-      defaultValue: 0,
+      // 0 = no retry, empty = unlimited retries
+      componentProps: { min: 0, precision: 0 },
     },
     {
       component: 'InputNumber',

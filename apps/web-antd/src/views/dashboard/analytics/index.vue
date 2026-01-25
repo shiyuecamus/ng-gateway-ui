@@ -28,11 +28,11 @@ import { VbenButton, VbenIcon } from '@vben-core/shadcn-ui';
 
 import { message } from 'ant-design-vue';
 
+import GatewayKpiGrid from '#/shared/components/gateway-kpi-grid.vue';
+import GatewayLineChart from '#/shared/components/gateway-line-chart.vue';
 import { useMetricsWs } from '#/shared/composables/use-metrics-ws';
 
 import { buildLineChartOption } from './modules/gateway-echarts';
-import GatewayKpiGrid from './widgets/gateway-kpi-grid.vue';
-import GatewayLineChart from './widgets/gateway-line-chart.vue';
 
 const router = useRouter();
 const { isDark } = usePreferences();

@@ -486,6 +486,15 @@ export function useConnectPolicyFormSchema(): FormSchema[] {
     // Backoff configuration
     {
       component: 'InputNumber',
+      fieldName: 'connectionPolicy.backoff.maxAttempts',
+      label: $t('page.southward.channel.connectPolicy.backoff.maxAttempts'),
+      help: $t('page.southward.channel.connectPolicy.backoff.maxAttemptsHelp'),
+      controlClass: 'w-full',
+      // 0 = no retry, empty = unlimited retries
+      componentProps: { min: 0, precision: 0 },
+    },
+    {
+      component: 'InputNumber',
       fieldName: 'connectionPolicy.backoff.initialIntervalMs',
       label: $t('page.southward.channel.connectPolicy.backoff.initialInterval'),
       help: $t('ui.help.unitWithName', { unit: $t('ui.unit.milliseconds') }),

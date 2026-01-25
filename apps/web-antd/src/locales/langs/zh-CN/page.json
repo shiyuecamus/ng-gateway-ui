@@ -162,7 +162,7 @@
       },
       "retryPolicy": {
         "maxAttempts": "最大重试次数",
-        "maxAttemptsHelp": "当达到最大重试次数后，将停止重试",
+        "maxAttemptsHelp": "0 表示不重试；留空表示无限重试；设置为 N 表示最多重试 N 次。",
         "initialInterval": "初始间隔",
         "maxInterval": "最大间隔",
         "randomizationFactor": "随机因子",
@@ -187,6 +187,26 @@
           "capacityHelp": "缓冲中可存储的最大消息数量",
           "expireTime": "过期时间"
         }
+      },
+      "observability": {
+        "ws": {
+          "connected": "已连接",
+          "connecting": "连接中",
+          "reconnecting": "重连中",
+          "disconnected": "未连接"
+        },
+        "appFallback": "应用 #{id}",
+        "snapshot": "快照",
+        "rawJsonDebug": "Raw JSON（调试）",
+        "state": "状态",
+        "connected": "已连接",
+        "messagesSent": "已发送消息",
+        "messagesDropped": "丢弃消息",
+        "errors": "错误",
+        "retries": "重试",
+        "avgLatencyMs": "平均延迟（ms）",
+        "lastSent": "最后发送",
+        "lastError": "最后错误"
       }
     }
   },
@@ -209,6 +229,8 @@
         "writeTimeout": "写入超时",
         "backoff": {
           "title": "重试策略",
+          "maxAttempts": "最大重试次数",
+          "maxAttemptsHelp": "0 表示不重试；留空表示无限重试；设置为 N 表示最多重试 N 次。",
           "initialInterval": "初始间隔",
           "maxInterval": "最大间隔",
           "randomizationFactor": "随机因子",
@@ -230,7 +252,85 @@
       "subDevice": "子设备",
       "configView": "配置预览",
       "importDevicePoints": "设备+点位",
-      "importDevicePointsHint": "请上传设备+点位组合模板文件（.xlsx格式）"
+      "importDevicePointsHint": "请上传设备+点位组合模板文件（.xlsx格式）",
+      "observability": {
+        "title": "观测",
+        "ws": {
+          "connected": "已连接",
+          "connecting": "连接中",
+          "reconnecting": "重连中",
+          "disconnected": "未连接"
+        },
+        "channelFallback": "通道 #{id}",
+        "state": "状态",
+        "health": "健康",
+        "searchDevice": "搜索设备...",
+        "kpi": {
+          "throughput": "吞吐",
+          "quality": "质量",
+          "latency": "延迟"
+        },
+        "success": "成功率",
+        "ops": "操作",
+        "ioSuccess": "I/O 成功率",
+        "ioOps": "I/O 操作",
+        "collectPoints": "采集点位",
+        "collectPointSuccess": "采集成功率",
+        "collectPointTimeout": "采集超时",
+        "publishTotal": "上报投递",
+        "publishSuccess": "上报成功率",
+        "publishDropped": "上报丢弃",
+        "lastReportAge": "距上次上报",
+        "reconnects": "重连次数",
+        "connectFailed": "连接失败次数",
+        "disconnects": "断开次数",
+        "writeTotal": "写点",
+        "writeSuccess": "写点成功率",
+        "executeTotal": "命令",
+        "executeSuccess": "命令成功率",
+        "totals": "累计",
+        "out": "出",
+        "in": "入",
+        "avg": "采集平均耗时",
+        "last": "最近耗时",
+        "charts": {
+          "network": "网络",
+          "latencyAvg": "延迟",
+          "reportPublish": "上报投递"
+        },
+        "series": {
+          "tx": "TX",
+          "rx": "RX",
+          "avg": "平均"
+        },
+        "unit": {
+          "bps": "B/s",
+          "ms": "ms",
+          "msgps": "msg/s",
+          "s": "s"
+        },
+        "report": {
+          "series": {
+            "ok": "成功",
+            "dropped": "丢弃",
+            "fail": "失败"
+          }
+        },
+        "table": {
+          "device": "设备",
+          "type": "类型",
+          "ok": "采集成功",
+          "fail": "采集失败",
+          "timeout": "采集超时",
+          "reportOk": "上报成功",
+          "reportDropped": "上报丢弃",
+          "reportFail": "上报失败",
+          "lastReport": "最近上报",
+          "avgLatencyMs": "平均延迟",
+          "lastLatencyMs": "最近延迟",
+          "lastActivity": "最近活动"
+        }
+      }
     },
     "device": {
       "title": "设备",

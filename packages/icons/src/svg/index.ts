@@ -18,6 +18,12 @@ const SvgCpuIcon = createIconifyIcon('svg:cpu');
 const SvgDiskIcon = createIconifyIcon('svg:disk');
 const SvgNetworkIcon = createIconifyIcon('svg:network');
 const SvgCollectorIcon = createIconifyIcon('svg:collector');
+const SvgTxIcon = createIconifyIcon('svg:tx');
+const SvgRxIcon = createIconifyIcon('svg:rx');
+const SvgCollectIcon = createIconifyIcon('svg:collect');
+const SvgReportIcon = createIconifyIcon('svg:report');
+const SvgReliabilityIcon = createIconifyIcon('svg:reliability');
+const SvgWriteIcon = createIconifyIcon('svg:write');
 const SvgAntdvLogoIcon = createIconifyIcon('svg:antdv-logo');
 const SvgGithubIcon = createIconifyIcon('svg:github');
 const SvgGoogleIcon = createIconifyIcon('svg:google');
@@ -37,6 +43,7 @@ export {
   SvgCakeIcon,
   SvgCardIcon,
   SvgChannelIcon,
+  SvgCollectIcon,
   SvgCollectorIcon,
   SvgCpuIcon,
   SvgDeviceIcon,
@@ -48,6 +55,11 @@ export {
   SvgNetworkIcon,
   SvgPointsIcon,
   SvgQQChatIcon,
+  SvgReliabilityIcon,
+  SvgReportIcon,
+  SvgRxIcon,
   SvgTDesignIcon,
+  SvgTxIcon,
   SvgWeChatIcon,
+  SvgWriteIcon,
 };

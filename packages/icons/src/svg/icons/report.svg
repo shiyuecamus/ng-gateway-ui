@@ -1,0 +1,28 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="report_grad" x1="4" x2="44" y1="4" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8" />
+      <stop offset="0.5" stop-color="#34d399" />
+      <stop offset="1" stop-color="#f472b6" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#report_grad)" />
+  <path d="M24 30a3 3 0 1 0 .001 0H24z" fill="#fff" fill-opacity="0.95" />
+  <path
+    d="M18.5 28.5a7.8 7.8 0 0 1 0-9M29.5 19.5a7.8 7.8 0 0 1 0 9"
+    stroke="#fff"
+    stroke-linecap="round"
+    stroke-width="2.2"
+    stroke-opacity="0.95"
+    fill="none"
+  />
+  <path
+    d="M15.2 31.8a12.5 12.5 0 0 1 0-15.6M32.8 16.2a12.5 12.5 0 0 1 0 15.6"
+    stroke="#fff"
+    stroke-linecap="round"
+    stroke-width="2.2"
+    stroke-opacity="0.7"
+    fill="none"
+  />
+</svg>
+

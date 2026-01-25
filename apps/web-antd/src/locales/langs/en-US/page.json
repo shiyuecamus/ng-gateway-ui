@@ -162,7 +162,7 @@
       },
       "retryPolicy": {
         "maxAttempts": "Max Attempts",
-        "maxAttemptsHelp": "Stop retrying after reaching the maximum number of attempts",
+        "maxAttemptsHelp": "0 = no retries; empty = unlimited retries; N = retry at most N times.",
         "initialInterval": "Initial Interval",
         "maxInterval": "Max Interval",
         "randomizationFactor": "Randomization Factor",
@@ -187,6 +187,26 @@
           "capacityHelp": "Maximum number of messages that can be stored in the buffer",
           "expireTime": "Expire Time"
         }
+      },
+      "observability": {
+        "ws": {
+          "connected": "Connected",
+          "connecting": "Connecting",
+          "reconnecting": "Reconnecting",
+          "disconnected": "Disconnected"
+        },
+        "appFallback": "App #{id}",
+        "snapshot": "Snapshot",
+        "rawJsonDebug": "Raw JSON (debug)",
+        "state": "State",
+        "connected": "Connected",
+        "messagesSent": "Messages Sent",
+        "messagesDropped": "Messages Dropped",
+        "errors": "Errors",
+        "retries": "Retries",
+        "avgLatencyMs": "Avg Latency",
+        "lastSent": "Last Sent",
+        "lastError": "Last Error"
       }
     }
   },
@@ -209,6 +229,8 @@
         "writeTimeout": "Write Timeout",
         "backoff": {
           "title": "Retry Backoff",
+          "maxAttempts": "Max Attempts",
+          "maxAttemptsHelp": "0 = no retries; empty = unlimited retries; N = retry at most N times.",
           "initialInterval": "Initial Interval",
           "maxInterval": "Max Interval",
           "randomizationFactor": "Randomization Factor",
@@ -230,7 +252,85 @@
       "subDevice": "Sub Device",
       "configView": "Config View",
       "importDevicePoints": "Device + Points",
-      "importDevicePointsHint": "Please upload the device + points combined template file (.xlsx format)"
+      "importDevicePointsHint": "Please upload the device + points combined template file (.xlsx format)",
+      "observability": {
+        "title": "Observability",
+        "ws": {
+          "connected": "Connected",
+          "connecting": "Connecting",
+          "reconnecting": "Reconnecting",
+          "disconnected": "Disconnected"
+        },
+        "channelFallback": "Channel #{id}",
+        "state": "State",
+        "health": "Health",
+        "searchDevice": "Search device...",
+        "kpi": {
+          "throughput": "Throughput",
+          "quality": "Quality",
+          "latency": "Latency"
+        },
+        "success": "Success",
+        "ops": "Ops",
+        "reconnects": "Reconnects",
+        "ioSuccess": "I/O Success",
+        "ioOps": "I/O Ops",
+        "collectPoints": "Collected Points",
+        "collectPointSuccess": "Collect Success",
+        "collectPointTimeout": "Collect Timeout",
+        "publishTotal": "Report Publish",
+        "publishSuccess": "Publish Success",
+        "publishDropped": "Publish Dropped",
+        "lastReportAge": "Since Last Report",
+        "connectFailed": "Connect Failed",
+        "disconnects": "Disconnects",
+        "writeTotal": "Write",
+        "writeSuccess": "Write Success",
+        "executeTotal": "Execute",
+        "executeSuccess": "Execute Success",
+        "totals": "Totals",
+        "out": "out",
+        "in": "in",
+        "avg": "Collect Avg",
+        "last": "Collect Last",
+        "charts": {
+          "network": "Network",
+          "latencyAvg": "Latency",
+          "reportPublish": "Report Publish"
+        },
+        "series": {
+          "tx": "TX",
+          "rx": "RX",
+          "avg": "Avg"
+        },
+        "unit": {
+          "bps": "B/s",
+          "ms": "ms",
+          "msgps": "msg/s",
+          "s": "s"
+        },
+        "report": {
+          "series": {
+            "ok": "OK",
+            "dropped": "Dropped",
+            "fail": "Fail"
+          }
+        },
+        "table": {
+          "device": "Device",
+          "type": "Type",
+          "ok": "Collect Success",
+          "fail": "Collect Fail",
+          "timeout": "Collect Timeout",
+          "reportOk": "Report Success",
+          "reportDropped": "Report Dropped",
+          "reportFail": "Report Fail",
+          "lastReport": "Last Report",
+          "avgLatencyMs": "Avg Latency",
+          "lastLatencyMs": "Last Latency",
+          "lastActivity": "Last Activity"
+        }
+      }
     },
     "device": {
       "title": "Device",

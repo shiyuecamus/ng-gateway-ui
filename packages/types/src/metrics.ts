@@ -111,6 +111,33 @@ export interface ChannelMetricsSnapshot {
   bytesSent: number;
   bytesReceived: number;
   reconnectionCount: number;
+  // collection (point-based)
+  pointReadSuccessTotal: number;
+  pointReadFailTotal: number;
+  pointReadTimeoutTotal: number;
+  // connection reliability
+  connectFailedCount: number;
+  disconnectCount: number;
+  lastStateChangeAt?: null | string;
+  // report/push (driver publisher.try_publish)
+  reportPublishSuccessTotal: number;
+  reportPublishDroppedTotal: number;
+  reportPublishFailTotal: number;
+  lastReportAt?: null | string;
+}
+
+export interface ControlMetricsSnapshot {
+  // write-point
+  writeSuccessTotal: number;
+  writeFailTotal: number;
+  writeTimeoutTotal: number;
+  writeQueueWaitAvgMs: number;
+  writeExecuteAvgMs: number;
+  // execute-action
+  executeSuccessTotal: number;
+  executeFailTotal: number;
+  executeTimeoutTotal: number;
+  executeAvgMs: number;
 }
 
 export interface ChannelStatsSnapshot {
@@ -121,6 +148,7 @@ export interface ChannelStatsSnapshot {
   health?: unknown;
   deviceCount: number;
   metrics: ChannelMetricsSnapshot;
+  controlMetrics?: ControlMetricsSnapshot | null;
   createdAt: string;
   lastActivity: string;
 }
@@ -151,16 +179,18 @@ export interface DeviceStatsSnapshot {
   deviceType: string;
   status: number;
   runtimeState?: number;
-  bytesAttributed: boolean;
 
   // flattened metrics fields (backend uses `#[serde(flatten)]`)
-  bytesSent: number;
-  bytesReceived: number;
   collectSuccessTotal: number;
   collectFailTotal: number;
   collectTimeoutTotal: number;
   avgCollectLatencyMs: number;
   lastCollectLatencyMs: number;
+  // report/push (driver publisher.try_publish)
+  reportSuccessTotal: number;
+  reportDroppedTotal: number;
+  reportFailTotal: number;
+  lastReportMs: number;
   lastActivityMs: number;
 }
 
