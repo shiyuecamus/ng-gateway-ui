@@ -57,7 +57,7 @@ function patchForm(patch: Partial<TcpConnectRequest>) {
       <Form.Item :label="$t('page.maintenance.netDebug.readBanner')">
         <Switch
           :checked="props.form.readBanner"
-          @update:checked="(v) => patchForm({ readBanner: v })"
+          @update:checked="(v) => patchForm({ readBanner: v === true })"
         />
       </Form.Item>
       <Form.Item :label="$t('page.maintenance.netDebug.bannerBytes')">

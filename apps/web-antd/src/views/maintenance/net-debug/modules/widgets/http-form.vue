@@ -40,7 +40,11 @@ function updateHeader(
   patch: Partial<{ key: string; value: string }>,
 ) {
   const next = cloneHeaders();
-  next[idx] = { ...next[idx], ...patch };
+  const current = next[idx] ?? { key: '', value: '' };
+  next[idx] = {
+    key: patch.key ?? current.key,
+    value: patch.value ?? current.value,
+  };
   emit('update:headers', next);
 }
 
@@ -146,14 +150,14 @@ function addHeader() {
     <div class="grid grid-cols-2 gap-3">
       <Form.Item :label="$t('page.maintenance.netDebug.followRedirects')">
         <Switch
-          :checked="props.form.followRedirects"
-          @update:checked="(v) => patchForm({ followRedirects: v })"
+          :checked="!!props.form.followRedirects"
+          @update:checked="(v) => patchForm({ followRedirects: v as boolean })"
         />
       </Form.Item>
       <Form.Item :label="$t('page.maintenance.netDebug.insecureTls')">
         <Switch
-          :checked="props.form.insecureTls"
-          @update:checked="(v) => patchForm({ insecureTls: v })"
+          :checked="!!props.form.insecureTls"
+          @update:checked="(v) => patchForm({ insecureTls: v as boolean })"
         />
       </Form.Item>
     </div>
