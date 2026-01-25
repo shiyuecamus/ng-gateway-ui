@@ -35,7 +35,10 @@ function cloneHeaders() {
   return props.headers.map((h) => ({ ...h }));
 }
 
-function updateHeader(idx: number, patch: Partial<{ key: string; value: string }>) {
+function updateHeader(
+  idx: number,
+  patch: Partial<{ key: string; value: string }>,
+) {
   const next = cloneHeaders();
   next[idx] = { ...next[idx], ...patch };
   emit('update:headers', next);
@@ -104,11 +107,7 @@ function addHeader() {
             ×
           </Button>
         </div>
-        <Button
-          type="dashed"
-          class="w-full"
-          @click="addHeader"
-        >
+        <Button type="dashed" class="w-full" @click="addHeader">
           {{ $t('page.maintenance.netDebug.addHeader') }}
         </Button>
       </div>
