@@ -77,7 +77,18 @@ const gridOptions: VxeGridProps<ChannelInfo> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({
+type ChannelGridApi = {
+  query: () => Promise<unknown>;
+};
+
+// Note: vxe-table's `DeepPartial<...>` generics can cause TS(2589) (excessively deep instantiation).
+// Keep safety via the explicitly-typed `gridOptions` above, and avoid forcing TS to fully expand
+// vxe-table's complex conditional types at this call boundary.
+const [Grid, gridApi] = (
+  useVbenVxeGrid as unknown as (
+    options: any,
+  ) => readonly [any, ChannelGridApi]
+)({
   formOptions,
   gridOptions,
 });
