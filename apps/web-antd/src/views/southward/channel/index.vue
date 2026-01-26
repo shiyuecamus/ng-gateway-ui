@@ -25,6 +25,7 @@ import {
 
 import ConfigViewer from './modules/config-viewer.vue';
 import ChannelForm from './modules/form.vue';
+import LogLevelModal from './modules/log-level-modal.vue';
 import { searchFormSchema, useColumns } from './modules/schemas';
 import SubDeviceModal from './modules/sub-device-manager.vue';
 
@@ -93,6 +94,10 @@ const [SubDeviceModalRef, deviceModalApi] = useVbenModal({
   connectedComponent: SubDeviceModal,
 });
 
+const [ChannelLogLevelModalRef, channelLogLevelModalApi] = useVbenModal({
+  connectedComponent: LogLevelModal,
+});
+
 function onActionClick({ code, row }: OnActionClickParams<ChannelInfo>) {
   switch (code) {
     case 'configView': {
@@ -113,6 +118,17 @@ function onActionClick({ code, row }: OnActionClickParams<ChannelInfo>) {
     }
     case 'subDevice': {
       handleSubDevice(row);
+      break;
+    }
+    case 'logLevel': {
+      channelLogLevelModalApi
+        .setData({ channelId: row.id, channelName: row.name })
+        .setState({
+          title: $t('page.southward.channel.logLevelModal.titleWithName', {
+            name: row.name,
+          }),
+        })
+        .open();
       break;
     }
     default: {
@@ -251,5 +267,6 @@ const handleFormSubmit = async (
     <FormDrawer @submit="handleFormSubmit" />
     <ConfigViewerModal />
     <SubDeviceModalRef />
+    <ChannelLogLevelModalRef />
   </Page>
 </template>

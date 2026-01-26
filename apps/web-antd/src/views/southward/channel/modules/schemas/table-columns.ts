@@ -88,6 +88,11 @@ export function useChannelColumns(
             tooltip: $t('page.southward.channel.configView'),
           },
           {
+            code: 'logLevel',
+            icon: 'mdi:math-log',
+            tooltip: $t('page.southward.channel.logLevel'),
+          },
+          {
             code: 'subDevice',
             icon: 'mdi:devices',
             tooltip: $t('page.southward.channel.subDevice'),

@@ -190,5 +190,17 @@
     "sidebarToggle": "Enable Sidebar Toggle",
     "lockScreen": "Enable Lock Screen",
     "refresh": "Enable Refresh"
+  },
+  "system": {
+    "title": "System",
+    "log": {
+      "title": "Logging",
+      "baselineEffective": "System log level (baseline): {baseline}; effective: {effective}",
+      "channelTtlRange": "Channel TTL (seconds): range {min}-{max}, default {def}",
+      "tip": "Tip: Channel log level is a temporary override (TTL). It will automatically revert to follow the system/global level when expired.",
+      "levelLabel": "System log level",
+      "refresh": "Refresh",
+      "apply": "Apply"
+    }
   }
 }

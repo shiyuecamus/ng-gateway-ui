@@ -28,14 +28,54 @@ export namespace ChannelApi {
     `${base}/${id}/import-device-points-preview`;
   export const importDevicePointsCommit = (id: IdType) =>
     `${base}/${id}/import-device-points-commit`;
+  export const logLevel = (id: IdType) => `${base}/${id}/log-level`;
 
   /** channel page params */
   export interface ChannelPageParams
-    extends CommonPageRequest,
-      CommonTimeRangeRequest {
+    extends CommonPageRequest, CommonTimeRangeRequest {
     name?: string;
     status?: (typeof CommonStatus)[keyof typeof CommonStatus];
   }
+}
+
+export type LogLevel = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG' | 'TRACE';
+
+export interface TtlRangeView {
+  minMs: number;
+  maxMs: number;
+  defaultMs: number;
+}
+
+export interface ChannelLogOverrideView {
+  level: LogLevel;
+  expiresAtMs: number;
+}
+
+export interface ChannelLogLevelView {
+  channelId: number;
+  effective: LogLevel;
+  override?: ChannelLogOverrideView;
+  ttl: TtlRangeView;
+}
+
+export interface SetChannelLogLevelRequest {
+  level: LogLevel;
+  ttlMs?: number;
+}
+
+export async function getChannelLogLevel(id: IdType) {
+  return requestClient.get<ChannelLogLevelView>(ChannelApi.logLevel(id));
+}
+
+export async function setChannelLogLevel(
+  id: IdType,
+  data: SetChannelLogLevelRequest,
+) {
+  return requestClient.put<ChannelLogLevelView>(ChannelApi.logLevel(id), data);
+}
+
+export async function clearChannelLogLevel(id: IdType) {
+  return requestClient.delete<ChannelLogLevelView>(ChannelApi.logLevel(id));
 }
 
 /**

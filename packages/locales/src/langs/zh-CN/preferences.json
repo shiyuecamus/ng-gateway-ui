@@ -190,5 +190,17 @@
     "sidebarToggle": "启用侧边栏切换",
     "lockScreen": "启用锁屏",
     "refresh": "启用刷新"
+  },
+  "system": {
+    "title": "系统",
+    "log": {
+      "title": "日志",
+      "baselineEffective": "当前系统日志级别（baseline）：{baseline}；有效（effective）：{effective}",
+      "channelTtlRange": "通道级 TTL（秒）：范围 {min}-{max}，默认 {def}",
+      "tip": "提示：通道级日志级别为临时设置（TTL），到期后会自动恢复跟随系统/Global。",
+      "levelLabel": "系统日志级别",
+      "refresh": "刷新",
+      "apply": "应用"
+    }
   }
 }

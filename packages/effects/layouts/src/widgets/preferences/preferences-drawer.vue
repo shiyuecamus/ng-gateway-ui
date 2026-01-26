@@ -52,6 +52,7 @@ import {
   Navigation,
   Radius,
   Sidebar,
+  SystemLogging,
   Tabbar,
   Theme,
   Widget,
@@ -204,6 +205,10 @@ const tabs = computed((): SegmentedItem[] => {
     {
       label: $t('preferences.general'),
       value: 'general',
+    },
+    {
+      label: $t('preferences.system.title'),
+      value: 'system',
     },
   ];
 });
@@ -454,6 +459,12 @@ async function handleReset() {
                 v-model:shortcut-keys-lock-screen="shortcutKeysGlobalLockScreen"
                 v-model:shortcut-keys-logout="shortcutKeysGlobalLogout"
               />
+            </Block>
+          </template>
+
+          <template #system>
+            <Block :title="$t('preferences.system.log.title')">
+              <SystemLogging />
             </Block>
           </template>
         </VbenSegmented>
