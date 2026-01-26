@@ -38,7 +38,7 @@ export namespace ChannelApi {
   }
 }
 
-export type LogLevel = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG' | 'TRACE';
+export type LogLevel = 'DEBUG' | 'ERROR' | 'INFO' | 'TRACE' | 'WARN';
 
 export interface TtlRangeView {
   minMs: number;

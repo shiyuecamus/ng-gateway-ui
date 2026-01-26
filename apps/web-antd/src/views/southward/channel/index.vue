@@ -112,14 +112,6 @@ function onActionClick({ code, row }: OnActionClickParams<ChannelInfo>) {
       handleEdit(row);
       break;
     }
-    case 'observability': {
-      router.push(`/southward/channel/${row.id}/observability`);
-      break;
-    }
-    case 'subDevice': {
-      handleSubDevice(row);
-      break;
-    }
     case 'logLevel': {
       channelLogLevelModalApi
         .setData({ channelId: row.id, channelName: row.name })
@@ -129,6 +121,14 @@ function onActionClick({ code, row }: OnActionClickParams<ChannelInfo>) {
           }),
         })
         .open();
+      break;
+    }
+    case 'observability': {
+      router.push(`/southward/channel/${row.id}/observability`);
+      break;
+    }
+    case 'subDevice': {
+      handleSubDevice(row);
       break;
     }
     default: {

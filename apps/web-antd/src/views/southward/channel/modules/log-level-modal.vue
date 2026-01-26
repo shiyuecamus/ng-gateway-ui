@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { IdType } from '@vben/types';
 
+import type { ChannelLogLevelView, LogLevel } from '#/api/core/channel';
+
 import { computed, nextTick, ref } from 'vue';
 
 import { confirm, useVbenModal } from '@vben/common-ui';
@@ -10,18 +12,16 @@ import {
   Alert,
   Button,
   InputNumber,
+  message,
   Select,
   Space,
   Spin,
-  message,
 } from 'ant-design-vue';
 
 import {
   clearChannelLogLevel,
   getChannelLogLevel,
   setChannelLogLevel,
-  type ChannelLogLevelView,
-  type LogLevel,
 } from '#/api/core/channel';
 
 defineOptions({ name: 'ChannelLogLevelModal' });
@@ -96,7 +96,9 @@ function validateTtlOrThrow() {
   const max = ttlMaxSeconds.value;
   const v = Number(ttlSeconds.value);
   if (!Number.isFinite(v)) {
-    throw new Error($t('page.southward.channel.logLevelModal.ttlNotNumber'));
+    throw new TypeError(
+      $t('page.southward.channel.logLevelModal.ttlNotNumber'),
+    );
   }
   if (v < min || v > max) {
     throw new Error(
@@ -109,8 +111,8 @@ async function applyOverride() {
   if (!view.value) return;
   try {
     validateTtlOrThrow();
-  } catch (e: any) {
-    message.error(e?.message ?? String(e));
+  } catch (error: any) {
+    message.error(error?.message ?? String(error));
     return;
   }
 

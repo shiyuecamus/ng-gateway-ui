@@ -10,14 +10,14 @@ import { VbenButton } from '@vben-core/shadcn-ui';
 
 import SelectItem from '../select-item.vue';
 
-type LogLevel = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG' | 'TRACE';
+type LogLevel = 'DEBUG' | 'ERROR' | 'INFO' | 'TRACE' | 'WARN';
 
 type WebResponse<T> = { code: number; data: T; message?: string };
 
 type GlobalLogLevelView = {
   baseline: LogLevel;
+  channelOverrideTtl: { defaultMs: number; maxMs: number; minMs: number };
   effective: LogLevel;
-  channelOverrideTtl: { minMs: number; maxMs: number; defaultMs: number };
 };
 
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
@@ -75,8 +75,8 @@ async function reload() {
     const data = await apiFetch<GlobalLogLevelView>('GET', '/logging/level');
     view.value = data;
     desired.value = data.baseline;
-  } catch (e: any) {
-    error.value = e?.message ?? String(e);
+  } catch (error_: any) {
+    error.value = error_?.message ?? String(error_);
   } finally {
     loading.value = false;
   }
@@ -91,8 +91,8 @@ async function apply() {
       level: desired.value,
     });
     view.value = data;
-  } catch (e: any) {
-    error.value = e?.message ?? String(e);
+  } catch (error_: any) {
+    error.value = error_?.message ?? String(error_);
   } finally {
     loading.value = false;
   }
