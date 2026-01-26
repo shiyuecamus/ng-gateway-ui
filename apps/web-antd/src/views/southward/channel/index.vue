@@ -85,9 +85,7 @@ type ChannelGridApi = {
 // Keep safety via the explicitly-typed `gridOptions` above, and avoid forcing TS to fully expand
 // vxe-table's complex conditional types at this call boundary.
 const [Grid, gridApi] = (
-  useVbenVxeGrid as unknown as (
-    options: any,
-  ) => readonly [any, ChannelGridApi]
+  useVbenVxeGrid as unknown as (options: any) => readonly [any, ChannelGridApi]
 )({
   formOptions,
   gridOptions,
