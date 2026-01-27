@@ -193,6 +193,130 @@
   },
   "system": {
     "title": "System",
+    "runtimeTuning": {
+      "title": "Runtime Tuning",
+      "desc": "Apply & persist per domain; fields overridden by ENV are read-only."
+    },
+    "logging": {
+      "title": "Logging",
+      "desc": "Runtime level, output pipeline, and log file operations."
+    },
+    "meta": {
+      "apply": "Apply",
+      "reset": "Reset",
+      "unsaved": "Unsaved changes",
+      "overviewLoadFailed": "Failed to load system settings",
+      "sourceDefault": "Default",
+      "sourceFile": "File",
+      "sourceEnv": "Env",
+      "envLocked": "ENV locked",
+      "envLockedTipTitle": "This field is controlled by an environment variable (read-only)"
+    },
+    "applyResult": {
+      "applied": "Applied",
+      "noop": "No changes",
+      "persisted": "Persisted",
+      "notPersisted": "Not persisted (will be lost on restart)",
+      "blockedByEnv": "Blocked by ENV (ignored)",
+      "impactHotApply": "Hot applied",
+      "impactRestartComponent": "Restarted components",
+      "impactRestartProcess": "Process restart required"
+    },
+    "collector": {
+      "title": "Collector",
+      "desc": "Concurrency/timeout/retry and outbound queue for collections.",
+      "collectionTimeoutMs": "Collection timeout (ms)",
+      "collectionTimeoutMsTip": "Tune based on device/protocol latency; too small causes frequent timeouts.",
+      "maxConcurrentCollections": "Max concurrent collections",
+      "outboundQueueCapacity": "Outbound queue capacity",
+      "retryPolicyTitle": "Retry policy",
+      "maxAttemptsUnlimited": "Unlimited retries",
+      "maxAttemptsUnlimitedTip": "When enabled, max_attempts is sent as null (unlimited).",
+      "maxAttempts": "Max attempts",
+      "initialIntervalMs": "Initial interval (ms)",
+      "maxIntervalMs": "Max interval (ms)",
+      "randomizationFactor": "Randomization factor",
+      "multiplier": "Multiplier",
+      "maxElapsedUnlimited": "No elapsed-time limit",
+      "maxElapsedUnlimitedTip": "When enabled, max_elapsed_time_ms is sent as null (no limit).",
+      "maxElapsedTimeMs": "Max elapsed time (ms)"
+    },
+    "northward": {
+      "title": "Northward",
+      "desc": "Queue capacity and start timeout.",
+      "queueCapacity": "Queue capacity",
+      "startTimeoutMs": "Start timeout (ms)"
+    },
+    "southward": {
+      "title": "Southward Snapshot",
+      "desc": "Device-change cache TTL and snapshot GC tuning.",
+      "startTimeoutMs": "Start timeout (ms)",
+      "startTimeoutMsTip": "Range: 1~300000.",
+      "deviceChangeCacheTtlMs": "Device-change cache TTL (ms)",
+      "deviceChangeCacheTtlMsTip": "0 disables eviction; recommended: 10000~86400000.",
+      "snapshotGcIntervalMs": "Snapshot GC interval (ms)",
+      "snapshotGcIntervalMsTip": "Recommended: 200~300000.",
+      "snapshotGcWorkers": "Snapshot GC workers",
+      "snapshotGcWorkersTip": "Recommended: 1~16.",
+      "maxDevicesPerSnapshotTick": "Max devices per GC tick",
+      "maxDevicesPerSnapshotTickTip": "Recommended: 1~10000."
+    },
+    "loggingRuntime": {
+      "title": "Logging Runtime",
+      "desc": "System log level (high-frequency ops).",
+      "effectiveDiff": "Effective differs from baseline (overrides may exist).",
+      "baseline": "System log level (baseline)",
+      "channelOverrideTtlTitle": "Channel override TTL (read-only)"
+    },
+    "loggingOutput": {
+      "title": "Logging Output",
+      "desc": "Format, span fields and file output/rotation/retention.",
+      "format": "Format",
+      "includeSpanFields": "Include span fields",
+      "includeSpanFieldsTip": "When enabled, logs include span-related fields for tracing.",
+      "fileTitle": "File output",
+      "fileEnabled": "Enable file output",
+      "dir": "Log directory",
+      "dirPlaceholder": "e.g. /var/log/ng-gateway",
+      "rotationModeTitle": "Rotation mode",
+      "rotationMode": {
+        "time": "Time",
+        "size": "Size",
+        "both": "Time + Size"
+      },
+      "timeRotationTitle": "Time rotation",
+      "timeRotation": {
+        "hourly": "Hourly",
+        "daily": "Daily"
+      },
+      "rotationSizeMb": "File size (MB)",
+      "rotationMaxFiles": "Max files",
+      "retentionMaxDays": "Max days",
+      "retentionMaxDaysTip": "0 disables day-based limit.",
+      "retentionMaxTotalSizeMb": "Max total size (MB)",
+      "retentionMaxTotalSizeMbTip": "0 disables size-based limit."
+    },
+    "loggingCleanup": {
+      "title": "Logging Cleanup",
+      "desc": "Scheduled cleanup policy (periodic job).",
+      "enabled": "Enable scheduled cleanup",
+      "intervalMs": "Cleanup interval (ms)",
+      "intervalMsTip": "Job interval (>=1)."
+    },
+    "loggingFiles": {
+      "title": "Logging Files (Ops)",
+      "desc": "List, download and manually clean up log files.",
+      "modalTitle": "Log files",
+      "count": "Count",
+      "manage": "Manage",
+      "dryRun": "Dry-run",
+      "cleanup": "Clean up",
+      "cleaning": "Cleaning...",
+      "cleanupReportTitle": "Cleanup report",
+      "cleanupFreed": "Freed",
+      "cleanupDeleted": "Deleted files",
+      "cleanupProtectedActive": "Protected active (currently writing) log files."
+    },
     "log": {
       "title": "Logging",
       "levelLabel": "System log level",

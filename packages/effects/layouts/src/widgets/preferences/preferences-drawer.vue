@@ -52,7 +52,7 @@ import {
   Navigation,
   Radius,
   Sidebar,
-  SystemLogging,
+  SystemSettings,
   Tabbar,
   Theme,
   Widget,
@@ -463,8 +463,8 @@ async function handleReset() {
           </template>
 
           <template #system>
-            <Block :title="$t('preferences.system.log.title')">
-              <SystemLogging />
+            <Block :title="$t('preferences.system.title')">
+              <SystemSettings />
             </Block>
           </template>
         </VbenSegmented>

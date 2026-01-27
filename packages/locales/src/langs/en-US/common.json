@@ -59,6 +59,7 @@
   "next": "Next",
   "submit": "Submit",
   "advancedSettings": "Advanced Settings",
+  "loading": "Loading",
   "rateLimit": {
     "createRateLimit": "Create Rate Limit",
     "limitPlaceholder": "Message Count",

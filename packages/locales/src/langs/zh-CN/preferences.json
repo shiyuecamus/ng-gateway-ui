@@ -193,6 +193,130 @@
   },
   "system": {
     "title": "系统",
+    "runtimeTuning": {
+      "title": "运行时调参",
+      "desc": "按子域独立应用与持久化；被环境变量接管的字段为只读。"
+    },
+    "logging": {
+      "title": "日志",
+      "desc": "运行时级别、输出策略与日志文件运维。"
+    },
+    "meta": {
+      "apply": "应用",
+      "reset": "重置",
+      "unsaved": "未保存更改",
+      "overviewLoadFailed": "加载系统设置失败",
+      "sourceDefault": "默认",
+      "sourceFile": "配置文件",
+      "sourceEnv": "环境变量",
+      "envLocked": "ENV 接管",
+      "envLockedTipTitle": "此字段由环境变量接管（只读）"
+    },
+    "applyResult": {
+      "applied": "已应用",
+      "noop": "无变更",
+      "persisted": "已持久化",
+      "notPersisted": "未持久化（重启会丢）",
+      "blockedByEnv": "被环境变量覆盖，已忽略字段",
+      "impactHotApply": "已热生效",
+      "impactRestartComponent": "已重启组件",
+      "impactRestartProcess": "需要重启进程"
+    },
+    "collector": {
+      "title": "Collector",
+      "desc": "采集引擎并发/超时/重试与出站队列。",
+      "collectionTimeoutMs": "采集超时（ms）",
+      "collectionTimeoutMsTip": "建议根据设备/协议延迟设置；过小会导致采集频繁超时。",
+      "maxConcurrentCollections": "最大并发采集数",
+      "outboundQueueCapacity": "出站队列容量",
+      "retryPolicyTitle": "重试策略",
+      "maxAttemptsUnlimited": "无限重试",
+      "maxAttemptsUnlimitedTip": "开启后 max_attempts 以 null 表示无限重试。",
+      "maxAttempts": "最大重试次数",
+      "initialIntervalMs": "初始重试间隔（ms）",
+      "maxIntervalMs": "最大重试间隔（ms）",
+      "randomizationFactor": "抖动系数",
+      "multiplier": "退避倍率",
+      "maxElapsedUnlimited": "不限制总耗时",
+      "maxElapsedUnlimitedTip": "开启后 max_elapsed_time_ms 以 null 表示不限制。",
+      "maxElapsedTimeMs": "总耗时上限（ms）"
+    },
+    "northward": {
+      "title": "Northward",
+      "desc": "北向队列容量与启动超时。",
+      "queueCapacity": "队列容量",
+      "startTimeoutMs": "启动超时（ms）"
+    },
+    "southward": {
+      "title": "Southward Snapshot",
+      "desc": "南向设备变更缓存 TTL 与快照 GC。",
+      "startTimeoutMs": "启动超时（ms）",
+      "startTimeoutMsTip": "范围：1~300000。",
+      "deviceChangeCacheTtlMs": "设备变更缓存 TTL（ms）",
+      "deviceChangeCacheTtlMsTip": "0 表示禁用淘汰；推荐：10000~86400000。",
+      "snapshotGcIntervalMs": "快照 GC 间隔（ms）",
+      "snapshotGcIntervalMsTip": "推荐：200~300000。",
+      "snapshotGcWorkers": "快照 GC 并发数",
+      "snapshotGcWorkersTip": "推荐：1~16。",
+      "maxDevicesPerSnapshotTick": "每次 GC 最大设备数",
+      "maxDevicesPerSnapshotTickTip": "推荐：1~10000。"
+    },
+    "loggingRuntime": {
+      "title": "Logging Runtime",
+      "desc": "系统日志级别（高频运维项）。",
+      "effectiveDiff": "当前 effective 与 baseline 不一致（可能存在 override）。",
+      "baseline": "系统日志级别（baseline）",
+      "channelOverrideTtlTitle": "Channel override TTL（只读）"
+    },
+    "loggingOutput": {
+      "title": "Logging Output",
+      "desc": "日志格式、span fields 与文件输出/滚动/保留策略。",
+      "format": "格式",
+      "includeSpanFields": "包含 span fields",
+      "includeSpanFieldsTip": "开启后会在日志中输出 span 相关字段，便于链路追踪。",
+      "fileTitle": "文件输出",
+      "fileEnabled": "启用文件输出",
+      "dir": "日志目录",
+      "dirPlaceholder": "例如：/var/log/ng-gateway",
+      "rotationModeTitle": "滚动模式",
+      "rotationMode": {
+        "time": "按时间",
+        "size": "按大小",
+        "both": "时间 + 大小"
+      },
+      "timeRotationTitle": "时间滚动粒度",
+      "timeRotation": {
+        "hourly": "每小时",
+        "daily": "每天"
+      },
+      "rotationSizeMb": "单文件大小（MB）",
+      "rotationMaxFiles": "保留文件数",
+      "retentionMaxDays": "保留天数",
+      "retentionMaxDaysTip": "0 表示不按天数限制。",
+      "retentionMaxTotalSizeMb": "总大小上限（MB）",
+      "retentionMaxTotalSizeMbTip": "0 表示不按总大小限制。"
+    },
+    "loggingCleanup": {
+      "title": "Logging Cleanup",
+      "desc": "定时清理策略（周期性执行）。",
+      "enabled": "启用定时清理",
+      "intervalMs": "清理间隔（ms）",
+      "intervalMsTip": "定时任务执行间隔（>=1）。"
+    },
+    "loggingFiles": {
+      "title": "Logging Files（运维）",
+      "desc": "列出、下载与手动清理日志文件。",
+      "modalTitle": "日志文件",
+      "count": "文件数",
+      "manage": "管理文件",
+      "dryRun": "Dry-run（预演）",
+      "cleanup": "清理",
+      "cleaning": "清理中...",
+      "cleanupReportTitle": "清理结果",
+      "cleanupFreed": "释放空间",
+      "cleanupDeleted": "删除文件数",
+      "cleanupProtectedActive": "已保护正在写入的活动日志文件。"
+    },
     "log": {
       "title": "日志",
       "levelLabel": "系统日志级别",

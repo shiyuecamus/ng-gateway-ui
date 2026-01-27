@@ -59,6 +59,7 @@
   "next": "下一步",
   "submit": "提交",
   "advancedSettings": "高级设置",
+  "loading": "加载中",
   "rateLimit": {
     "createRateLimit": "创建速率限制",
     "limitPlaceholder": "消息数量",
