@@ -23,7 +23,7 @@ import {
 import { useVbenForm } from '#/adapter/form';
 import { installPlugin, previewPlugin } from '#/api';
 
-import { useFormSchema } from './schemas';
+import { useFormSchema } from '../schemas';
 
 defineOptions({ name: 'InstallPlugin' });
 
@@ -295,3 +295,4 @@ function osArchLabel(value: number) {
 </template>
 
 <style scoped></style>
+

@@ -22,7 +22,7 @@ import { getActionById } from '#/api/core/action';
 import { fetchDriverSchemasById } from '#/api/core/driver';
 
 import ActionParameterManager from './action-parameter-manager.vue';
-import { useActionBasicFormSchema } from './schemas/form';
+import { useActionBasicFormSchema } from '../schemas/form';
 import {
   mapActionSchemasToForm,
   sortDriverSchemas,
@@ -155,3 +155,4 @@ async function loadDriverSchema(id: IdType) {
     </div>
   </ModalRoot>
 </template>
+

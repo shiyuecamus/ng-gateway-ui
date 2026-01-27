@@ -15,7 +15,7 @@ import { Card } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 
-import { useActionParameterBasicFormSchema } from './schemas/form';
+import { useActionParameterBasicFormSchema } from '../schemas/form';
 
 type ActionParameter = ActionInfo['inputs'][number];
 
@@ -71,7 +71,13 @@ watch(
           minValue: current.minValue,
           maxValue: current.maxValue,
         }
-      : { required: false, transformDataType: undefined, transformScale: undefined, transformOffset: undefined, transformNegate: false };
+      : {
+          required: false,
+          transformDataType: undefined,
+          transformScale: undefined,
+          transformOffset: undefined,
+          transformNegate: false,
+        };
     await parameterFormApi.resetForm({ values: baseValues });
   },
   { immediate: true },
@@ -190,3 +196,4 @@ function resolveDriverDefaultValues(
     </div>
   </ParameterDrawer>
 </template>
+

@@ -25,9 +25,9 @@ import {
   updateApp,
 } from '#/api';
 
-import AppForm from './modules/form.vue';
+import AppForm from './modules/widgets/form.vue';
 import { createSearchFormSchema, useColumns } from './modules/schemas';
-import SubscriptionDrawer from './modules/subscription.vue';
+import SubscriptionDrawer from './modules/widgets/subscription.vue';
 
 defineOptions({
   name: 'NorthwardAppPage',

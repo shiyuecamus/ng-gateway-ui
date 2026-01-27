@@ -33,8 +33,8 @@ import { useImportFlow } from '#/shared/composables/use-import-flow';
 
 import ActionManager from './action-manager.vue';
 import PointManager from './point-manager.vue';
-import { deviceSearchFormSchema } from './schemas/search-form';
-import { useDeviceColumns } from './schemas/table-columns';
+import { deviceSearchFormSchema } from '../schemas/search-form';
+import { useDeviceColumns } from '../schemas/table-columns';
 import SubDeviceForm from './sub-device-form.vue';
 
 type ImportType = 'device' | 'device-points';
@@ -443,3 +443,4 @@ const handleFormSubmit = async (
   margin-left: 0.35rem;
 }
 </style>
+

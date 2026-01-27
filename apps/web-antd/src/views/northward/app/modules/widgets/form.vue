@@ -2,6 +2,8 @@
 import type { FormOpenData } from '@vben/constants';
 import type { AppInfo, IdType, PluginInfo, Recordable } from '@vben/types';
 
+import type { DriverSchemas } from '#/shared/dynamic-schema';
+
 import { nextTick, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
@@ -16,17 +18,16 @@ import { Card, Select, Step, Steps, Tag } from 'ant-design-vue';
 import { useVbenForm } from '#/adapter/form';
 import { fetchAllPlugins, getAppById } from '#/api/core';
 import { fetchPluginSchemasById } from '#/api/core/plugin';
+import {
+  mapChannelSchemasToForm,
+  sortDriverSchemas,
+} from '#/shared/dynamic-schema';
 
 import {
   useAppBasicFormSchema,
   useQueuePolicyFormSchema,
   useRetryPolicyFormSchema,
-} from './schemas';
-import {
-  mapPluginConfigSchemasToForm,
-  sortNodes,
-  type PluginConfigSchemas,
-} from '#/shared/dynamic-schema';
+} from '../schemas';
 
 defineOptions({ name: 'AppForm' });
 
@@ -204,10 +205,10 @@ async function onPluginIdChange(id: any, _option?: any, resetForm = true) {
   }
   await handleRequest(
     () => fetchPluginSchemasById(id as unknown as IdType),
-    async (schemas: PluginConfigSchemas) => {
+    async (schemas: DriverSchemas) => {
       await nextTick();
-      const sortedSchemas = sortNodes(schemas);
-      const formSchemas = mapPluginConfigSchemasToForm(sortedSchemas);
+      const sorted = sortDriverSchemas(schemas);
+      const formSchemas = mapChannelSchemasToForm(sorted);
       // Update dynamic schema first, then apply defaults
       pluginConfigFormApi.setState({ schema: formSchemas });
       if (resetForm) {
@@ -290,3 +291,4 @@ async function onPluginIdChange(id: any, _option?: any, resetForm = true) {
 </template>
 
 <style scoped></style>
+

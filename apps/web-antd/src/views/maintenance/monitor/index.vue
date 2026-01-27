@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ChannelInfo, DeviceInfo } from '@vben/types';
 
-import type { MonitorDeviceSnapshot, MonitorRow } from './modules/types';
+import type { MonitorDeviceSnapshot, MonitorRow } from '@vben/types';
 
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
 

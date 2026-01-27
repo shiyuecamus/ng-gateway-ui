@@ -21,7 +21,7 @@ import {
   sortDriverSchemas,
   type DriverSchemas,
 } from '#/shared/dynamic-schema';
-import { usePointBasicFormSchema } from './schemas/form';
+import { usePointBasicFormSchema } from '../schemas/form';
 
 defineOptions({ name: 'PointForm' });
 
@@ -172,3 +172,4 @@ async function loadDriverSchema(id: IdType) {
     </div>
   </Modal>
 </template>
+

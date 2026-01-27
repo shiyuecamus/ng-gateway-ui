@@ -18,7 +18,7 @@ import {
   uninstallDriver,
 } from '#/api';
 
-import InstallDriver from './modules/install.vue';
+import InstallDriver from './modules/widgets/install.vue';
 import { searchFormSchema, useColumns } from './modules/schemas';
 // TemplateDownload modal is deprecated by dropdown in CellOperation
 

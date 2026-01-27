@@ -19,7 +19,7 @@ import {
 } from '#/api';
 import { useVbenForm } from '#/adapter/form';
 
-import { useSubscriptionFormSchema } from './schemas/form';
+import { useSubscriptionFormSchema } from '../schemas/form';
 
 const CHANNEL_KEY_PREFIX = 'channel-';
 const DEVICE_KEY_PREFIX = 'device-';
@@ -246,3 +246,4 @@ async function handleSubmit(values: Record<string, any>) {
     </Spin>
   </Modal>
 </template>
+

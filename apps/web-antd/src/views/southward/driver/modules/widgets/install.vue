@@ -23,7 +23,7 @@ import {
 import { useVbenForm } from '#/adapter/form';
 import { installDriver, previewDriver } from '#/api';
 
-import { useFormSchema } from './schemas';
+import { useFormSchema } from '../schemas';
 
 defineOptions({ name: 'InstallDriver' });
 
@@ -225,10 +225,16 @@ function osArchLabel(value: number) {
                 {{ formatBytes(probeInfo?.size ?? 0) }}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item :label="$t('page.southward.driver.checksum')" :span="2">
+            <Descriptions.Item
+              :label="$t('page.southward.driver.checksum')"
+              :span="2"
+            >
               {{ probeInfo?.checksum }}
             </Descriptions.Item>
-            <Descriptions.Item :label="$t('page.southward.driver.description')" :span="2">
+            <Descriptions.Item
+              :label="$t('page.southward.driver.description')"
+              :span="2"
+            >
               {{ probeInfo?.description || '-' }}
             </Descriptions.Item>
           </Descriptions>
@@ -247,7 +253,9 @@ function osArchLabel(value: number) {
         <Card v-if="!installSuccess">
           <div class="mb-4 text-base font-medium">
             {{
-              $t('common.installWithName', { name: $t('page.southward.driver.title') })
+              $t('common.installWithName', {
+                name: $t('page.southward.driver.title'),
+              })
             }}
           </div>
           <Progress
@@ -285,3 +293,4 @@ function osArchLabel(value: number) {
 </template>
 
 <style scoped></style>
+

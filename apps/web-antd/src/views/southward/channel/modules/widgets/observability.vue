@@ -38,7 +38,7 @@ import { getChannelById } from '#/api';
 import GatewayKpiGrid from '#/shared/components/gateway-kpi-grid.vue';
 import GatewayLineChart from '#/shared/components/gateway-line-chart.vue';
 import { useMetricsWs } from '#/shared/composables/use-metrics-ws';
-import { buildLineChartOption } from '#/views/dashboard/analytics/modules/gateway-echarts';
+import { buildLineChartOption } from '#/views/dashboard/analytics/modules/widgets/gateway-echarts';
 
 import { useDeviceObservabilityColumnsByType } from '../schemas/table-columns';
 

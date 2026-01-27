@@ -23,10 +23,7 @@ import {
   sortDriverSchemas,
 } from '#/shared/dynamic-schema';
 
-import {
-  useChannelBasicFormSchema,
-  useConnectPolicyFormSchema,
-} from './schemas';
+import { useChannelBasicFormSchema, useConnectPolicyFormSchema } from '../schemas';
 
 defineOptions({ name: 'ChannelForm' });
 
@@ -243,3 +240,4 @@ async function onDriverIdChange(id: any, _option?: any) {
 </template>
 
 <style scoped></style>
+

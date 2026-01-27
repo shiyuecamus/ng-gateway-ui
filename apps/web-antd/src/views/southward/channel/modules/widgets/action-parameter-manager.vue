@@ -16,7 +16,7 @@ import { Button, Card, message } from 'ant-design-vue';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 
 import ActionParameterForm from './action-parameter-form.vue';
-import { useActionParameterColumns } from './schemas/table-columns';
+import { useActionParameterColumns } from '../schemas/table-columns';
 
 type ActionParameter = ActionInfo['inputs'][number];
 
@@ -178,3 +178,4 @@ function handleParameterSubmit(
 
   <ParameterDrawer @submit="handleParameterSubmit" />
 </template>
+

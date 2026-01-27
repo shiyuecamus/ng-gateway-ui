@@ -21,7 +21,7 @@ import {
   sortDriverSchemas,
   type DriverSchemas,
 } from '#/shared/dynamic-schema';
-import { useSubDeviceBasicFormSchema } from './schemas/form';
+import { useSubDeviceBasicFormSchema } from '../schemas/form';
 
 defineOptions({ name: 'SubDeviceForm' });
 
@@ -173,3 +173,4 @@ async function init() {
     </div>
   </Modal>
 </template>
+

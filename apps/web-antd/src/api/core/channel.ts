@@ -48,6 +48,8 @@ export interface TtlRangeView {
 
 export interface ChannelLogOverrideView {
   level: LogLevel;
+  /** TTL in ms used when setting this override. Used for countdown progress. Omitted by older backends. */
+  ttlMs?: number;
   expiresAtMs: number;
 }
 

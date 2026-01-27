@@ -1,4 +1,4 @@
-import type { MonitorRow } from './types';
+import type { MonitorRow } from '@vben/types';
 
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
@@ -57,3 +57,4 @@ function sourceTypeTagOptions() {
     },
   ];
 }
+

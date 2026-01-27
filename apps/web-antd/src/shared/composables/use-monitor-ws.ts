@@ -1,66 +1,14 @@
 import type {
-  BaseClientMessage,
-  WsPingMessage,
-  WsPongMessage,
-  WsUnsubscribeMessage,
-} from '@vben/types';
-
-import type {
+  MonitorClientMessage,
   MonitorDeviceSnapshot,
+  MonitorServerMessage,
+  MonitorSubscribeMessage,
   MonitorUpdateHint,
-} from '#/views/maintenance/monitor/modules/types';
+} from '@vben/types';
 
 import { shallowRef, triggerRef } from 'vue';
 
 import { useGatewayWs } from './use-gateway-ws';
-
-interface SubscribePayload extends BaseClientMessage {
-  type: 'subscribe';
-  channelId?: number;
-  deviceId?: number;
-  deviceIds?: number[];
-}
-
-type ClientMessage = SubscribePayload | WsPingMessage | WsUnsubscribeMessage;
-
-type ServerMessage =
-  | WsPongMessage
-  | {
-      attributes: {
-        client: Record<string, unknown>;
-        server: Record<string, unknown>;
-        shared: Record<string, unknown>;
-      };
-      device: {
-        channelId: number;
-        deviceName: string;
-        id: number;
-      };
-      lastUpdate: string;
-      telemetry: Record<string, unknown>;
-      type: 'snapshot';
-    }
-  | {
-      code: string;
-
-      details?: any;
-      message: string;
-      type: 'error';
-    }
-  | {
-      dataType: 'attributes' | 'telemetry';
-      deviceId: number;
-      scope?: string;
-      timestamp: string;
-      type: 'update';
-
-      values: any;
-    }
-  | {
-      deviceIds: number[];
-      requestId?: string;
-      type: 'subscribed';
-    };
 
 export function useMonitorWs() {
   const snapshots = shallowRef<Map<number, MonitorDeviceSnapshot>>(new Map());
@@ -75,15 +23,15 @@ export function useMonitorWs() {
   const TRIGGER_MIN_INTERVAL_MS = 200;
 
   const { status, connect, disconnect, sendMessage, ping } = useGatewayWs<
-    ServerMessage,
-    ClientMessage
+    MonitorServerMessage,
+    MonitorClientMessage
   >({
     endpoint: '/api/ws/monitor',
     onConnected() {
       if (subscribedDeviceIds.value.length > 0) {
         // Re-subscribe on reconnect
         const ids = subscribedDeviceIds.value;
-        const payload: SubscribePayload = {
+        const payload: MonitorSubscribeMessage = {
           type: 'subscribe',
           deviceIds: ids,
           requestId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -105,7 +53,7 @@ export function useMonitorWs() {
     updateHints.value = [];
     pendingHintKeys.clear();
 
-    const payload: SubscribePayload = {
+    const payload: MonitorSubscribeMessage = {
       type: 'subscribe',
       channelId,
       deviceIds: ids,
@@ -122,7 +70,7 @@ export function useMonitorWs() {
     sendMessage({ type: 'unsubscribe', requestId: `${Date.now()}` });
   }
 
-  function handleServerMessage(msg: ServerMessage) {
+  function handleServerMessage(msg: MonitorServerMessage) {
     switch (msg.type) {
       case 'error': {
         // 这里只做简单日志，具体 UI 提示交给调用方

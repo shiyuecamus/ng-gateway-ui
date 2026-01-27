@@ -30,7 +30,7 @@ import {
   updateUser,
 } from '#/api';
 
-import UserForm from './modules/form.vue';
+import UserForm from './modules/widgets/form.vue';
 import { searchFormSchema, useColumns } from './modules/schemas';
 
 const { handleRequest } = useRequestHandler();

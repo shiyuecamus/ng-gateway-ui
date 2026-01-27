@@ -32,7 +32,7 @@ import GatewayKpiGrid from '#/shared/components/gateway-kpi-grid.vue';
 import GatewayLineChart from '#/shared/components/gateway-line-chart.vue';
 import { useMetricsWs } from '#/shared/composables/use-metrics-ws';
 
-import { buildLineChartOption } from './modules/gateway-echarts';
+import { buildLineChartOption } from './modules/widgets/gateway-echarts';
 
 const router = useRouter();
 const { isDark } = usePreferences();

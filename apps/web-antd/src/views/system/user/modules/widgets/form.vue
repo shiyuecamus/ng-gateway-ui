@@ -11,7 +11,7 @@ import { useRequestHandler } from '@vben/hooks';
 import { useVbenForm } from '#/adapter/form';
 import { getUserById } from '#/api/core';
 
-import { formSchema } from './schemas';
+import { formSchema } from '../schemas';
 
 defineOptions({ name: 'UserForm' });
 
@@ -86,3 +86,4 @@ async function init() {
 </template>
 
 <style scoped></style>
+

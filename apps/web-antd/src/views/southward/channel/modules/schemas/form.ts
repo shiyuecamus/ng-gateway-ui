@@ -543,3 +543,64 @@ export function useConnectPolicyFormSchema(): FormSchema[] {
     },
   ];
 }
+
+/** Log level options for channel log level form. */
+const CHANNEL_LOG_LEVEL_OPTIONS = [
+  { label: 'ERROR', value: 'ERROR' },
+  { label: 'WARN', value: 'WARN' },
+  { label: 'INFO', value: 'INFO' },
+  { label: 'DEBUG', value: 'DEBUG' },
+  { label: 'TRACE', value: 'TRACE' },
+] as const;
+
+/**
+ * Options for channel log level form schema (TTL bounds).
+ */
+export interface ChannelLogLevelFormSchemaOptions {
+  minSeconds: number;
+  maxSeconds: number;
+  defaultSeconds: number;
+}
+
+/**
+ * Form schema for channel log level modal: level (Select) + TTL (InputNumber).
+ * Used with useVbenForm for setting temporary channel log level override.
+ */
+export function useChannelLogLevelFormSchema(
+  opts: ChannelLogLevelFormSchemaOptions,
+): FormSchema[] {
+  const { minSeconds, maxSeconds, defaultSeconds } = opts;
+  return [
+    {
+      component: 'Select',
+      componentProps: {
+        options: [...CHANNEL_LOG_LEVEL_OPTIONS],
+        placeholder: $t('ui.placeholder.selectWithName', {
+          name: $t('page.southward.channel.logLevelModal.levelLabel'),
+        }),
+      },
+      fieldName: 'level',
+      label: $t('page.southward.channel.logLevelModal.levelLabel'),
+      rules: 'required',
+      controlClass: 'w-full',
+    },
+    {
+      component: 'InputNumber',
+      fieldName: 'ttlSeconds',
+      label: $t('page.southward.channel.logLevelModal.ttlSeconds'),
+      help: $t('page.southward.channel.logLevelModal.ttlRange', {
+        min: minSeconds,
+        max: maxSeconds,
+        def: defaultSeconds,
+      }),
+      controlClass: 'w-full',
+      componentProps: {
+        min: minSeconds,
+        max: maxSeconds,
+        step: 10,
+      },
+      rules: 'required',
+      defaultValue: defaultSeconds,
+    },
+  ];
+}

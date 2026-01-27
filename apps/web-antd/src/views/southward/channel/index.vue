@@ -23,11 +23,11 @@ import {
   updateChannel,
 } from '#/api';
 
-import ConfigViewer from './modules/config-viewer.vue';
-import ChannelForm from './modules/form.vue';
-import LogLevelModal from './modules/log-level-modal.vue';
+import ConfigViewer from './modules/widgets/config-viewer.vue';
+import ChannelForm from './modules/widgets/form.vue';
+import LogLevelModal from './modules/widgets/log-level-modal.vue';
 import { searchFormSchema, useColumns } from './modules/schemas';
-import SubDeviceModal from './modules/sub-device-manager.vue';
+import SubDeviceModal from './modules/widgets/sub-device-manager.vue';
 
 const { handleRequest } = useRequestHandler();
 const router = useRouter();

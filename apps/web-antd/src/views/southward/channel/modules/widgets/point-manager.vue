@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { ActionInfo, IdType } from '@vben/types';
+import type { IdType, PointInfo } from '@vben/types';
 
 import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
@@ -15,26 +15,26 @@ import { Button, message } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
-  batchDeleteAction,
-  clearActionByDevice,
-  createAction,
-  deleteAction,
-  fetchActionPage,
-  updateAction,
+  batchDeletePoint,
+  clearPointByDevice,
+  createPoint,
+  deletePoint,
+  fetchPointPage,
+  updatePoint,
 } from '#/api/core';
-import { importActionCommit, importActionPreview } from '#/api/core/device';
+import { importPointCommit, importPointPreview } from '#/api/core/device';
 import { useImportFlow } from '#/shared/composables/use-import-flow';
 
-import ActionForm from './action-form.vue';
-import { actionSearchFormSchema } from './schemas/search-form';
-import { useActionColumns } from './schemas/table-columns';
+import PointForm from './point-form.vue';
+import { pointSearchFormSchema } from '../schemas/search-form';
+import { usePointColumns } from '../schemas/table-columns';
 
-defineOptions({ name: 'ActionManager' });
+defineOptions({ name: 'PointManager' });
 
 const { handleRequest } = useRequestHandler();
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
-  connectedComponent: ActionForm,
+  connectedComponent: PointForm,
 });
 
 const [Modal, modalApi] = useVbenModal({
@@ -51,12 +51,12 @@ const [Modal, modalApi] = useVbenModal({
   },
 });
 
-const gridOptions: VxeGridProps<ActionInfo> = {
+const gridOptions: VxeGridProps<PointInfo> = {
   checkboxConfig: {
     highlight: true,
     labelField: 'name',
   },
-  columns: useActionColumns(onActionClick),
+  columns: usePointColumns(onActionClick),
   exportConfig: {},
   height: 'auto',
   keepSource: true,
@@ -70,7 +70,7 @@ const gridOptions: VxeGridProps<ActionInfo> = {
     ajax: {
       query: async ({ page }, formValues) => {
         const { deviceId } = modalApi.getData<{ deviceId: IdType }>();
-        return await fetchActionPage({
+        return await fetchPointPage({
           page: page.currentPage,
           pageSize: page.pageSize,
           deviceId,
@@ -92,11 +92,11 @@ const gridOptions: VxeGridProps<ActionInfo> = {
     importMethod: async ({ file }) => {
       const { deviceId } = modalApi.getData<{ deviceId: IdType }>();
       const { runImport } = useImportFlow({
-        previewRequest: async (f: File) => importActionPreview(deviceId, f),
-        commitRequest: async (f: File) => importActionCommit(deviceId, f),
+        previewRequest: async (f: File) => importPointPreview(deviceId, f),
+        commitRequest: async (f: File) => importPointCommit(deviceId, f),
       });
       await runImport(file as File, {
-        title: $t('page.southward.action.importTitle') as string,
+        title: $t('page.southward.point.importTitle') as string,
         allowCommitWithErrors: true,
         onDone: async () => {
           await gridApi.query();
@@ -109,14 +109,14 @@ const gridOptions: VxeGridProps<ActionInfo> = {
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
     collapsed: true,
-    schema: actionSearchFormSchema,
+    schema: pointSearchFormSchema,
     showCollapseButton: true,
     submitOnEnter: false,
   },
   gridOptions,
 });
 
-function onActionClick({ code, row }: OnActionClickParams<ActionInfo>) {
+function onActionClick({ code, row }: OnActionClickParams<PointInfo>) {
   switch (code) {
     case 'delete': {
       handleDelete(row);
@@ -147,13 +147,13 @@ const handleCreate = () => {
     })
     .setState({
       title: $t('common.createWithName', {
-        name: `${deviceName} ${$t('page.southward.action.title')}`,
+        name: `${deviceName} ${$t('page.southward.point.title')}`,
       }),
     })
     .open();
 };
 
-const handleEdit = (row: ActionInfo) => {
+const handleEdit = (row: PointInfo) => {
   const { deviceId, driverId } = modalApi.getData<{
     deviceId: IdType;
     driverId: IdType;
@@ -172,10 +172,10 @@ const handleEdit = (row: ActionInfo) => {
     .open();
 };
 
-const handleDelete = async (row: ActionInfo) => {
+const handleDelete = async (row: PointInfo) => {
   confirm({
     content: $t('common.action.deleteConfirm', {
-      entityType: $t(`entity.${EntityType.ACTION.toLowerCase()}`),
+      entityType: $t(`entity.${EntityType.POINT.toLowerCase()}`),
       name: row.name,
     }),
     icon: 'warning',
@@ -183,7 +183,7 @@ const handleDelete = async (row: ActionInfo) => {
   })
     .then(async () => {
       await handleRequest(
-        () => deleteAction(row.id),
+        () => deletePoint(row.id),
         async () => {
           message.success(
             $t('common.action.deleteSuccessWithName', { name: row.name }),
@@ -196,13 +196,13 @@ const handleDelete = async (row: ActionInfo) => {
 };
 
 const handleBatchDelete = async () => {
-  const records = gridApi.getCheckboxRecords() as ActionInfo[];
+  const records = gridApi.getCheckboxRecords() as PointInfo[];
   if (records.length === 0) {
     message.warning($t('common.action.selectData') as string);
     return;
   }
   confirm({
-    content: $t('common.action.actionBatchDeleteConfirm', {
+    content: $t('common.action.pointBatchDeleteConfirm', {
       count: records.length,
     }) as string,
     icon: 'warning',
@@ -211,7 +211,7 @@ const handleBatchDelete = async () => {
     .then(async () => {
       const ids = records.map((item) => item.id) as IdType[];
       await handleRequest(
-        () => batchDeleteAction(ids),
+        () => batchDeletePoint(ids),
         async () => {
           message.success($t('common.action.deleteSuccess') as string);
         },
@@ -226,9 +226,8 @@ const handleClear = async () => {
     deviceId: IdType;
     deviceName: string;
   }>();
-
   confirm({
-    content: $t('common.action.actionClearConfirm', {
+    content: $t('common.action.pointClearConfirm', {
       name: deviceName,
     }) as string,
     icon: 'warning',
@@ -236,7 +235,7 @@ const handleClear = async () => {
   })
     .then(async () => {
       await handleRequest(
-        () => clearActionByDevice(deviceId),
+        () => clearPointByDevice(deviceId),
         async () => {
           message.success($t('common.action.deleteSuccess') as string);
         },
@@ -249,12 +248,12 @@ const handleClear = async () => {
 const handleFormSubmit = async (
   type: FormOpenType,
   id: IdType,
-  values: ActionInfo,
+  values: PointInfo,
 ) => {
-  const payload = { ...values } as ActionInfo;
+  const payload = { ...values } as PointInfo;
   await (type === FormOpenType.CREATE
     ? handleRequest(
-        () => createAction(payload),
+        () => createPoint(payload),
         async () => {
           formDrawerApi.close();
           message.success($t('common.action.createSuccess'));
@@ -262,7 +261,7 @@ const handleFormSubmit = async (
         },
       )
     : handleRequest(
-        () => updateAction({ ...payload, id } as ActionInfo),
+        () => updatePoint({ ...payload, id } as PointInfo),
         async () => {
           formDrawerApi.close();
           message.success($t('common.action.updateSuccess'));
@@ -279,7 +278,7 @@ const handleFormSubmit = async (
         <template #toolbar-actions>
           <Button class="mr-2" type="primary" @click="handleCreate">
             <span>{{
-              `${$t('common.createWithName', { name: $t('page.southward.action.title') })}`
+              `${$t('common.createWithName', { name: $t('page.southward.point.title') })}`
             }}</span>
           </Button>
           <Button class="mr-2" danger @click="handleBatchDelete">
@@ -294,3 +293,4 @@ const handleFormSubmit = async (
     <FormDrawer @submit="handleFormSubmit" />
   </Modal>
 </template>
+
