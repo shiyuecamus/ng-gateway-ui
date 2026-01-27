@@ -33,22 +33,39 @@ export function useVbenModal<TParentModalProps extends ModalProps = ModalProps>(
   if (connectedComponent) {
     const extendedApi = reactive({});
     const isModalReady = ref(true);
+    /**
+     * Provide data for the connected modal instance.
+     *
+     * Note:
+     * In `destroyOnClose` mode we re-create the connected component after closing.
+     * We must reset `consumed` before re-creating, otherwise the next injected
+     * instance will be treated as a nested modal and will NOT re-bind the api
+     * back to the parent `extendedApi`. That will make `.open()` work only once.
+     */
+    const injectPayload: {
+      extendApi: (api: ExtendedModalApi) => void;
+      consumed: boolean;
+      options: ModalApiOptions;
+      reCreateModal: () => Promise<void>;
+    } = {
+      extendApi(api: ExtendedModalApi) {
+        // 不能直接给 reactive 赋值，会丢失响应
+        // 不能用 Object.assign,会丢失 api 的原型函数
+        Object.setPrototypeOf(extendedApi, api);
+      },
+      consumed: false,
+      options,
+      async reCreateModal() {
+        // Reset consumed so the next recreated instance can re-bind api.
+        injectPayload.consumed = false;
+        isModalReady.value = false;
+        await nextTick();
+        isModalReady.value = true;
+      },
+    };
     const Modal = defineComponent(
       (props: TParentModalProps, { attrs, slots }) => {
-        provide(USER_MODAL_INJECT_KEY, {
-          extendApi(api: ExtendedModalApi) {
-            // 不能直接给 reactive 赋值，会丢失响应
-            // 不能用 Object.assign,会丢失 api 的原型函数
-            Object.setPrototypeOf(extendedApi, api);
-          },
-          consumed: false,
-          options,
-          async reCreateModal() {
-            isModalReady.value = false;
-            await nextTick();
-            isModalReady.value = true;
-          },
-        });
+        provide(USER_MODAL_INJECT_KEY, injectPayload);
         checkProps(extendedApi as ExtendedModalApi, {
           ...props,
           ...attrs,
