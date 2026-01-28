@@ -146,17 +146,6 @@ if (props.autoLoad && !props.initialView) {
       >
         {{ $t('preferences.system.loggingRuntime.baseline') }}
       </SelectItem>
-
-      <div class="bg-muted/20 mt-3 rounded-md border p-3 text-xs">
-        <div class="text-muted-foreground font-medium">
-          {{ $t('preferences.system.loggingRuntime.channelOverrideTtlTitle') }}
-        </div>
-        <div class="mt-1 grid grid-cols-3 gap-2 font-mono text-[11px] opacity-80">
-          <div>min={{ view.channelOverrideTtl.minMs }}ms</div>
-          <div>default={{ view.channelOverrideTtl.defaultMs }}ms</div>
-          <div>max={{ view.channelOverrideTtl.maxMs }}ms</div>
-        </div>
-      </div>
     </template>
   </CardShell>
 </template>
