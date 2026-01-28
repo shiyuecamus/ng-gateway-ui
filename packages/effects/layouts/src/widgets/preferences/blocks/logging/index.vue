@@ -6,9 +6,11 @@ import { $t } from '@vben/locales';
 import { VbenButton } from '@vben-core/shadcn-ui';
 
 import { useV1Api } from '../../api/v1';
-import Collector from './collector.vue';
-import Northward from './northward.vue';
-import Southward from './southward.vue';
+import LoggingCleanup from './logging-cleanup.vue';
+import LoggingControl from './logging-control.vue';
+import LoggingFiles from './logging-files.vue';
+import LoggingOutput from './logging-output.vue';
+import LoggingRuntime from './logging-runtime.vue';
 
 const { request } = useV1Api();
 
@@ -57,11 +59,8 @@ reloadOverview();
 
     <div>
       <div class="mb-2">
-        <!-- <div class="text-sm font-semibold">
-          {{ $t('preferences.system.runtimeTuning.title') }}
-        </div> -->
         <div class="text-muted-foreground text-xs">
-          {{ $t('preferences.system.runtimeTuning.desc') }}
+          {{ $t('preferences.system.logging.desc') }}
           <span
             v-if="overviewLoading"
             class="ml-2 font-mono text-[11px] opacity-70"
@@ -70,19 +69,29 @@ reloadOverview();
           </span>
         </div>
       </div>
+
       <div
         v-if="overview"
         class="grid gap-4"
         style="grid-template-columns: repeat(auto-fit, minmax(420px, 1fr))"
       >
-        <Collector :initial-view="overview.collector" :auto-load="false" />
-        <Northward :initial-view="overview.northward" :auto-load="false" />
-        <Southward
+        <LoggingRuntime
+          :initial-view="overview.loggingRuntime"
+          :auto-load="false"
+        />
+        <LoggingControl :initial-view="overview.loggingControl" :auto-load="false" />
+        <LoggingFiles />
+        <LoggingOutput
           class="col-span-full"
-          :initial-view="overview.southward"
+          :initial-view="overview.loggingOutput"
+          :auto-load="false"
+        />
+        <LoggingCleanup
+          :initial-view="overview.loggingCleanup"
           :auto-load="false"
         />
       </div>
     </div>
   </div>
 </template>
+

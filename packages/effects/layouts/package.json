@@ -33,6 +33,7 @@
     "@vben/icons": "workspace:*",
     "@vben/locales": "workspace:*",
     "@vben/preferences": "workspace:*",
+    "@vben/request": "workspace:*",
     "@vben/stores": "workspace:*",
     "@vben/types": "workspace:*",
     "@vben/utils": "workspace:*",

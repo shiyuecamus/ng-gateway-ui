@@ -195,7 +195,7 @@
     "title": "System",
     "runtimeTuning": {
       "title": "Runtime Tuning",
-      "desc": "Apply & persist per domain; fields overridden by ENV are read-only."
+      "desc": "fields overridden by ENV are read-only."
     },
     "logging": {
       "title": "Logging",
@@ -248,7 +248,7 @@
       "startTimeoutMs": "Start timeout (ms)"
     },
     "southward": {
-      "title": "Southward Snapshot",
+      "title": "Southward",
       "desc": "Device-change cache TTL and snapshot GC tuning.",
       "startTimeoutMs": "Start timeout (ms)",
       "startTimeoutMsTip": "Range: 1~300000.",
@@ -266,7 +266,26 @@
       "desc": "System log level (high-frequency ops).",
       "effectiveDiff": "Effective differs from baseline (overrides may exist).",
       "baseline": "System log level (baseline)",
-      "channelOverrideTtlTitle": "Channel override TTL (read-only)"
+      "channelOverrideTtlTitle": "Channel override TTL (ms)"
+    },
+    "loggingControl": {
+      "title": "Override policy",
+      "desc": "Configure TTL policy for per-channel log overrides.",
+      "minTtlMs": "Min TTL (ms)",
+      "defaultTtlMs": "Default TTL (ms)",
+      "maxTtlMs": "Max TTL (ms)",
+      "advancedTitle": "Advanced",
+      "overrideCleanupIntervalMs": "Override cleanup interval (ms)",
+      "overrideCleanupIntervalMsTip": "Scan and purge expired overrides. Too small increases background overhead; too large delays expiry effects.",
+      "driverIngestQueueCapacity": "Driver log queue capacity",
+      "driverIngestQueueCapacityTip": "Bounded queue capacity for driver (cdylib) logs into the host; when full, the oldest logs are dropped to keep new ones.",
+      "errMin": "Min TTL must be > 0.",
+      "errDefault": "Default TTL must be > 0.",
+      "errMax": "Max TTL must be > 0.",
+      "errCleanupInterval": "Override cleanup interval must be >= 200ms.",
+      "errDriverQueue": "Driver log queue capacity must be > 0.",
+      "errRange": "Max TTL must be >= Min TTL.",
+      "errDefaultRange": "Default TTL must be within [min, max]."
     },
     "loggingOutput": {
       "title": "Logging Output",
@@ -304,7 +323,7 @@
       "intervalMsTip": "Job interval (>=1)."
     },
     "loggingFiles": {
-      "title": "Logging Files (Ops)",
+      "title": "Logging Files",
       "desc": "List, download and manually clean up log files.",
       "modalTitle": "Log files",
       "count": "Count",

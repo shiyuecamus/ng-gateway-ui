@@ -49,6 +49,7 @@ import {
   GlobalShortcutKeys,
   Header,
   Layout,
+  LoggingSettings,
   Navigation,
   Radius,
   Sidebar,
@@ -207,6 +208,10 @@ const tabs = computed((): SegmentedItem[] => {
       value: 'general',
     },
     {
+      label: $t('preferences.system.logging.title'),
+      value: 'logging',
+    },
+    {
       label: $t('preferences.system.title'),
       value: 'system',
     },
@@ -251,7 +256,7 @@ async function handleReset() {
     <Drawer
       :description="$t('preferences.subtitle')"
       :title="$t('preferences.title')"
-      class="!border-0 sm:max-w-sm"
+      class="!border-0 sm:max-w-[1100px]"
     >
       <template #extra>
         <div class="flex items-center">
@@ -465,6 +470,12 @@ async function handleReset() {
           <template #system>
             <Block :title="$t('preferences.system.title')">
               <SystemSettings />
+            </Block>
+          </template>
+
+          <template #logging>
+            <Block :title="$t('preferences.system.logging.title')">
+              <LoggingSettings />
             </Block>
           </template>
         </VbenSegmented>

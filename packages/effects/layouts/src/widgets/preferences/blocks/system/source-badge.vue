@@ -5,8 +5,6 @@ import { computed } from 'vue';
 
 import { $t } from '@vben/locales';
 
-import { VbenTooltip } from '@vben-core/shadcn-ui';
-
 const props = defineProps<{
   field: SettingField<any>;
 }>();
@@ -54,7 +52,7 @@ const sourceClass = computed(() => {
       {{ sourceLabel }}
     </span>
 
-    <VbenTooltip v-if="field.envOverridden" side="bottom">
+    <!-- <VbenTooltip v-if="field.envOverridden" side="bottom">
       <template #trigger>
         <span
           class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-800"
@@ -70,6 +68,6 @@ const sourceClass = computed(() => {
           {{ field.envKey || '-' }}
         </div>
       </div>
-    </VbenTooltip>
+    </VbenTooltip> -->
   </span>
 </template>

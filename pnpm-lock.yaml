@@ -1757,6 +1757,9 @@ importers:
       '@vben/preferences':
         specifier: workspace:*
         version: link:../../preferences
+      '@vben/request':
+        specifier: workspace:*
+        version: link:../request
       '@vben/stores':
         specifier: workspace:*
         version: link:../../stores

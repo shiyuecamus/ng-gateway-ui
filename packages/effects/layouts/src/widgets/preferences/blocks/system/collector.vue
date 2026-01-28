@@ -7,7 +7,7 @@ import { $t } from '@vben/locales';
 
 import NumberFieldItem from '../number-field-item.vue';
 import SwitchItem from '../switch-item.vue';
-import { useV1Api } from './api';
+import { useV1Api } from '../../api/v1';
 import CardShell from './card-shell.vue';
 import SourceBadge from './source-badge.vue';
 

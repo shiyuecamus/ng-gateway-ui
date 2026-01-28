@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ApplySystemSettingsResult, SettingField } from './types';
+import type { ApplySystemSettingsResult, SettingField } from '../system/types';
 
 import { computed, reactive, ref } from 'vue';
 
@@ -7,9 +7,9 @@ import { $t } from '@vben/locales';
 
 import NumberFieldItem from '../number-field-item.vue';
 import SwitchItem from '../switch-item.vue';
-import { useV1Api } from './api';
-import CardShell from './card-shell.vue';
-import SourceBadge from './source-badge.vue';
+import { useV1Api } from '../../api/v1';
+import CardShell from '../system/card-shell.vue';
+import SourceBadge from '../system/source-badge.vue';
 
 type LoggingCleanupSettingsView = {
   enabled: SettingField<boolean>;
@@ -54,8 +54,7 @@ function applyView(v: LoggingCleanupSettingsView) {
 }
 
 const dirty = computed(
-  () =>
-    draft.enabled !== loaded.enabled || draft.intervalMs !== loaded.intervalMs,
+  () => draft.enabled !== loaded.enabled || draft.intervalMs !== loaded.intervalMs,
 );
 
 function reset() {
@@ -137,10 +136,7 @@ if (props.autoLoad && !props.initialView) {
     @apply="apply"
   >
     <template v-if="view">
-      <SwitchItem
-        v-model="draft.enabled"
-        :disabled="fieldDisabled(view.enabled)"
-      >
+      <SwitchItem v-model="draft.enabled" :disabled="fieldDisabled(view.enabled)">
         <span class="flex items-center gap-2">
           {{ $t('preferences.system.loggingCleanup.enabled') }}
           <SourceBadge :field="view.enabled" />
@@ -162,3 +158,4 @@ if (props.autoLoad && !props.initialView) {
     </template>
   </CardShell>
 </template>
+

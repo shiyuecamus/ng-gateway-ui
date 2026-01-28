@@ -4,10 +4,17 @@ import { computed, reactive, ref } from 'vue';
 import { $t } from '@vben/locales';
 
 import SelectItem from '../select-item.vue';
-import { useV1Api } from './api';
-import CardShell from './card-shell.vue';
+import { useV1Api } from '../../api/v1';
+import CardShell from '../system/card-shell.vue';
 
-type LogLevel = 'debug' | 'error' | 'info' | 'trace' | 'warn';
+/**
+ * Log level DTO values returned by the backend.
+ *
+ * NOTE:
+ * The backend serializes `LogLevel` as UPPERCASE strings (e.g. "INFO", "WARN").
+ * Keep frontend values aligned with the API to ensure Select binding works.
+ */
+type LogLevel = 'DEBUG' | 'ERROR' | 'INFO' | 'TRACE' | 'WARN';
 
 type TtlRange = {
   defaultMs: number;
@@ -43,18 +50,18 @@ const error = ref('');
 
 const view = ref<GlobalLogLevelView | null>(null);
 const loaded = reactive({
-  baseline: 'info' as LogLevel,
+  baseline: 'INFO' as LogLevel,
 });
 const draft = reactive({ ...loaded });
 
 const dirty = computed(() => draft.baseline !== loaded.baseline);
 
 const levelItems = [
-  { label: 'ERROR', value: 'error' },
-  { label: 'WARN', value: 'warn' },
-  { label: 'INFO', value: 'info' },
-  { label: 'DEBUG', value: 'debug' },
-  { label: 'TRACE', value: 'trace' },
+  { label: 'ERROR', value: 'ERROR' },
+  { label: 'WARN', value: 'WARN' },
+  { label: 'INFO', value: 'INFO' },
+  { label: 'DEBUG', value: 'DEBUG' },
+  { label: 'TRACE', value: 'TRACE' },
 ];
 
 function applyView(v: GlobalLogLevelView) {
@@ -144,9 +151,7 @@ if (props.autoLoad && !props.initialView) {
         <div class="text-muted-foreground font-medium">
           {{ $t('preferences.system.loggingRuntime.channelOverrideTtlTitle') }}
         </div>
-        <div
-          class="mt-1 grid grid-cols-3 gap-2 font-mono text-[11px] opacity-80"
-        >
+        <div class="mt-1 grid grid-cols-3 gap-2 font-mono text-[11px] opacity-80">
           <div>min={{ view.channelOverrideTtl.minMs }}ms</div>
           <div>default={{ view.channelOverrideTtl.defaultMs }}ms</div>
           <div>max={{ view.channelOverrideTtl.maxMs }}ms</div>
@@ -155,3 +160,4 @@ if (props.autoLoad && !props.initialView) {
     </template>
   </CardShell>
 </template>
+

@@ -6,7 +6,7 @@ import { preferences } from '@vben/preferences';
 
 import { VbenButton, VbenCheckbox } from '@vben-core/shadcn-ui';
 
-import { useV1Api } from './api';
+import { useV1Api } from '../../api/v1';
 
 type LogFileInfo = {
   modifiedAt: number;
@@ -296,9 +296,7 @@ defineExpose({
       </div>
     </div>
 
-    <div
-      class="flex flex-wrap items-center justify-between gap-2 border-t pt-4"
-    >
+    <div class="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
       <div class="text-muted-foreground flex items-center gap-2 text-xs">
         <VbenCheckbox v-model="dryRun" />
         <span>{{ $t('preferences.system.loggingFiles.dryRun') }}</span>
@@ -309,12 +307,8 @@ defineExpose({
           :disabled="cleaning || downloading"
           @click="cleanup"
         >
-          <span v-if="cleaning">{{
-            $t('preferences.system.loggingFiles.cleaning')
-          }}</span>
-          <span v-else>{{
-            $t('preferences.system.loggingFiles.cleanup')
-          }}</span>
+          <span v-if="cleaning">{{ $t('preferences.system.loggingFiles.cleaning') }}</span>
+          <span v-else>{{ $t('preferences.system.loggingFiles.cleanup') }}</span>
         </VbenButton>
         <VbenButton
           variant="outline"
@@ -324,12 +318,11 @@ defineExpose({
           {{ $t('common.cancel') }}
         </VbenButton>
         <VbenButton :disabled="!hasSelection || downloading" @click="download">
-          <span v-if="downloading">{{
-            $t('preferences.system.log.downloading')
-          }}</span>
+          <span v-if="downloading">{{ $t('preferences.system.log.downloading') }}</span>
           <span v-else>{{ $t('preferences.system.log.download') }}</span>
         </VbenButton>
       </div>
     </div>
   </div>
 </template>
+

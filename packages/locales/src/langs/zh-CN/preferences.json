@@ -195,7 +195,7 @@
     "title": "系统",
     "runtimeTuning": {
       "title": "运行时调参",
-      "desc": "按子域独立应用与持久化；被环境变量接管的字段为只读。"
+      "desc": "被环境变量接管的字段为只读。"
     },
     "logging": {
       "title": "日志",
@@ -207,8 +207,8 @@
       "unsaved": "未保存更改",
       "overviewLoadFailed": "加载系统设置失败",
       "sourceDefault": "默认",
-      "sourceFile": "配置文件",
-      "sourceEnv": "环境变量",
+      "sourceFile": "文件",
+      "sourceEnv": "ENV",
       "envLocked": "ENV 接管",
       "envLockedTipTitle": "此字段由环境变量接管（只读）"
     },
@@ -223,7 +223,7 @@
       "impactRestartProcess": "需要重启进程"
     },
     "collector": {
-      "title": "Collector",
+      "title": "采集引擎",
       "desc": "采集引擎并发/超时/重试与出站队列。",
       "collectionTimeoutMs": "采集超时（ms）",
       "collectionTimeoutMsTip": "建议根据设备/协议延迟设置；过小会导致采集频繁超时。",
@@ -242,13 +242,13 @@
       "maxElapsedTimeMs": "总耗时上限（ms）"
     },
     "northward": {
-      "title": "Northward",
+      "title": "北向",
       "desc": "北向队列容量与启动超时。",
       "queueCapacity": "队列容量",
       "startTimeoutMs": "启动超时（ms）"
     },
     "southward": {
-      "title": "Southward Snapshot",
+      "title": "南向",
       "desc": "南向设备变更缓存 TTL 与快照 GC。",
       "startTimeoutMs": "启动超时（ms）",
       "startTimeoutMsTip": "范围：1~300000。",
@@ -262,14 +262,33 @@
       "maxDevicesPerSnapshotTickTip": "推荐：1~10000。"
     },
     "loggingRuntime": {
-      "title": "Logging Runtime",
+      "title": "日志级别",
       "desc": "系统日志级别（高频运维项）。",
       "effectiveDiff": "当前 effective 与 baseline 不一致（可能存在 override）。",
       "baseline": "系统日志级别（baseline）",
-      "channelOverrideTtlTitle": "Channel override TTL（只读）"
+      "channelOverrideTtlTitle": "覆盖 TTL 范围（ms）"
+    },
+    "loggingControl": {
+      "title": "日志覆盖策略",
+      "desc": "配置 Channel 级别日志覆盖（override）的 TTL 策略。",
+      "minTtlMs": "最小 TTL（ms）",
+      "defaultTtlMs": "默认 TTL（ms）",
+      "maxTtlMs": "最大 TTL（ms）",
+      "advancedTitle": "高级",
+      "overrideCleanupIntervalMs": "覆盖清理间隔（ms）",
+      "overrideCleanupIntervalMsTip": "用于扫描并清理已过期的 override；过小会增加后台开销，过大可能导致过期生效延迟。",
+      "driverIngestQueueCapacity": "驱动日志队列容量",
+      "driverIngestQueueCapacityTip": "驱动（cdylib）日志进入 Host 的有界队列容量；队列满时会丢弃最旧日志以保证最新日志可进入。",
+      "errMin": "最小 TTL 必须 > 0。",
+      "errDefault": "默认 TTL 必须 > 0。",
+      "errMax": "最大 TTL 必须 > 0。",
+      "errCleanupInterval": "覆盖清理间隔必须 >= 200ms。",
+      "errDriverQueue": "驱动日志队列容量必须 > 0。",
+      "errRange": "最大 TTL 必须 >= 最小 TTL。",
+      "errDefaultRange": "默认 TTL 必须在 [最小 TTL, 最大 TTL] 范围内。"
     },
     "loggingOutput": {
-      "title": "Logging Output",
+      "title": "日志输出",
       "desc": "日志格式、span fields 与文件输出/滚动/保留策略。",
       "format": "格式",
       "includeSpanFields": "包含 span fields",
@@ -297,14 +316,14 @@
       "retentionMaxTotalSizeMbTip": "0 表示不按总大小限制。"
     },
     "loggingCleanup": {
-      "title": "Logging Cleanup",
+      "title": "日志清理",
       "desc": "定时清理策略（周期性执行）。",
       "enabled": "启用定时清理",
       "intervalMs": "清理间隔（ms）",
       "intervalMsTip": "定时任务执行间隔（>=1）。"
     },
     "loggingFiles": {
-      "title": "Logging Files（运维）",
+      "title": "日志文件",
       "desc": "列出、下载与手动清理日志文件。",
       "modalTitle": "日志文件",
       "count": "文件数",

@@ -6,8 +6,8 @@ import { $t } from '@vben/locales';
 import { useVbenModal } from '@vben-core/popup-ui';
 import { VbenButton } from '@vben-core/shadcn-ui';
 
-import { useV1Api } from './api';
-import CardShell from './card-shell.vue';
+import { useV1Api } from '../../api/v1';
+import CardShell from '../system/card-shell.vue';
 import LogDownloadModal from './log-download-modal.vue';
 
 type LogFileInfo = {
@@ -69,9 +69,7 @@ onMounted(() => {
     @reset="() => {}"
     @apply="() => {}"
   >
-    <div
-      class="bg-muted/10 flex items-center justify-between rounded-md border p-3 text-sm"
-    >
+    <div class="bg-muted/10 flex items-center justify-between rounded-md border p-3 text-sm">
       <div class="text-muted-foreground text-xs">
         {{ $t('preferences.system.loggingFiles.count') }}:
         <span class="text-foreground ml-1 font-mono">{{ fileCount }}</span>
@@ -86,3 +84,4 @@ onMounted(() => {
     </LogFilesModalComponent>
   </CardShell>
 </template>
+

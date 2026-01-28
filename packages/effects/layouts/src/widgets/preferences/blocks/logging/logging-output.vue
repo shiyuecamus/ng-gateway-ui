@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ApplySystemSettingsResult, SettingField } from './types';
+import type { ApplySystemSettingsResult, SettingField } from '../system/types';
 
 import { computed, reactive, ref } from 'vue';
 
@@ -9,9 +9,9 @@ import InputItem from '../input-item.vue';
 import NumberFieldItem from '../number-field-item.vue';
 import SelectItem from '../select-item.vue';
 import SwitchItem from '../switch-item.vue';
-import { useV1Api } from './api';
-import CardShell from './card-shell.vue';
-import SourceBadge from './source-badge.vue';
+import { useV1Api } from '../../api/v1';
+import CardShell from '../system/card-shell.vue';
+import SourceBadge from '../system/source-badge.vue';
 
 type LoggingOutputFormat = 'json' | 'text';
 type LoggingRotationMode = 'both' | 'size' | 'time';
@@ -193,10 +193,7 @@ async function apply() {
   if (!rot.time.envOverridden && draft.rotationTime !== loaded.rotationTime) {
     rotationPatch.time = draft.rotationTime;
   }
-  if (
-    !rot.sizeMb.envOverridden &&
-    draft.rotationSizeMb !== loaded.rotationSizeMb
-  ) {
+  if (!rot.sizeMb.envOverridden && draft.rotationSizeMb !== loaded.rotationSizeMb) {
     rotationPatch.sizeMb = draft.rotationSizeMb;
   }
   if (
@@ -211,10 +208,7 @@ async function apply() {
 
   const retentionPatch: PatchLoggingFileRetentionRequest = {};
   const ret = file.retention;
-  if (
-    !ret.maxDays.envOverridden &&
-    draft.retentionMaxDays !== loaded.retentionMaxDays
-  ) {
+  if (!ret.maxDays.envOverridden && draft.retentionMaxDays !== loaded.retentionMaxDays) {
     retentionPatch.maxDays = draft.retentionMaxDays;
   }
   if (
@@ -420,9 +414,7 @@ if (props.autoLoad && !props.initialView) {
           :min="0"
           :step="10"
           class="px-0"
-          :tip="
-            $t('preferences.system.loggingOutput.retentionMaxTotalSizeMbTip')
-          "
+          :tip="$t('preferences.system.loggingOutput.retentionMaxTotalSizeMbTip')"
         >
           <span class="flex items-center gap-2">
             {{ $t('preferences.system.loggingOutput.retentionMaxTotalSizeMb') }}
@@ -433,3 +425,4 @@ if (props.autoLoad && !props.initialView) {
     </template>
   </CardShell>
 </template>
+

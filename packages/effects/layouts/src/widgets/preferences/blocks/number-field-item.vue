@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SelectOption } from '@vben/types';
 
-import { useSlots } from 'vue';
+import { computed, useAttrs, useSlots } from 'vue';
 
 import { CircleHelp } from '@vben/icons';
 
@@ -36,6 +36,23 @@ withDefaults(
 const inputValue = defineModel<number>();
 
 const slots = useSlots();
+
+const attrs = useAttrs();
+
+/**
+ * Reka UI `NumberField` snaps to `step` on blur by default (`stepSnapping=true`).
+ *
+ * In practice, for some locales/formatting combinations this can cause a small drift
+ * (e.g. +1/+2) when `step > 1` and the input is committed on blur.
+ *
+ * For preferences forms, `step` is a UI convenience (buttons / wheel / arrow keys),
+ * not a hard validation rule, so we disable snapping when `step > 1` to keep the
+ * user-entered value stable.
+ */
+const stepSnapping = computed(() => {
+  const step = Number((attrs as any).step);
+  return !(Number.isFinite(step) && step > 1);
+});
 </script>
 
 <template>
@@ -63,7 +80,12 @@ const slots = useSlots();
       </VbenTooltip>
     </span>
 
-    <NumberField v-model="inputValue" v-bind="$attrs" class="w-[165px]">
+    <NumberField
+      v-model="inputValue"
+      v-bind="$attrs"
+      :step-snapping="stepSnapping"
+      class="w-[165px]"
+    >
       <NumberFieldContent>
         <NumberFieldDecrement />
         <NumberFieldInput />
