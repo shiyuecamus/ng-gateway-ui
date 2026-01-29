@@ -124,8 +124,7 @@ function statusTextOf(s: string) {
   }
 }
 
-const channelState = computed(() => channelSnapshot.value?.state ?? '-');
-const channelHealth = computed(() => channelSnapshot.value?.health ?? null);
+const channelState = computed(() => channelSnapshot.value?.state?.phase ?? '-');
 const channelMetrics = computed(() => channelSnapshot.value?.metrics ?? null);
 const controlMetrics = computed(
   () => channelSnapshot.value?.controlMetrics ?? null,
@@ -721,10 +720,6 @@ onBeforeUnmount(() => {
               {{ statusTextOf(wsStatus) }}
               · {{ $t('page.southward.channel.observability.state') }}:
               {{ effectiveChannelState }}
-              <template v-if="channelHealth">
-                · {{ $t('page.southward.channel.observability.health') }}:
-                {{ channelHealth }}
-              </template>
             </div>
           </div>
         </div>

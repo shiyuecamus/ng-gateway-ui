@@ -112,7 +112,8 @@ setupVbenVxeTable({
     // 单元格渲染：连接状态
     vxeUI.renderer.add('CellConnectionState', {
       renderTableDefault(_renderOpts, { column, row }) {
-        const stateStr = String(get(row, column.field) || 'Disconnected');
+        const raw = get(row, column.field) as { phase?: string } | null | undefined;
+        const stateStr = String(raw?.phase ?? 'Disconnected');
 
         let color: string;
         let text: string;
@@ -125,6 +126,11 @@ setupVbenVxeTable({
           case 'Connecting': {
             color = 'processing';
             text = $t('ui.connectionState.connecting');
+            break;
+          }
+          case 'Initializing': {
+            color = 'processing';
+            text = $t('ui.connectionState.initializing');
             break;
           }
           case 'Disconnected': {
@@ -144,9 +150,7 @@ setupVbenVxeTable({
           }
           default: {
             color = 'default';
-            text = $te(`ui.connectionState.${stateStr.toLowerCase()}`)
-              ? $t(`ui.connectionState.${stateStr.toLowerCase()}`)
-              : stateStr;
+            text = stateStr;
           }
         }
 
@@ -209,10 +213,10 @@ setupVbenVxeTable({
           .map((opt) => {
             return isString(opt)
               ? {
-                  code: opt,
-                  text: $te(`common.${opt}`) ? $t(`common.${opt}`) : opt,
-                  ...defaultProps,
-                }
+                code: opt,
+                text: $te(`common.${opt}`) ? $t(`common.${opt}`) : opt,
+                ...defaultProps,
+              }
               : { ...defaultProps, ...opt };
           })
           .map((opt) => {
@@ -242,10 +246,10 @@ setupVbenVxeTable({
               icon: undefined,
               onClick: listen
                 ? () =>
-                    attrs?.onClick?.({
-                      code: opt.code,
-                      row,
-                    })
+                  attrs?.onClick?.({
+                    code: opt.code,
+                    row,
+                  })
                 : undefined,
             },
             { default: () => buttonContent },

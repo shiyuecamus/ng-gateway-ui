@@ -20,6 +20,12 @@ import { clamp } from '@vben/utils';
 
 import { useGatewayWs } from './use-gateway-ws';
 
+type MetricsScopeId<S extends MetricsScope> = S extends 'global' ? undefined : number;
+
+type MetricsSnapshotOrUpdateMessage =
+  | MetricsSnapshotMessage
+  | MetricsUpdateMessage;
+
 function pushPoint(
   buf: TrendPoint[],
   p: TrendPoint,
@@ -142,7 +148,7 @@ export function useMetricsWs(options?: {
   });
 
   // UI throttling: buffer snapshot/update per scope and commit at a controlled cadence.
-  const pendingByScope = new Map<MetricsScope, MetricsServerMessage>();
+  const pendingByScope = new Map<MetricsScope, MetricsSnapshotOrUpdateMessage>();
   let pendingTimer: null | ReturnType<typeof setTimeout> = null;
   let lastUiCommitAt = 0;
 
@@ -182,11 +188,11 @@ export function useMetricsWs(options?: {
     scheduleFlush();
   }
 
-  function subscribe(
-    scope: MetricsScope,
-    id?: number,
+  function subscribe<S extends MetricsScope>(
+    scope: S,
+    id: MetricsScopeId<S>,
     intervalOverrideMs?: number,
-  ) {
+  ): void {
     subscribed.value = { scope, id };
 
     // Maintain "at most one per scope" subscription list.

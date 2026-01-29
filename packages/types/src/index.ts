@@ -7,6 +7,8 @@ export type * from './base';
 export * from './base';
 export type * from './channel';
 export * from './channel';
+export type * from './connection-state';
+export * from './connection-state';
 export * from './color';
 export type * from './common';
 export * from './common';

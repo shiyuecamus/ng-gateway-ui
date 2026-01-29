@@ -1,6 +1,7 @@
 import type { Recordable } from '@vben-core/typings';
 
 import type { BaseEntity, IdType, RetryPolicy, StatusInfo } from './base';
+import type { ConnectionState } from './connection-state';
 
 // Channel collection type
 export const CollectionType = {
@@ -21,17 +22,6 @@ export interface ConnectionPolicy {
   backoff: RetryPolicy;
 }
 
-/**
- * Southward connection state enumeration
- */
-export const SouthwardConnectionState = {
-  Disconnected: 'Disconnected',
-  Connecting: 'Connecting',
-  Connected: 'Connected',
-  Reconnecting: 'Reconnecting',
-  Failed: 'Failed',
-} as const;
-
 interface ChannelInfo extends BaseEntity, StatusInfo {
   name: string;
   driverId: IdType;
@@ -44,9 +34,7 @@ interface ChannelInfo extends BaseEntity, StatusInfo {
   /**
    * Connection state from runtime manager (optional)
    */
-  connectionState?:
-    | (typeof SouthwardConnectionState)[keyof typeof SouthwardConnectionState]
-    | string;
+  connectionState?: ConnectionState | null;
 }
 
 export type { ChannelInfo };

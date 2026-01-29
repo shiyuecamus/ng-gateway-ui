@@ -137,7 +137,9 @@ async function init() {
       async (data: ChannelInfo) => {
         await onDriverIdChange(data.driverId);
         basicFormApi.setValues(data);
-        connectPolicyFormApi.setValues(data.connectionPolicy);
+        // The connect policy form schema uses nested field names like:
+        // `connectionPolicy.backoff.maxAttempts`, so we must wrap values.
+        connectPolicyFormApi.setValues({ connectionPolicy: data.connectionPolicy });
         driverFormApi.setValues(data.driverConfig);
         loading.value = false;
       },

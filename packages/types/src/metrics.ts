@@ -4,6 +4,7 @@ import type {
   WsPingMessage,
   WsPongMessage,
 } from './ws';
+import type { ConnectionState } from './connection-state';
 
 export type MetricsScope = 'app' | 'channel' | 'device' | 'global';
 
@@ -144,8 +145,7 @@ export interface ChannelStatsSnapshot {
   channelId: number;
   name: string;
   driverName: string;
-  state: unknown;
-  health?: unknown;
+  state: ConnectionState;
   deviceCount: number;
   metrics: ChannelMetricsSnapshot;
   controlMetrics?: ControlMetricsSnapshot | null;
@@ -167,8 +167,8 @@ export interface NorthwardAppStatsSnapshot {
   appId: number;
   pluginId: number;
   name: string;
-  state: number;
-  isConnected: boolean;
+  actorState: number;
+  connectionState: ConnectionState;
   metrics: NorthwardAppMetricsSnapshot;
 }
 

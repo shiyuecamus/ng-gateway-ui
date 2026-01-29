@@ -71,8 +71,9 @@ UI 端会按当前语言做 fallback（当前 locale → base language → en-US
   - `name`：驱动名称
   - `description`：驱动描述（可选）
   - `driver_type`：驱动唯一标识
-  - `factory`：实现了 SouthwardDriverFactory 的工厂类型
   - `metadata_fn`：返回 `DriverSchemas` 的函数（通常是 `build_metadata`）
+  - `component`：驱动组件类型（实现 `Connector/Session/Handle` 并提供 `fn new(ctx)`）
+  - `model_convert`：模型转换器（实现 `SouthwardModelConverter`，用于低频 model -> runtime 结构转换）
   - `channel_capacity`：可选；驱动内部 actor 队列容量
 
 ## Schema 如何被网关使用
@@ -81,13 +82,14 @@ UI 端会按当前语言做 fallback（当前 locale → base language → en-US
 
 每个南向驱动 crate 会提供一个 `build_metadata() -> DriverSchemas`，并在 `lib.rs` 里通过 `ng_driver_factory!` 宏导出：
 
-- 驱动基础信息：name/description/driver_type/factory
+- 驱动基础信息：name/description/driver_type/component/model_convert
 - **静态 metadata（DriverSchemas）**：通过 C ABI 以 JSON bytes 形式暴露给网关驱动加载器
 
 ::: tip 最小示例：
 
 ```rust
-use factory::EthernetIpDriverFactory;
+pub use connector::EthernetIpConnector;
+use converter::EthernetIpConverter;
 use metadata::build_metadata;
 use ng_gateway_sdk::ng_driver_factory;
 
@@ -95,8 +97,9 @@ ng_driver_factory!(
     name = "Ethernet/IP",
     description = "Ethernet/IP industrial protocol driver for Allen-Bradley PLCs",
     driver_type = "ethernet-ip",
-    factory = EthernetIpDriverFactory,
-    metadata_fn = build_metadata
+    component = EthernetIpConnector,
+    metadata_fn = build_metadata,
+    model_convert = EthernetIpConverter
 );
 ```
 

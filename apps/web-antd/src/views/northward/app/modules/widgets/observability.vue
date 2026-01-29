@@ -67,6 +67,12 @@ const statusColor = computed(() => {
 });
 
 const snapMetrics = computed(() => appSnapshot.value?.metrics ?? null);
+const connectionPhase = computed(
+  () => appSnapshot.value?.connectionState?.phase ?? '-',
+);
+const isConnected = computed(
+  () => appSnapshot.value?.connectionState?.phase === 'Connected',
+);
 
 const kpiItems = computed<AnalysisOverviewItem[]>(() => {
   const m = snapMetrics.value;
@@ -102,7 +108,7 @@ const kpiItems = computed<AnalysisOverviewItem[]>(() => {
       icon: SvgLatencyIcon,
       title: $t('page.northward.app.observability.avgLatencyMs'),
       totalTitle: $t('page.northward.app.observability.connected'),
-      totalValue: appSnapshot.value?.isConnected ? 1 : 0,
+      totalValue: isConnected.value ? 1 : 0,
       totalSuffix: '',
       value: Number(m?.avgLatencyMs ?? 0),
       valueSuffix: 'ms',
@@ -157,12 +163,12 @@ onBeforeUnmount(() => {
     <Card size="small" :title="$t('page.northward.app.observability.snapshot')">
       <Descriptions :column="2" bordered size="small">
         <DescriptionsItem :label="$t('page.northward.app.observability.state')">
-          {{ appSnapshot?.state ?? '-' }}
+          {{ connectionPhase }}
         </DescriptionsItem>
         <DescriptionsItem
           :label="$t('page.northward.app.observability.connected')"
         >
-          {{ appSnapshot?.isConnected ?? '-' }}
+          {{ isConnected }}
         </DescriptionsItem>
         <DescriptionsItem
           :label="$t('page.northward.app.observability.messagesSent')"

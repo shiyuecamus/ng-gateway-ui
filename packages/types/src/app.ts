@@ -1,6 +1,7 @@
 import type { Recordable } from '@vben-core/typings';
 
 import type { BaseEntity, IdType, RetryPolicy, StatusInfo } from './base';
+import type { ConnectionState } from './connection-state';
 
 /**
  * Drop policy options for app queue handling.
@@ -47,17 +48,6 @@ interface QueuePolicy {
 }
 
 /**
- * Northward connection state enumeration
- */
-export const NorthwardConnectionState = {
-  Disconnected: 'Disconnected',
-  Connecting: 'Connecting',
-  Connected: 'Connected',
-  Reconnecting: 'Reconnecting',
-  Failed: 'Failed',
-} as const;
-
-/**
  * Read-only northward app information.
  */
 interface AppInfo extends BaseEntity, StatusInfo {
@@ -92,9 +82,7 @@ interface AppInfo extends BaseEntity, StatusInfo {
   /**
    * Connection state from runtime manager (optional)
    */
-  connectionState?:
-    | (typeof NorthwardConnectionState)[keyof typeof NorthwardConnectionState]
-    | string;
+  connectionState?: ConnectionState | null;
 }
 
 export type { AppInfo, QueuePolicy };
