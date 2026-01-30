@@ -189,6 +189,7 @@
         }
       },
       "observability": {
+        "title": "北向观测",
         "ws": {
           "connected": "已连接",
           "connecting": "连接中",
@@ -197,7 +198,6 @@
         },
         "appFallback": "应用 #{id}",
         "snapshot": "快照",
-        "rawJsonDebug": "Raw JSON（调试）",
         "state": "状态",
         "connected": "已连接",
         "messagesSent": "已发送消息",
@@ -206,7 +206,22 @@
         "retries": "重试",
         "avgLatencyMs": "平均延迟（ms）",
         "lastSent": "最后发送",
-        "lastError": "最后错误"
+        "lastError": "最后错误",
+        "charts": {
+          "throughput": "吞吐",
+          "latency": "延迟"
+        },
+        "series": {
+          "sent": "发送",
+          "dropped": "丢弃",
+          "errors": "错误",
+          "retries": "重试",
+          "avg": "平均"
+        },
+        "unit": {
+          "msgps": "msg/s",
+          "ms": "ms"
+        }
       }
     }
   },
@@ -278,7 +293,7 @@
       "importDevicePoints": "设备+点位",
       "importDevicePointsHint": "请上传设备+点位组合模板文件（.xlsx格式）",
       "observability": {
-        "title": "观测",
+        "title": "南向观测",
         "ws": {
           "connected": "已连接",
           "connecting": "连接中",

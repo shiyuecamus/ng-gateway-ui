@@ -189,6 +189,7 @@
         }
       },
       "observability": {
+        "title": "Northward Observability",
         "ws": {
           "connected": "Connected",
           "connecting": "Connecting",
@@ -197,7 +198,6 @@
         },
         "appFallback": "App #{id}",
         "snapshot": "Snapshot",
-        "rawJsonDebug": "Raw JSON (debug)",
         "state": "State",
         "connected": "Connected",
         "messagesSent": "Messages Sent",
@@ -206,7 +206,22 @@
         "retries": "Retries",
         "avgLatencyMs": "Avg Latency",
         "lastSent": "Last Sent",
-        "lastError": "Last Error"
+        "lastError": "Last Error",
+        "charts": {
+          "throughput": "Throughput",
+          "latency": "Latency"
+        },
+        "series": {
+          "sent": "Sent",
+          "dropped": "Dropped",
+          "errors": "Errors",
+          "retries": "Retries",
+          "avg": "Avg"
+        },
+        "unit": {
+          "msgps": "msg/s",
+          "ms": "ms"
+        }
       }
     }
   },
@@ -278,7 +293,7 @@
       "importDevicePoints": "Device + Points",
       "importDevicePointsHint": "Please upload the device + points combined template file (.xlsx format)",
       "observability": {
-        "title": "Observability",
+        "title": "Southward Observability",
         "ws": {
           "connected": "Connected",
           "connecting": "Connecting",

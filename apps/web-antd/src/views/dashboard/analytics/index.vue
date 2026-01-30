@@ -20,7 +20,6 @@ import { usePreferences } from '@vben/preferences';
 import {
   formatBytesHuman,
   formatMs,
-  formatRate,
   parseChronoDurationToMs,
 } from '@vben/utils';
 
@@ -131,6 +130,16 @@ const activeDeviceRate = computed(() => {
   return total > 0 ? s.metrics.activeDevices / total : 0;
 });
 
+/**
+ * Format bytes/sec into a consistent `KB/s` string.
+ *
+ * NOTE: We intentionally always use `KB/s` here to keep KPI/headers/charts aligned.
+ */
+function formatKBpsFromBps(bps: number) {
+  if (!Number.isFinite(bps)) return '-';
+  return `${Math.round(Math.max(0, bps) / 1024)} KB/s`;
+}
+
 const overviewItems = computed<AnalysisOverviewItem[]>(() => {
   const s = snap.value;
   if (!s) {
@@ -233,11 +242,11 @@ const overviewItems = computed<AnalysisOverviewItem[]>(() => {
       icon: SvgNetworkIcon,
       title: $t('page.dashboard.gatewayOverview.kpi.networkRx'),
       totalTitle: $t('page.dashboard.gatewayOverview.kpi.networkTx'),
-      // `network*Bps` are bytes/sec; convert to kilobits/sec.
-      totalValue: Math.round((metrics.networkTxBps.value * 8) / 1024),
-      totalSuffix: 'Kb/s',
-      value: Math.round((metrics.networkRxBps.value * 8) / 1024),
-      valueSuffix: 'Kb/s',
+      // `network*Bps` are bytes/sec; convert to KB/sec for consistent UI.
+      totalValue: Math.round(metrics.networkTxBps.value / 1024),
+      totalSuffix: 'KB/s',
+      value: Math.round(metrics.networkRxBps.value / 1024),
+      valueSuffix: 'KB/s',
     },
     {
       icon: SvgCollectorIcon,
@@ -328,8 +337,8 @@ const quickFacts = computed(() => {
     channels: `${s.metrics.connectedChannels}/${s.metrics.totalChannels} (${Math.round(connectedRate.value * 100)}%)`,
     devices: `${s.metrics.activeDevices}/${s.metrics.totalDevices} (${Math.round(activeDeviceRate.value * 100)}%)`,
     uptime: formatMs(header.value?.uptimeMs ?? 0),
-    netTx: formatRate(metrics.networkTxBps.value),
-    netRx: formatRate(metrics.networkRxBps.value),
+    netTx: formatKBpsFromBps(metrics.networkTxBps.value),
+    netRx: formatKBpsFromBps(metrics.networkRxBps.value),
     procMem: formatBytesHuman(s.metrics.memoryUsage ?? 0),
     collectorMs: formatMs(s.collectorMetrics.averageCollectionTimeMs ?? 0),
   };
