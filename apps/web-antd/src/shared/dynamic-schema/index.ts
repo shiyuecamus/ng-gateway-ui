@@ -133,8 +133,15 @@ function getNodeOrder(node: Node): number {
   return isNullOrUndefined(node.order) ? 0 : Number(node.order);
 }
 
-export function sortNodes(nodes: Node[]): Node[] {
-  return nodes
+/**
+ * Sort nodes by `order` recursively.
+ *
+ * Note: API payloads may omit arrays (e.g. `children`) in edge cases. This
+ * function is deliberately defensive to avoid UI crashes.
+ */
+export function sortNodes(nodes?: null | Node[]): Node[] {
+  const list = Array.isArray(nodes) ? nodes : [];
+  return list
     .map((n) => sortNode(n))
     .toSorted((a, b) => getNodeOrder(a) - getNodeOrder(b));
 }
@@ -147,15 +154,18 @@ function sortNode(node: Node): Node {
     case 'Group': {
       return {
         ...node,
-        children: sortNodes(node.children),
+        children: sortNodes((node as any).children),
       };
     }
     case 'Union': {
+      const mapping = Array.isArray((node as any).mapping)
+        ? (node as any).mapping
+        : [];
       return {
         ...node,
-        mapping: node.mapping.map((m) => ({
+        mapping: mapping.map((m: any) => ({
           ...m,
-          children: sortNodes(m.children),
+          children: sortNodes(m?.children),
         })),
       };
     }

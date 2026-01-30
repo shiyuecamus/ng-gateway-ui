@@ -2,7 +2,7 @@
 import type { FormOpenData } from '@vben/constants';
 import type { AppInfo, IdType, PluginInfo, Recordable } from '@vben/types';
 
-import type { DriverSchemas } from '#/shared/dynamic-schema';
+import type { PluginConfigSchemas } from '#/shared/dynamic-schema';
 
 import { nextTick, ref } from 'vue';
 
@@ -19,8 +19,8 @@ import { useVbenForm } from '#/adapter/form';
 import { fetchAllPlugins, getAppById } from '#/api/core';
 import { fetchPluginSchemasById } from '#/api/core/plugin';
 import {
-  mapChannelSchemasToForm,
-  sortDriverSchemas,
+  mapPluginConfigSchemasToForm,
+  sortNodes,
 } from '#/shared/dynamic-schema';
 
 import {
@@ -205,10 +205,10 @@ async function onPluginIdChange(id: any, _option?: any, resetForm = true) {
   }
   await handleRequest(
     () => fetchPluginSchemasById(id as unknown as IdType),
-    async (schemas: DriverSchemas) => {
+    async (schemas: PluginConfigSchemas) => {
       await nextTick();
-      const sorted = sortDriverSchemas(schemas);
-      const formSchemas = mapChannelSchemasToForm(sorted);
+      const sorted = sortNodes(schemas);
+      const formSchemas = mapPluginConfigSchemasToForm(sorted);
       // Update dynamic schema first, then apply defaults
       pluginConfigFormApi.setState({ schema: formSchemas });
       if (resetForm) {

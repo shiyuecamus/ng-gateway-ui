@@ -11,6 +11,8 @@ import type {
   OsType,
 } from '@vben/types';
 
+import type { PluginConfigSchemas } from '#/shared/dynamic-schema';
+
 import { requestClient } from '#/api/request';
 
 export namespace PluginApi {
@@ -26,7 +28,7 @@ export namespace PluginApi {
   /** northward plugin page params */
   export interface PluginPageParams
     extends CommonPageRequest,
-      CommonTimeRangeRequest {
+    CommonTimeRangeRequest {
     name?: string;
     plugin_type?: string;
     source?: (typeof PluginSource)[keyof typeof PluginSource];
@@ -130,5 +132,5 @@ export async function getPluginById(id: IdType) {
  * @param id - Plugin ID
  */
 export async function fetchPluginSchemasById(id: IdType) {
-  return requestClient.get<any>(PluginApi.getSchemasById(id));
+  return requestClient.get<PluginConfigSchemas>(PluginApi.getSchemasById(id));
 }
