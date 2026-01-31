@@ -60,6 +60,20 @@ export const DataType = {
   Timestamp: 13,
 } as const;
 
+/**
+ * Log level string union used by logging control APIs.
+ */
+export type LogLevel = 'DEBUG' | 'ERROR' | 'INFO' | 'TRACE' | 'WARN';
+
+/**
+ * TTL range view used by runtime log-level override APIs.
+ */
+export interface TtlRangeView {
+  minMs: number;
+  maxMs: number;
+  defaultMs: number;
+}
+
 export type {
   CommonPageRequest,
   CommonPageResponse,

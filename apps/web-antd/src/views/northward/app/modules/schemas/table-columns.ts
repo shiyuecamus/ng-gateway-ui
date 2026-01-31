@@ -57,6 +57,11 @@ export function useColumns(
             tooltip: $t('page.northward.app.subscription'),
           },
           {
+            code: 'logLevel',
+            icon: 'mdi:math-log',
+            tooltip: $t('page.northward.app.logLevel'),
+          },
+          {
             code: 'observability',
             icon: 'mdi:chart-line',
             tooltip: 'Observability',
@@ -79,7 +84,7 @@ export function useColumns(
       headerAlign: 'center',
       showOverflow: false,
       title: $t('common.actions'),
-      width: 150,
+      width: 180,
     },
   ];
 }

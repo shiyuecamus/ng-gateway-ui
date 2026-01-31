@@ -290,3 +290,66 @@ export function useSubscriptionFormSchema(): FormSchema[] {
     },
   ];
 }
+
+// --- App log level override (TTL) ---
+
+/** Log level options for app log level form. */
+const APP_LOG_LEVEL_OPTIONS = [
+  { label: 'ERROR', value: 'ERROR' },
+  { label: 'WARN', value: 'WARN' },
+  { label: 'INFO', value: 'INFO' },
+  { label: 'DEBUG', value: 'DEBUG' },
+  { label: 'TRACE', value: 'TRACE' },
+] as const;
+
+/**
+ * Options for app log level form schema (TTL bounds).
+ */
+export interface AppLogLevelFormSchemaOptions {
+  minSeconds: number;
+  maxSeconds: number;
+  defaultSeconds: number;
+}
+
+/**
+ * Form schema for app log level modal: level (Select) + TTL (InputNumber).
+ * Used with useVbenForm for setting temporary app log level override.
+ */
+export function useAppLogLevelFormSchema(
+  opts: AppLogLevelFormSchemaOptions,
+): FormSchema[] {
+  const { minSeconds, maxSeconds, defaultSeconds } = opts;
+  return [
+    {
+      component: 'Select',
+      componentProps: {
+        options: [...APP_LOG_LEVEL_OPTIONS],
+        placeholder: $t('ui.placeholder.selectWithName', {
+          name: $t('page.northward.app.logLevelModal.levelLabel'),
+        }),
+      },
+      fieldName: 'level',
+      label: $t('page.northward.app.logLevelModal.levelLabel'),
+      rules: 'required',
+      controlClass: 'w-full',
+    },
+    {
+      component: 'InputNumber',
+      fieldName: 'ttlSeconds',
+      label: $t('page.northward.app.logLevelModal.ttlSeconds'),
+      help: $t('page.northward.app.logLevelModal.ttlRange', {
+        min: minSeconds,
+        max: maxSeconds,
+        def: defaultSeconds,
+      }),
+      controlClass: 'w-full',
+      componentProps: {
+        min: minSeconds,
+        max: maxSeconds,
+        step: 10,
+      },
+      rules: 'required',
+      defaultValue: defaultSeconds,
+    },
+  ];
+}

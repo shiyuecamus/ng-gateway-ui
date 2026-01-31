@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { ChannelLogOverrideView } from '@vben/types';
+import type { AppLogOverrideView } from '@vben/types';
 
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 
@@ -7,13 +7,13 @@ import { $t } from '@vben/locales';
 
 import { Progress } from 'ant-design-vue';
 
-defineOptions({ name: 'LogLevelCountdownProgress' });
+defineOptions({ name: 'AppLogLevelCountdownProgress' });
 
 const props = defineProps<{
   /** Called when countdown reaches zero (override expired). Parent typically refetches. */
   onExpired?: () => Promise<void> | void;
   /** Active override with ttlMs + expiresAtMs. Not rendered when null or expired. */
-  override: ChannelLogOverrideView | null | undefined;
+  override: AppLogOverrideView | null | undefined;
 }>();
 
 const RATE_MS = 1000;
@@ -28,12 +28,12 @@ function computeRemaining(expiresAtMs: number): number {
 function formatRemaining(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   if (totalSeconds <= 0)
-    return `0${$t('page.southward.channel.logLevelModal.countdownSeconds')}`;
+    return `0${$t('page.northward.app.logLevelModal.countdownSeconds')}`;
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
-  const unitS = $t('page.southward.channel.logLevelModal.countdownSeconds');
+  const unitS = $t('page.northward.app.logLevelModal.countdownSeconds');
   if (m > 0) {
-    const unitM = $t('page.southward.channel.logLevelModal.countdownMinutes');
+    const unitM = $t('page.northward.app.logLevelModal.countdownMinutes');
     return `${m}${unitM}${s}${unitS}`;
   }
   return `${s}${unitS}`;
@@ -123,11 +123,11 @@ onBeforeUnmount(() => {
   >
     <div class="flex items-center justify-between text-sm">
       <span class="text-muted-foreground">
-        {{ $t('page.southward.channel.logLevelModal.countdownLabel') }}
+        {{ $t('page.northward.app.logLevelModal.countdownLabel') }}
       </span>
       <span class="font-medium tabular-nums">
         {{
-          $t('page.southward.channel.logLevelModal.countdownRemaining', {
+          $t('page.northward.app.logLevelModal.countdownRemaining', {
             time: timeText,
           })
         }}

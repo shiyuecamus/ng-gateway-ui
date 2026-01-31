@@ -1,6 +1,7 @@
 import type { Recordable } from '@vben-core/typings';
 
 import type { BaseEntity, IdType, RetryPolicy, StatusInfo } from './base';
+import type { LogLevel, TtlRangeView } from './common';
 import type { ConnectionState } from './connection-state';
 
 /**
@@ -83,6 +84,31 @@ interface AppInfo extends BaseEntity, StatusInfo {
    * Connection state from runtime manager (optional)
    */
   connectionState?: ConnectionState | null;
+}
+
+/**
+ * Temporary app log override view (TTL).
+ */
+export interface AppLogOverrideView {
+  level: LogLevel;
+  /** TTL in ms used when setting this override. */
+  ttlMs?: number;
+  expiresAtMs: number;
+}
+
+/**
+ * Runtime view for app log level (effective + active override + TTL bounds).
+ */
+export interface AppLogLevelView {
+  appId: number;
+  effective: LogLevel;
+  override?: AppLogOverrideView;
+  ttl: TtlRangeView;
+}
+
+export interface SetAppLogLevelRequest {
+  level: LogLevel;
+  ttlMs?: number;
 }
 
 export type { AppInfo, QueuePolicy };

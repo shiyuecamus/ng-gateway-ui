@@ -3,8 +3,8 @@ import { computed, reactive, ref } from 'vue';
 
 import { $t } from '@vben/locales';
 
-import SelectItem from '../select-item.vue';
 import { useV1Api } from '../../api/v1';
+import SelectItem from '../select-item.vue';
 import CardShell from '../system/card-shell.vue';
 
 /**
@@ -24,8 +24,8 @@ type TtlRange = {
 
 type GlobalLogLevelView = {
   baseline: LogLevel;
-  channelOverrideTtl: TtlRange;
   effective: LogLevel;
+  overrideTtl: TtlRange;
 };
 
 type SetGlobalLogLevelRequest = {
@@ -136,7 +136,9 @@ if (props.autoLoad && !props.initialView) {
         class="mb-2 rounded-md bg-amber-50 p-3 text-xs text-amber-900"
       >
         {{ $t('preferences.system.loggingRuntime.effectiveDiff') }}
-        <span class="ml-1 font-mono">{{ view.baseline }} → {{ view.effective }}</span>
+        <span class="ml-1 font-mono">
+          {{ view.baseline }} → {{ view.effective }}
+        </span>
       </div>
 
       <SelectItem
@@ -149,4 +151,3 @@ if (props.autoLoad && !props.initialView) {
     </template>
   </CardShell>
 </template>
-

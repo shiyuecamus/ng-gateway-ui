@@ -25,8 +25,9 @@ import {
   updateApp,
 } from '#/api';
 
-import AppForm from './modules/widgets/form.vue';
 import { createSearchFormSchema, useColumns } from './modules/schemas';
+import AppForm from './modules/widgets/form.vue';
+import AppLogLevelModal from './modules/widgets/log-level-modal.vue';
 import SubscriptionDrawer from './modules/widgets/subscription.vue';
 
 defineOptions({
@@ -125,6 +126,10 @@ const [SubModal, subModalApi] = useVbenModal({
   connectedComponent: SubscriptionDrawer,
 });
 
+const [AppLogLevelModalRef, appLogLevelModalApi] = useVbenModal({
+  connectedComponent: AppLogLevelModal,
+});
+
 /**
  * Handle table action button clicks.
  * @param payload - Event payload.
@@ -140,6 +145,17 @@ function onActionClick(payload: OnActionClickParams<AppInfo>) {
     }
     case 'edit': {
       handleEdit(row);
+      break;
+    }
+    case 'logLevel': {
+      appLogLevelModalApi
+        .setData({ appId: row.id, appName: row.name })
+        .setState({
+          title: $t('page.northward.app.logLevelModal.titleWithName', {
+            name: row.name,
+          }),
+        })
+        .open();
       break;
     }
     case 'observability': {
@@ -311,5 +327,6 @@ onMounted(() => {
     </Grid>
     <FormDrawer @submit="handleFormSubmit" />
     <SubModal @submitted="handleSubscriptionSubmit" />
+    <AppLogLevelModalRef />
   </Page>
 </template>

@@ -1,9 +1,11 @@
 import type {
   AppInfo,
+  AppLogLevelView,
   CommonPageRequest,
   CommonPageResponse,
   CommonTimeRangeRequest,
   IdType,
+  SetAppLogLevelRequest,
 } from '@vben/types';
 
 import { CommonStatus } from '@vben/types';
@@ -40,11 +42,15 @@ export namespace AppApi {
   export const changeStatus = `${base}/change-status`;
 
   /**
+   * Route template for app log-level override operations (TTL).
+   */
+  export const logLevel = (id: IdType) => `${base}/${id}/log-level`;
+
+  /**
    * Query parameters when requesting a paginated northward app list.
    */
   export interface AppPageParams
-    extends CommonPageRequest,
-      CommonTimeRangeRequest {
+    extends CommonPageRequest, CommonTimeRangeRequest {
     /**
      * Optional fuzzy search by app name.
      */
@@ -122,4 +128,25 @@ export async function changeAppStatus(
     id,
     status,
   });
+}
+
+/**
+ * Get runtime app log level view (effective + active TTL override).
+ */
+export async function getAppLogLevel(id: IdType) {
+  return requestClient.get<AppLogLevelView>(AppApi.logLevel(id));
+}
+
+/**
+ * Set a temporary app log level override (TTL). Host will auto-revert on expiry.
+ */
+export async function setAppLogLevel(id: IdType, data: SetAppLogLevelRequest) {
+  return requestClient.put<AppLogLevelView>(AppApi.logLevel(id), data);
+}
+
+/**
+ * Clear the app log level override and restore "follow system".
+ */
+export async function clearAppLogLevel(id: IdType) {
+  return requestClient.delete<AppLogLevelView>(AppApi.logLevel(id));
 }

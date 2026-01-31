@@ -1,5 +1,6 @@
 import type {
   ChannelInfo,
+  ChannelLogLevelView,
   CommitResult,
   CommonPageRequest,
   CommonPageResponse,
@@ -8,6 +9,7 @@ import type {
   DeviceInfo,
   IdType,
   ImportPreview,
+  SetChannelLogLevelRequest,
 } from '@vben/types';
 
 import { requestClient } from '#/api/request';
@@ -36,33 +38,6 @@ export namespace ChannelApi {
     name?: string;
     status?: (typeof CommonStatus)[keyof typeof CommonStatus];
   }
-}
-
-export type LogLevel = 'DEBUG' | 'ERROR' | 'INFO' | 'TRACE' | 'WARN';
-
-export interface TtlRangeView {
-  minMs: number;
-  maxMs: number;
-  defaultMs: number;
-}
-
-export interface ChannelLogOverrideView {
-  level: LogLevel;
-  /** TTL in ms used when setting this override. Used for countdown progress. Omitted by older backends. */
-  ttlMs?: number;
-  expiresAtMs: number;
-}
-
-export interface ChannelLogLevelView {
-  channelId: number;
-  effective: LogLevel;
-  override?: ChannelLogOverrideView;
-  ttl: TtlRangeView;
-}
-
-export interface SetChannelLogLevelRequest {
-  level: LogLevel;
-  ttlMs?: number;
 }
 
 export async function getChannelLogLevel(id: IdType) {

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import type { ChannelLogLevelView, IdType, LogLevel } from '@vben/types';
+import type { AppLogLevelView, IdType, LogLevel } from '@vben/types';
 
-import type { ChannelLogLevelFormSchemaOptions } from '../schemas/form';
+import type { AppLogLevelFormSchemaOptions } from '../schemas';
 
 import { nextTick, ref } from 'vue';
 
@@ -12,31 +12,31 @@ import { Button, message, Spin } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import {
-  clearChannelLogLevel,
-  getChannelLogLevel,
-  setChannelLogLevel,
-} from '#/api/core/channel';
+  clearAppLogLevel,
+  getAppLogLevel,
+  setAppLogLevel,
+} from '#/api/core/app';
 
-import { useChannelLogLevelFormSchema } from '../schemas/form';
+import { useAppLogLevelFormSchema } from '../schemas';
 import LogLevelCountdownProgress from './log-level-countdown-progress.vue';
 
-defineOptions({ name: 'ChannelLogLevelModal' });
+defineOptions({ name: 'AppLogLevelModal' });
 
-type ModalData = { channelId: IdType; channelName?: string };
+type ModalData = { appId: IdType; appName?: string };
 
-const DEFAULT_TTL_OPTS: ChannelLogLevelFormSchemaOptions = {
+const DEFAULT_TTL_OPTS: AppLogLevelFormSchemaOptions = {
   minSeconds: 10,
   maxSeconds: 1800,
   defaultSeconds: 300,
 };
 
 const loading = ref(false);
-const view = ref<ChannelLogLevelView | null>(null);
-const channelName = ref<string>('');
-const channelId = ref<IdType>(0 as any);
+const view = ref<AppLogLevelView | null>(null);
+const appName = ref<string>('');
+const appId = ref<IdType>(0 as any);
 
 const [Form, formApi] = useVbenForm({
-  schema: useChannelLogLevelFormSchema(DEFAULT_TTL_OPTS),
+  schema: useAppLogLevelFormSchema(DEFAULT_TTL_OPTS),
   showDefaultActions: false,
   commonConfig: {
     labelClass: 'text-[14px] w-1/4',
@@ -59,21 +59,21 @@ const [Modal, modalApi] = useVbenModal({
 
 async function load() {
   const data = modalApi.getData<ModalData>();
-  channelId.value = data.channelId;
-  channelName.value = data.channelName ?? '';
+  appId.value = data.appId;
+  appName.value = data.appName ?? '';
 
   loading.value = true;
   try {
-    const resp = await getChannelLogLevel(data.channelId);
+    const resp = await getAppLogLevel(data.appId);
     view.value = resp;
 
     const ttl = resp.ttl;
-    const ttlOpts: ChannelLogLevelFormSchemaOptions = {
+    const ttlOpts: AppLogLevelFormSchemaOptions = {
       minSeconds: Math.ceil(ttl.minMs / 1000),
       maxSeconds: Math.floor(ttl.maxMs / 1000),
       defaultSeconds: Math.round(ttl.defaultMs / 1000),
     };
-    formApi.setState({ schema: useChannelLogLevelFormSchema(ttlOpts) });
+    formApi.setState({ schema: useAppLogLevelFormSchema(ttlOpts) });
 
     await formApi.resetForm({
       values: {
@@ -97,13 +97,13 @@ async function applyOverride() {
   const max = view.value ? Math.floor(view.value.ttl.maxMs / 1000) : 1800;
   if (!Number.isFinite(ttlSeconds) || ttlSeconds < min || ttlSeconds > max) {
     message.error(
-      $t('page.southward.channel.logLevelModal.invalidTtl', { min, max }),
+      $t('page.northward.app.logLevelModal.invalidTtl', { min, max }),
     );
     return;
   }
 
-  const name = String(channelName.value || channelId.value);
-  const msg = $t('page.southward.channel.logLevelModal.confirmApply', {
+  const name = String(appName.value || appId.value);
+  const msg = $t('page.northward.app.logLevelModal.confirmApply', {
     name,
     level,
     seconds: ttlSeconds,
@@ -117,11 +117,11 @@ async function applyOverride() {
     .then(async () => {
       loading.value = true;
       try {
-        await setChannelLogLevel(channelId.value, {
+        await setAppLogLevel(appId.value, {
           level,
           ttlMs: Math.round(ttlSeconds * 1000),
         });
-        message.success($t('page.southward.channel.logLevelModal.applied'));
+        message.success($t('page.northward.app.logLevelModal.applied'));
         await load();
       } finally {
         loading.value = false;
@@ -133,22 +133,22 @@ async function applyOverride() {
 async function clearOverride() {
   if (!view.value) return;
   if (!view.value.override) {
-    message.info($t('page.southward.channel.logLevelModal.noOverride'));
+    message.info($t('page.northward.app.logLevelModal.noOverride'));
     return;
   }
-  const name = String(channelName.value || channelId.value);
+  const name = String(appName.value || appId.value);
   confirm({
     title: $t('common.tips'),
     icon: 'warning',
-    content: $t('page.southward.channel.logLevelModal.confirmRestore', {
+    content: $t('page.northward.app.logLevelModal.confirmRestore', {
       name,
     }),
   })
     .then(async () => {
       loading.value = true;
       try {
-        await clearChannelLogLevel(channelId.value);
-        message.success($t('page.southward.channel.logLevelModal.restored'));
+        await clearAppLogLevel(appId.value);
+        message.success($t('page.northward.app.logLevelModal.restored'));
         await load();
       } finally {
         loading.value = false;
@@ -170,13 +170,13 @@ async function clearOverride() {
 
         <div class="flex justify-end gap-2 pt-2">
           <Button @click="modalApi.close()">
-            {{ $t('page.southward.channel.logLevelModal.close') }}
+            {{ $t('page.northward.app.logLevelModal.close') }}
           </Button>
           <Button danger @click="clearOverride">
-            {{ $t('page.southward.channel.logLevelModal.restore') }}
+            {{ $t('page.northward.app.logLevelModal.restore') }}
           </Button>
           <Button type="primary" :loading="loading" @click="applyOverride">
-            {{ $t('page.southward.channel.logLevelModal.apply') }}
+            {{ $t('page.northward.app.logLevelModal.apply') }}
           </Button>
         </div>
       </div>

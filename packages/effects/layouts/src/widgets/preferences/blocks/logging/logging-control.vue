@@ -10,25 +10,25 @@ import { computed, reactive, ref } from 'vue';
 
 import { $t } from '@vben/locales';
 
-import NumberFieldItem from '../number-field-item.vue';
 import { useV1Api } from '../../api/v1';
+import NumberFieldItem from '../number-field-item.vue';
 import CardShell from '../system/card-shell.vue';
 import SourceBadge from '../system/source-badge.vue';
 
 type LoggingControlSettingsView = {
-  channelOverrideDefaultTtlMs: SettingField<number>;
-  channelOverrideMaxTtlMs: SettingField<number>;
-  channelOverrideMinTtlMs: SettingField<number>;
-  driverIngestQueueCapacity: SettingField<number>;
+  ingestQueueCapacity: SettingField<number>;
   overrideCleanupIntervalMs: SettingField<number>;
+  overrideDefaultTtlMs: SettingField<number>;
+  overrideMaxTtlMs: SettingField<number>;
+  overrideMinTtlMs: SettingField<number>;
 };
 
 type PatchLoggingControlSettingsRequest = Partial<{
-  channelOverrideDefaultTtlMs: number;
-  channelOverrideMaxTtlMs: number;
-  channelOverrideMinTtlMs: number;
-  driverIngestQueueCapacity: number;
+  ingestQueueCapacity: number;
   overrideCleanupIntervalMs: number;
+  overrideDefaultTtlMs: number;
+  overrideMaxTtlMs: number;
+  overrideMinTtlMs: number;
 }>;
 
 const props = withDefaults(
@@ -50,32 +50,32 @@ const result = ref<ApplySystemSettingsResult | null>(null);
 
 const view = ref<LoggingControlSettingsView | null>(null);
 const loaded = reactive({
-  channelOverrideMinTtlMs: 10_000,
-  channelOverrideDefaultTtlMs: 300_000,
-  channelOverrideMaxTtlMs: 1_800_000,
-  overrideCleanupIntervalMs: 5_000,
-  driverIngestQueueCapacity: 10_000,
+  overrideMinTtlMs: 10_000,
+  overrideDefaultTtlMs: 300_000,
+  overrideMaxTtlMs: 1_800_000,
+  overrideCleanupIntervalMs: 5000,
+  ingestQueueCapacity: 10_000,
 });
 const draft = reactive({ ...loaded });
 
 function applyView(v: LoggingControlSettingsView) {
   view.value = v;
-  loaded.channelOverrideMinTtlMs = v.channelOverrideMinTtlMs.value;
-  loaded.channelOverrideDefaultTtlMs = v.channelOverrideDefaultTtlMs.value;
-  loaded.channelOverrideMaxTtlMs = v.channelOverrideMaxTtlMs.value;
+  loaded.overrideMinTtlMs = v.overrideMinTtlMs.value;
+  loaded.overrideDefaultTtlMs = v.overrideDefaultTtlMs.value;
+  loaded.overrideMaxTtlMs = v.overrideMaxTtlMs.value;
   loaded.overrideCleanupIntervalMs = v.overrideCleanupIntervalMs.value;
-  loaded.driverIngestQueueCapacity = v.driverIngestQueueCapacity.value;
+  loaded.ingestQueueCapacity = v.ingestQueueCapacity.value;
   Object.assign(draft, loaded);
   result.value = null;
 }
 
 const dirty = computed(() => {
   return (
-    draft.channelOverrideMinTtlMs !== loaded.channelOverrideMinTtlMs ||
-    draft.channelOverrideDefaultTtlMs !== loaded.channelOverrideDefaultTtlMs ||
-    draft.channelOverrideMaxTtlMs !== loaded.channelOverrideMaxTtlMs ||
+    draft.overrideMinTtlMs !== loaded.overrideMinTtlMs ||
+    draft.overrideDefaultTtlMs !== loaded.overrideDefaultTtlMs ||
+    draft.overrideMaxTtlMs !== loaded.overrideMaxTtlMs ||
     draft.overrideCleanupIntervalMs !== loaded.overrideCleanupIntervalMs ||
-    draft.driverIngestQueueCapacity !== loaded.driverIngestQueueCapacity
+    draft.ingestQueueCapacity !== loaded.ingestQueueCapacity
   );
 });
 
@@ -90,19 +90,21 @@ function fieldDisabled(f?: SettingField<any>) {
 
 const localValidationError = computed(() => {
   // Keep client-side checks aligned with server-side validation.
-  if (draft.channelOverrideMinTtlMs <= 0) return $t('preferences.system.loggingControl.errMin');
-  if (draft.channelOverrideMaxTtlMs <= 0) return $t('preferences.system.loggingControl.errMax');
-  if (draft.channelOverrideDefaultTtlMs <= 0)
+  if (draft.overrideMinTtlMs <= 0)
+    return $t('preferences.system.loggingControl.errMin');
+  if (draft.overrideMaxTtlMs <= 0)
+    return $t('preferences.system.loggingControl.errMax');
+  if (draft.overrideDefaultTtlMs <= 0)
     return $t('preferences.system.loggingControl.errDefault');
   if (draft.overrideCleanupIntervalMs < 200)
     return $t('preferences.system.loggingControl.errCleanupInterval');
-  if (draft.driverIngestQueueCapacity <= 0)
-    return $t('preferences.system.loggingControl.errDriverQueue');
-  if (draft.channelOverrideMaxTtlMs < draft.channelOverrideMinTtlMs)
+  if (draft.ingestQueueCapacity <= 0)
+    return $t('preferences.system.loggingControl.errIngestQueue');
+  if (draft.overrideMaxTtlMs < draft.overrideMinTtlMs)
     return $t('preferences.system.loggingControl.errRange');
   if (
-    draft.channelOverrideDefaultTtlMs < draft.channelOverrideMinTtlMs ||
-    draft.channelOverrideDefaultTtlMs > draft.channelOverrideMaxTtlMs
+    draft.overrideDefaultTtlMs < draft.overrideMinTtlMs ||
+    draft.overrideDefaultTtlMs > draft.overrideMaxTtlMs
   ) {
     return $t('preferences.system.loggingControl.errDefaultRange');
   }
@@ -135,22 +137,22 @@ async function apply() {
   const patch: PatchLoggingControlSettingsRequest = {};
 
   if (
-    !v.channelOverrideMinTtlMs.envOverridden &&
-    draft.channelOverrideMinTtlMs !== loaded.channelOverrideMinTtlMs
+    !v.overrideMinTtlMs.envOverridden &&
+    draft.overrideMinTtlMs !== loaded.overrideMinTtlMs
   ) {
-    patch.channelOverrideMinTtlMs = draft.channelOverrideMinTtlMs;
+    patch.overrideMinTtlMs = draft.overrideMinTtlMs;
   }
   if (
-    !v.channelOverrideDefaultTtlMs.envOverridden &&
-    draft.channelOverrideDefaultTtlMs !== loaded.channelOverrideDefaultTtlMs
+    !v.overrideDefaultTtlMs.envOverridden &&
+    draft.overrideDefaultTtlMs !== loaded.overrideDefaultTtlMs
   ) {
-    patch.channelOverrideDefaultTtlMs = draft.channelOverrideDefaultTtlMs;
+    patch.overrideDefaultTtlMs = draft.overrideDefaultTtlMs;
   }
   if (
-    !v.channelOverrideMaxTtlMs.envOverridden &&
-    draft.channelOverrideMaxTtlMs !== loaded.channelOverrideMaxTtlMs
+    !v.overrideMaxTtlMs.envOverridden &&
+    draft.overrideMaxTtlMs !== loaded.overrideMaxTtlMs
   ) {
-    patch.channelOverrideMaxTtlMs = draft.channelOverrideMaxTtlMs;
+    patch.overrideMaxTtlMs = draft.overrideMaxTtlMs;
   }
   if (
     !v.overrideCleanupIntervalMs.envOverridden &&
@@ -159,10 +161,10 @@ async function apply() {
     patch.overrideCleanupIntervalMs = draft.overrideCleanupIntervalMs;
   }
   if (
-    !v.driverIngestQueueCapacity.envOverridden &&
-    draft.driverIngestQueueCapacity !== loaded.driverIngestQueueCapacity
+    !v.ingestQueueCapacity.envOverridden &&
+    draft.ingestQueueCapacity !== loaded.ingestQueueCapacity
   ) {
-    patch.driverIngestQueueCapacity = draft.driverIngestQueueCapacity;
+    patch.ingestQueueCapacity = draft.ingestQueueCapacity;
   }
 
   if (Object.keys(patch).length === 0) return;
@@ -206,38 +208,38 @@ if (props.autoLoad && !props.initialView) {
   >
     <template v-if="view">
       <NumberFieldItem
-        v-model="draft.channelOverrideMinTtlMs"
-        :disabled="fieldDisabled(view.channelOverrideMinTtlMs)"
+        v-model="draft.overrideMinTtlMs"
+        :disabled="fieldDisabled(view.overrideMinTtlMs)"
         :min="1"
         :step="1000"
       >
         <span class="flex items-center gap-2">
           {{ $t('preferences.system.loggingControl.minTtlMs') }}
-          <SourceBadge :field="view.channelOverrideMinTtlMs" />
+          <SourceBadge :field="view.overrideMinTtlMs" />
         </span>
       </NumberFieldItem>
 
       <NumberFieldItem
-        v-model="draft.channelOverrideDefaultTtlMs"
-        :disabled="fieldDisabled(view.channelOverrideDefaultTtlMs)"
+        v-model="draft.overrideDefaultTtlMs"
+        :disabled="fieldDisabled(view.overrideDefaultTtlMs)"
         :min="1"
         :step="1000"
       >
         <span class="flex items-center gap-2">
           {{ $t('preferences.system.loggingControl.defaultTtlMs') }}
-          <SourceBadge :field="view.channelOverrideDefaultTtlMs" />
+          <SourceBadge :field="view.overrideDefaultTtlMs" />
         </span>
       </NumberFieldItem>
 
       <NumberFieldItem
-        v-model="draft.channelOverrideMaxTtlMs"
-        :disabled="fieldDisabled(view.channelOverrideMaxTtlMs)"
+        v-model="draft.overrideMaxTtlMs"
+        :disabled="fieldDisabled(view.overrideMaxTtlMs)"
         :min="1"
         :step="1000"
       >
         <span class="flex items-center gap-2">
           {{ $t('preferences.system.loggingControl.maxTtlMs') }}
-          <SourceBadge :field="view.channelOverrideMaxTtlMs" />
+          <SourceBadge :field="view.overrideMaxTtlMs" />
         </span>
       </NumberFieldItem>
 
@@ -255,32 +257,37 @@ if (props.autoLoad && !props.initialView) {
           class="px-0"
         >
           <span class="flex items-center gap-2">
-            {{ $t('preferences.system.loggingControl.overrideCleanupIntervalMs') }}
+            {{
+              $t('preferences.system.loggingControl.overrideCleanupIntervalMs')
+            }}
             <SourceBadge :field="view.overrideCleanupIntervalMs" />
           </span>
           <template #tip>
-            {{ $t('preferences.system.loggingControl.overrideCleanupIntervalMsTip') }}
+            {{
+              $t(
+                'preferences.system.loggingControl.overrideCleanupIntervalMsTip',
+              )
+            }}
           </template>
         </NumberFieldItem>
 
         <NumberFieldItem
-          v-model="draft.driverIngestQueueCapacity"
-          :disabled="fieldDisabled(view.driverIngestQueueCapacity)"
+          v-model="draft.ingestQueueCapacity"
+          :disabled="fieldDisabled(view.ingestQueueCapacity)"
           :min="1"
           :max="1000000"
           :step="100"
           class="px-0"
         >
           <span class="flex items-center gap-2">
-            {{ $t('preferences.system.loggingControl.driverIngestQueueCapacity') }}
-            <SourceBadge :field="view.driverIngestQueueCapacity" />
+            {{ $t('preferences.system.loggingControl.ingestQueueCapacity') }}
+            <SourceBadge :field="view.ingestQueueCapacity" />
           </span>
           <template #tip>
-            {{ $t('preferences.system.loggingControl.driverIngestQueueCapacityTip') }}
+            {{ $t('preferences.system.loggingControl.ingestQueueCapacityTip') }}
           </template>
         </NumberFieldItem>
       </div>
     </template>
   </CardShell>
 </template>
-
