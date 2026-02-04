@@ -84,7 +84,7 @@ export function useColumns(
       headerAlign: 'center',
       showOverflow: false,
       title: $t('common.actions'),
-      width: 180,
+      width: 220,
     },
   ];
 }
