@@ -3,22 +3,15 @@ title: '数据监控（Realtime Monitor）'
 description: 'NG Gateway 数据监控最佳实践：通过 WebSocket 实时查看设备 Telemetry/Attributes，理解数据来源、刷新语义、性能边界与常见问题定位。'
 ---
 
-# 数据监控（Realtime Monitor）
+# 数据监控
 
 “数据监控”用于在管理控制台中实时查看某个设备的 **Telemetry** 与 **Attributes（client/shared/server）**，适合现场排障与联调验证：你能快速回答“设备有没有上报”“值有没有变化”“最后更新时间是什么时候”。
-
-> 本页对应 UI：`ng-gateway-ui/apps/web-antd/src/views/maintenance/monitor`
 
 ## 适用场景
 
 - **现场排障**：设备数据断续、延迟变大、疑似丢数据时，快速确认网关侧是否已采集到最新值
 - **联调验证**：驱动/点位映射刚改完，确认 key 是否正确、值是否按预期变化
 - **与北向链路解耦**：先确认“采集是否正常”，再去看“上云是否正常”（避免两头同时猜）
-
-## 前置条件与权限
-
-- **需要登录**：监控通过 WebSocket（`/api/ws/monitor`）提供实时数据，依赖标准认证中间件
-- **需要可见性权限**：页面会读取 Channel 列表与设备列表（Channel/Device 读权限或系统管理员权限）
 
 ## 核心概念：Telemetry vs Attributes
 
@@ -30,7 +23,7 @@ description: 'NG Gateway 数据监控最佳实践：通过 WebSocket 实时查�
 
 在监控表格中，`sourceType` 会标识当前行来自 `telemetry` 还是 `attributes`。
 
-## 使用指南（一步步）
+## 使用指南
 
 1. **选择通道（Channel）**
    - 该选择用于加载此通道下的设备列表，避免在大量设备中盲选
@@ -45,7 +38,7 @@ description: 'NG Gateway 数据监控最佳实践：通过 WebSocket 实时查�
    - **Source Type**：`telemetry` 或 `attributes`
    - **Last Update**：该设备最后更新时间（服务端时间戳）
 
-## 刷新语义与性能边界（产品级理解）
+## 刷新语义与性能边界
 
 为了在“高吞吐 + 高频点位”场景仍可稳定使用，监控链路做了两层“限速/合并”：
 
@@ -55,8 +48,6 @@ description: 'NG Gateway 数据监控最佳实践：通过 WebSocket 实时查�
 此外，表格渲染做了分页优化：
 
 - **仅渲染当前页的值**：分页时只为当前页行“注入实时 value”，将刷新成本控制为 \(O(pageSize)\)，避免点位数量大时浏览器卡顿
-
-> 最佳实践：当一个设备包含成百上千个 key 时，优先使用 **搜索框**缩小范围，再观察你关心的 key。
 
 ## 已知限制与注意事项
 
@@ -83,13 +74,8 @@ description: 'NG Gateway 数据监控最佳实践：通过 WebSocket 实时查�
 - 该 key 可能存在于“元数据列表”中，但当前快照暂未包含值（例如刚新增 key、尚未上报）
 - 建议等待下一次设备上报或重新订阅（切换设备再切回）
 
-## 故障排查建议（从快到慢）
+## 故障排查建议
 
 - **先看指标与背压**：如果队列背压或 drops 明显，实时监控也可能出现延迟
 - **再分方向**：南向采集是否正常？北向上报是否正常？
-
-可继续阅读：
-
-- [`Metrics 与可观测性`](./metrics.md)
-- [`故障排查`](./troubleshooting.md)
 

@@ -10,13 +10,6 @@ description: 'NG Gateway 产品级配置管理文档：运行时调参（Collect
 - **系统配置（Runtime Tuning）**：在不重启进程的前提下调整 Collector/Southward/Northward 的运行参数（并可持久化到配置文件）
 - **日志系统（Logging）**：全局日志级别、临时日志级别覆盖（per-channel/per-app，带 TTL 自动回滚）、日志输出格式与落盘策略、文件下载与清理
 
-> 系统配置与日志配置 UI 对应：
->
-> - `ng-gateway-ui/packages/effects/layouts/src/widgets/preferences/blocks/system`
-> - `ng-gateway-ui/packages/effects/layouts/src/widgets/preferences/blocks/logging`
->
-> 相关后端接口统一在：`/api/system/settings/*`
-
 ## 0. 重要设计：来源（source）与环境变量覆盖（envOverridden）
 
 每个可调配置项都带有“来源”信息：
