@@ -152,7 +152,7 @@ Subscription不是由 `Collector` 调度；它属于 driver 的“会话层/协�
 
 | 字段 | 类型 | 说明 | 建议 |
 | --- | --- | --- | --- |
-| `max_attempts` | `number \| null` | 最大重试次数；`null` 表示无限重试。注意：当前实现中多处将 `0` 视为“继续重试/不限制”，请谨慎使用 `0` | 生产建议使用有限次数或有限时长 |
+| `max_attempts` | `number \| null` | 最大重试次数；`0` 表示禁用重试；`null` 表示无限重试；设置为 `N` 表示最多重试 `N` 次 | 生产建议使用有限次数或有限时长 |
 | `initial_interval_ms` | `number` | 初始退避间隔（默认 1000ms） | 1000~3000 |
 | `max_interval_ms` | `number` | 最大退避上限（默认 30000ms） | 30000~60000 |
 | `multiplier` | `number` | 指数倍率（默认 2.0） | 2.0 |

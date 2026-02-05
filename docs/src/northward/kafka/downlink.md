@@ -15,13 +15,13 @@ Kafka 下行支持把消息映射为：
 
 ---
 
-## 2. Topic 与订阅组（实现细节）
+## 2. Topic 与订阅组
 
 ### 2.1 精确 topic 限制
 
 downlink 的 `topic` 必须是**精确字符串**，不支持：
 
-- `{{template}}`
+- <code v-pre>{{template}}</code>
 - `*` wildcard
 - `re:` / `regex:`
 
@@ -43,7 +43,7 @@ consumer group id 固定为：
 
 ---
 
-## 3. AckPolicy / FailurePolicy（commit 行为）
+## 3. AckPolicy / FailurePolicy
 
 Kafka 下行的“确认”对应 commit：
 

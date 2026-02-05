@@ -19,7 +19,6 @@ description: '为 MappedJson 提供常用 JMESPath 写法速查与示例。'
 JMESPath 返回 JSON 值，你可以直接把结果写到某个 out_path。
 
 ::: tip
-如果你发现“想拼字符串/做复杂计算”，这通常意味着你需要更强的 Transform（未来 Lua Sandbox）。  
+如果你发现“想拼字符串/做复杂计算”，这通常意味着你需要更强的 Transform（暂不支持）。  
 可以先把必要字段都输出到 JSON，再在平台侧处理。
 :::
-

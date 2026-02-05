@@ -42,7 +42,7 @@ MappedJson 允许你把输入 JSON 映射成网关期望的事件结构，然后
 
 ---
 
-## 3. Filter 模式（强烈建议在混合 topic 场景使用）
+## 3. Filter 模式
 
 ### 3.1 `none`
 

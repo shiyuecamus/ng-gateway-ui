@@ -3,7 +3,7 @@ title: 'Node 映射与 NodeId 规则'
 description: 'OPC UA AddressSpace 层级、NodeId 字符串规则、sanitize 策略，以及“只暴露已订阅点位”的安全边界。'
 ---
 
-## 1. AddressSpace 层级（实现对齐）
+## 1. AddressSpace 层级
 
 根节点：
 
@@ -17,11 +17,11 @@ description: 'OPC UA AddressSpace 层级、NodeId 字符串规则、sanitize 策
 
 - `{channel}` 使用 `channel_name` 作为 browse name
 - `{device}` 使用 `device_name`
-- `{point}` 使用 `point_key`（展示名用 `point_name`）
+- `{point}` 使用 `point_key`
 
 ---
 
-## 2. NodeId 规则（必须稳定）
+## 2. NodeId 规则
 
 每个点位 Variable 的 NodeId 使用 String NodeId：
 
@@ -50,7 +50,7 @@ ns=1;s={channel}.{device}.{point_key}
 
 ---
 
-## 4. 只暴露“已订阅点位”（安全边界）
+## 4. 只暴露“已订阅点位”
 
 当前实现刻意避免“把网关所有点位都暴露出去”：
 

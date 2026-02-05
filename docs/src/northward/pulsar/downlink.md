@@ -3,7 +3,7 @@ title: 'Pulsar 下行（Downlink）'
 description: 'Shared subscription 消费精确 topic 列表；把消息解码为 NorthwardEvent；解释 ack/nack 与 filter 语义。'
 ---
 
-## 1. 下行如何工作（实现要点）
+## 1. 下行如何工作
 
 - subscription name：`ng-gateway-plugin-{app_id}`（稳定命名，方便 broker 侧维护状态）
 - subscription type：Shared
@@ -15,7 +15,7 @@ description: 'Shared subscription 消费精确 topic 列表；把消息解码为
 
 ---
 
-## 2. AckPolicy / FailurePolicy（ack/nack 语义）
+## 2. AckPolicy / FailurePolicy
 
 Pulsar 的确认语义：
 

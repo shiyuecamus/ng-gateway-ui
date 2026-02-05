@@ -11,7 +11,7 @@ description: '把 NG Gateway 数据上送到 Apache Pulsar，并可选从 Pulsar
 
 ---
 
-## 2. 最小可跑配置（建议先跑通 uplink）
+## 2. 最小可跑配置
 
 ```json
 {
@@ -31,14 +31,3 @@ description: '把 NG Gateway 数据上送到 Apache Pulsar，并可选从 Pulsar
   "downlink": { "enabled": false }
 }
 ```
-
----
-
-## 3. 目录导航
-
-- 连接与鉴权：[`Pulsar 连接与鉴权`](/northward/pulsar/connection-auth)
-- 上行（Uplink）：[`Pulsar 上行配置与 payload`](/northward/pulsar/uplink)
-- 分区与有序性：[`Pulsar 分区与吞吐（partition_key）`](/northward/pulsar/partitions)
-- 下行（Downlink）：[`Pulsar 下行（ack/nack 语义）`](/northward/pulsar/downlink)
-- 示例：[`Pulsar 配置示例`](/northward/pulsar/examples)
-- 排障：[`Pulsar 排障`](/northward/pulsar/troubleshooting)

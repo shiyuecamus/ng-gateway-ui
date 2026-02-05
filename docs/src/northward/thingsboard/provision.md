@@ -34,7 +34,7 @@ description: 'ThingsBoard Provision 工作原理、TB 侧配置要点、重试�
 
 ---
 
-## 3. 重试与超时语义（实现对齐）
+## 3. 重试与超时语义
 
 Provision 配置字段：
 
@@ -50,19 +50,8 @@ Provision 配置字段：
 
 ---
 
-## 4. 凭据持久化（重要）
-
-Provision 成功后，凭据会被存入 extension storage（key：`provision_credentials`）。  
-这意味着：
-
-- 重启后会尝试复用已有凭据
-- 如果你更换了 TB 侧配置或希望重新 provision，需要清理该存储项（按项目的配置管理能力决定）
-
----
-
-## 5. 常见排障
+## 4. 常见排障
 
 - **一直超时**：检查 TB 是否启用了 provision、端口是否可达、ACL/防火墙
-- **NotFound/Failure**：device key/secret 不匹配，或 profile 未开启对应 method
+- **NotFound/Failure**：device key/secret 不匹配，或 TB已存在同名设备
 - **证书模式失败**：确认 TB 返回的证书字段格式（certificate/privateKey）与网关解析一致
-

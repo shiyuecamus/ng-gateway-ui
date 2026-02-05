@@ -21,10 +21,10 @@ description: 'Pulsar uplink：事件开关、topic/key 模板、payload 模式�
 
 ---
 
-## 2. 默认 topic/key（代码默认）
+## 2. 默认 topic/key
 
-- `topic`：`persistent://public/default/ng.uplink.{{event_kind}}.{{device_name}}`
-- `key`：`{{device_id}}`
+- `topic`：<code v-pre>persistent://public/default/ng.uplink.{{event_kind}}.{{device_name}}</code>
+- `key`：<code v-pre>{{device_id}}</code>
 
 模板语法见：
 
@@ -33,12 +33,12 @@ description: 'Pulsar uplink：事件开关、topic/key 模板、payload 模式�
 
 ---
 
-## 3. Producer 参数（`uplink.producer`）
+## 3. Producer 参数
 
 | 字段 | 默认 | 说明 |
 | --- | --- | --- |
 | `compression` | `lz4` | `none/lz4/zlib/zstd/snappy` |
-| `batchingEnabled` | false | 是否启用 batching（默认关闭，避免新用户遇到“延迟/顺序”惊喜） |
+| `batchingEnabled` | true | 是否启用 batching（默认关闭，避免新用户遇到“延迟/顺序”惊喜） |
 | `batchingMaxMessages` | 1000 | batching 开启后生效 |
 | `batchingMaxBytes` | 131072 | batching 开启后生效（128KiB） |
 | `batchingMaxPublishDelayMs` | 10 | batching 开启后生效 |

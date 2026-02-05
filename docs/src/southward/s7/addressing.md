@@ -29,24 +29,24 @@ S7 驱动支持以下内存区域。地址不区分大小写。
 
 驱动通过地址中的**类型前缀**来确定数据读取长度和解码方式。支持长命名和短命名（如 `INT` 和 `I`）。
 
-| 类型名称 | 长前缀 | 短前缀 | 长度 (Byte) | 对应的 Rust 类型 | 说明 |
+| 类型名称 | 长前缀 | 短前缀 | 长度 (Byte) | Rust 类型 | 说明 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Bit** | `BIT` | `X` | - | `Boolean` | 位访问 (需指定 `.bit` 索引) |
-| **Byte** | `BYTE` | `B` | 1 | `u8` / `int8` | 单字节 |
-| **Char** | `CHAR` | `C` | 1 | `u8` (ASCII) | 字符 |
+| **Bit** | `BIT` | `X` | 1/8 | `bool` | 位访问（必须指定 `.bit` 索引；在 wire 上按 1 字节承载） |
+| **Byte** | `BYTE` | `B` | 1 | `u8` | 单字节（如需 `i8` 语义请在业务侧转换） |
+| **Char** | `CHAR` | `C` | 1 | `char` | 单字符（按 1 字节码值写入/读取） |
 | **Word** | `WORD` | `W` | 2 | `u16` | 无符号字 |
 | **Int** | `INT` | `I` | 2 | `i16` | 有符号整数 |
-| **DWord** | `DWORD`, `DW` | - | 4 | `u32` | 无符号双字 |
-| **DInt** | `DINT`, `DI` | - | 4 | `i32` | 有符号双整数 |
+| **DWord** | `DWORD` | `DW` | 4 | `u32` | 无符号双字 |
+| **DInt** | `DINT` | `DI` | 4 | `i32` | 有符号双整数 |
 | **Real** | `REAL` | `R` | 4 | `f32` | 浮点数 |
-| **Time** | `TIME` | `T` | 4 | `i32` (ms) | IEC 时间 (毫秒) |
-| **Date** | `DATE` | - | 2 | `u16` (days) | IEC 日期 (自 1990-1-1 起的天数) |
-| **TimeOfDay** | `TOD` | - | 4 | `u32` (ms) | 一天中的时间 (毫秒) |
-| **S5Time** | `S5TIME` | `ST` | 2 | `u16` (encoded) | S5 格式时间 |
-| **DateTime** | `DATETIME`, `DT` | - | 8 | `i64` (timestamp) | 日期时间 |
-| **DateTimeLong**| `DATETIMELONG`, `DTL`| - | 12 | `struct` | 扩展日期时间 (S7-1200/1500) |
-| **String** | `STRING` | `S` | n + 2 | `String` | S7 字符串 (首字节为最大长度) |
-| **WString** | `WSTRING` | `WS` | 2n + 4 | `String` | S7 宽字符串 |
+| **Time** | `TIME` | `T` | 4 | `chrono::Duration` | IEC 时间（毫秒）；注意与区域 `T`（Timer）不同 |
+| **Date** | `DATE` | - | 2 | `chrono::NaiveDate` | IEC 日期（驱动会解码为日期） |
+| **TimeOfDay** | - | `TOD` | 4 | `chrono::NaiveTime` | 一天中的时间（毫秒），解码为 `NaiveTime` |
+| **S5Time** | `S5TIME` | `ST` | 2 | `chrono::Duration` | S5 格式时间，解码为 `Duration` |
+| **DateTime** | `DATETIME` | `DT` | 8 | `chrono::NaiveDateTime` | `DATE_AND_TIME`（BCD，8 字节） |
+| **DateTimeLong**| `DATETIMELONG` | `DTL` | 12 | `chrono::NaiveDateTime` | DTL（12 字节，S7-1200/1500） |
+| **String** | `STRING` | `S` | 256 (envelope) | `String` | `STRING` 结构整体读取（Latin-1）：`[max:u8][len:u8][payload...]` |
+| **WString** | `WSTRING` | `WS` | 512 (envelope) | `String` | `WSTRING` 结构整体读取（UTF-16BE）：`[max:u16][len:u16][payload...]` |
 
 ::: tip 提示
 - 如果不指定类型前缀（且没有小数点），默认按 **Byte** 解析（例如 `M10` 等价于 `MB10`）。
@@ -59,41 +59,58 @@ S7 驱动支持以下内存区域。地址不区分大小写。
 
 ### 3.1 I/Q/M/V 区示例
 
-I/Q/M 区的地址格式通常为 `{区域}{类型}{字节偏移}` 或 `{区域}{字节偏移}.{位索引}`。
+I/Q/M/V 区支持三类写法：
+1) **传统地址**：常见于 KepServer/Step7 的 `ID0/MD200/VD100` 等简写（注意：其中部分写法在 NG Gateway **不直接支持**，需要迁移）。
+2) **NG Gateway 完整地址**：使用长类型前缀（如 `WORD/REAL/DINT`），可读性最好。
+3) **NG Gateway short 地址**：使用短类型前缀（如 `W/R/DI`）或按规则省略类型（推荐仍尽量显式声明类型）。
 
-| 地址 | 等效标准写法 | 数据类型 | 说明 |
-| :--- | :--- | :--- | :--- |
-| **I0.0** | `IX0.0` | Bit | I 区，第 0 字节，第 0 位 |
-| **Q1.7** | `QX1.7` | Bit | Q 区，第 1 字节，第 7 位 |
-| **M10.5** | `MX10.5` | Bit | M 区，第 10 字节，第 5 位 |
-| **V100.0**| `DB1.X100.0` | Bit | V 区 (DB1)，第 100 字节，第 0 位 |
-| **IB0** | `IBYTE0` | Byte | I 区，第 0 字节 |
-| **QB10** | `QBYTE10` | Byte | Q 区，第 10 字节 |
-| **MB20** | `MBYTE20` | Byte | M 区，第 20 字节 |
-| **IW0** | `IWORD0` | Word (u16) | I 区，第 0 字节开始的字 |
-| **QW4** | `QWORD4` | Word (u16) | Q 区，第 4 字节开始的字 |
-| **MW10** | `MWORD10` | Word (u16) | M 区，第 10 字节开始的字 |
-| **ID0** | `IDWORD0` | DWord (u32) | I 区，第 0 字节开始的双字 (也可写 `IDW0`) |
-| **MD100** | `MDWORD100` | DWord (u32) | M 区，第 100 字节开始的双字 (也可写 `MDW100`) |
-| **MD104** | `MDINT104` | DInt (i32) | M 区，第 104 字节开始的双整数 (也可写 `MDI104`) |
-| **MD200** | `MREAL200` | Real (f32) | M 区，第 200 字节开始的浮点数 (也可写 `MR200`) |
+| 传统地址 | NG Gateway 完整地址 | NG Gateway short 地址 | S7 数据类型 | Rust 类型 | 说明 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **I0.0** | `IBIT0.0` | `IX0.0` | Bit | `bool` | I 区，第 0 字节，第 0 位（Bit 访问必须包含 `.bit`） |
+| **Q1.7** | `QBIT1.7` | `QX1.7` | Bit | `bool` | Q 区，第 1 字节，第 7 位 |
+| **M10.5** | `MBIT10.5` | `MX10.5` | Bit | `bool` | M 区，第 10 字节，第 5 位 |
+| **V100.0** | `DB1.BIT100.0` | `VX100.0` | Bit | `bool` | V 区在驱动内映射为 `DB1.*`（本行等价于 `DB1.X100.0`） |
+| **IB0** | `IBYTE0` | `IB0` | Byte | `u8` | I 区，第 0 字节 |
+| **QB10** | `QBYTE10` | `QB10` | Byte | `u8` | Q 区，第 10 字节 |
+| **MB20** | `MBYTE20` | `MB20` | Byte | `u8` | M 区，第 20 字节 |
+| **IW0** | `IWORD0` | `IW0` | Word | `u16` | I 区，第 0 字节开始的无符号 16 位（大端） |
+| **QW4** | `QWORD4` | `QW4` | Word | `u16` | Q 区，第 4 字节开始的无符号 16 位（大端） |
+| **MW10** | `MWORD10` | `MW10` | Word | `u16` | M 区，第 10 字节开始的无符号 16 位（大端） |
+| **ID0** | `IDWORD0` | `IDW0` | DWord | `u32` | I 区，第 0 字节开始的无符号 32 位（大端）；请用 `IDW*`/`IDWORD*` 迁移 |
+| **MD200** | `MDINT200` | `MDI200` | DInt | `i32` | M 区，第 200 字节开始的有符号 32 位（大端）；传统 `MD*` 语义为“4 字节”，在本驱动需显式声明 `DI/DINT` |
+| **MD200** | `MREAL200` | `MR200` | Real | `f32` | M 区，第 200 字节开始的 IEEE-754 `f32`（大端）；传统 `MD*` 若代表浮点，请用 `R/REAL` |
+| **VD100** | `DB1.DWORD100` | `VDW100` | DWord | `u32` | V 区（DB1）第 100 字节开始的无符号 32 位（大端）；传统 `VD*` 请改为 `VDW*` 或直接用 `DB1.DW*` |
 
 ### 3.2 DB 区示例
 
-DB 区地址必须以 `DB` 开头，后跟块号。格式：`DB{块号}.{类型}{偏移}`。**注意：NG Gateway 驱动暂不支持西门子传统的 `DBW`/`DBD`/`DBX` 组合前缀，请使用标准类型前缀。**
+DB 区地址必须以 `DB` 开头，后跟块号。格式：`DB{块号}.{类型}{偏移}`。
 
-| 地址 | 解析含义 | 对应 Rust 类型 | 说明 |
-| :--- | :--- | :--- | :--- |
-| **DB1.X0.0** | Bit | `bool` | DB1，第 0 字节第 0 位 (也可写 `DB1.BIT0.0`) |
-| **DB10.B0** | Byte | `u8` | DB10，第 0 字节 (也可写 `DB10.BYTE0`) |
-| **DB10.W2** | Word | `u16` | DB10，第 2 字节开始的字 (也可写 `DB10.WORD2`) |
-| **DB10.I4** | Int | `i16` | DB10，第 4 字节开始的整数 (也可写 `DB10.INT4`) |
-| **DB1.DW0** | DWord | `u32` | DB1，第 0 字节开始的双字 (也可写 `DB1.DWORD0`) |
-| **DB1.DI4** | DInt | `i32` | DB1，第 4 字节开始的有符号双整数 (也可写 `DB1.DINT4`) |
-| **DB1.R8** | Real | `f32` | DB1，第 8 字节开始的浮点数 (也可写 `DB1.REAL8`) |
-| **DB2.S0** | String | `String` | DB2，第 0 字节开始的字符串 (也可写 `DB2.STRING0`) |
-| **DB2.WS100**| WString| `String` | DB2，第 100 字节开始的宽字符串 (也可写 `DB2.WSTRING100`) |
-| **DB5.DT0** | DateTime | `i64` | DB5，第 0 字节开始的日期时间 |
+:::: warning 迁移提醒
+NG Gateway 当前地址解析器（见 `ng-gateway-southward/s7/src/protocol/frame/addr.rs`）**不支持**西门子传统 `DBX/DBB/DBW/DBD` 这类“组合前缀”（例如 `DB1.DBD100`）。请使用下表中的 **NG Gateway 完整/short 地址**。
+::::
+
+| 传统地址 | NG Gateway 完整地址 | NG Gateway short 地址 | S7 数据类型 | Rust 类型 | 说明 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **DB1.DBX0.0** | `DB1.BIT0.0` | `DB1.X0.0` | Bit | `bool` | DB1，第 0 字节第 0 位（Bit 必须写成 `*.Xbyte.bit` 或 `*.BITbyte.bit`） |
+| **DB10.DBB0** | `DB10.BYTE0` | `DB10.B0` | Byte | `u8` | DB10，第 0 字节 |
+| **DB10.DBW2** | `DB10.WORD2` | `DB10.W2` | Word | `u16` | DB10，第 2 字节开始的无符号 16 位（大端） |
+| **DB10.DBW4** | `DB10.INT4` | `DB10.I4` | Int | `i16` | DB10，第 4 字节开始的有符号 16 位（大端） |
+| **DB1.DBD0** | `DB1.DWORD0` | `DB1.DW0` | DWord | `u32` | DB1，第 0 字节开始的无符号 32 位（大端） |
+| **DB1.DBD4** | `DB1.DINT4` | `DB1.DI4` | DInt | `i32` | DB1，第 4 字节开始的有符号 32 位（大端） |
+| **DB1.DBD8** | `DB1.REAL8` | `DB1.R8` | Real | `f32` | DB1，第 8 字节开始的 IEEE-754 `f32`（大端）；传统 `DBD*` 仅表示“4 字节”，在本驱动必须显式声明 `DW/DI/R` |
+| **DB2.STRING0** | `DB2.STRING0` | `DB2.S0` | String | `String` | S7 `STRING` 结构（`[max:u8][len:u8][payload...]`，Latin-1），地址应指向结构起始偏移 |
+| **DB2.WSTRING100** | `DB2.WSTRING100` | `DB2.WS100` | WString | `String` | S7 `WSTRING` 结构（`[max:u16][len:u16][payload...]`，UTF-16BE），地址应指向结构起始偏移 |
+| - | `DB5.DATETIME0` | `DB5.DT0` | DateTime | `chrono::NaiveDateTime` | 8 字节 `DATE_AND_TIME`（BCD） |
+| - | `DB5.DATETIMELONG0` | `DB5.DTL0` | DateTimeLong | `chrono::NaiveDateTime` | 12 字节 DTL（S7-1200/1500）；与 `DT` 不同，纳秒字段为 24-bit BE |
+
+#### 最佳实践与常见坑
+
+- **尽量显式声明类型**：生产环境建议用 short 且显式的类型前缀（如 `DB1.R8`、`MDI200`），避免依赖隐式 Byte（例如 `M10`）带来的歧义。
+- **Bit 地址必须包含 `.bit`**：例如 `QX1` 在驱动中会被判为非法，必须写成 `QX1.0`（见解析器测试用例）。
+- **传统 `DBD/MD/VD` 仅代表“4 字节”**：在 NG Gateway 语法中必须明确是 `DW`（u32）/`DI`（i32）/`R`（f32）中的哪一种。
+- **`V` 区是 `DB1` 的语法糖**：`VB100` 等价于 `DB1.B100`，在跨团队协作/排查问题时，直接写 `DB1.*` 通常更直观。
+- **`STRING/WSTRING` 偏移要指向结构起始**：PLC 中 `STRING`/`WSTRING` 变量本身包含长度头部（2/4 字节）。驱动按结构整体读取并解码，偏移不要填到第一个字符处。
+- **端序与对齐**：数值类型按 S7 约定使用大端编码。建议按类型自然对齐（Word 从偶数开始、DWord/Real 从 4 的倍数开始）以提高可读性并减少 PLC 侧潜在开销。
 
 ### 3.3 Timer / Counter 示例
 

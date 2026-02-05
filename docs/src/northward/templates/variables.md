@@ -5,9 +5,7 @@ description: '北向 uplink topic/key 模板可用变量：app/device/event/time
 
 ## 1. 变量总览
 
-> 模板语法见：[`模板语法（Handlebars）`](/northward/templates/handlebars)
-
-### 1.1 通用变量（几乎所有 uplink 都可用）
+### 1.1 通用变量（所有 uplink 都可用）
 
 | 变量 | 类型 | 说明 |
 | --- | --- | --- |
@@ -27,7 +25,7 @@ description: '北向 uplink topic/key 模板可用变量：app/device/event/time
 | `channel_name` | string | 通道名称 | Telemetry/Attributes 通过 point meta 推断，缺 meta 或 values 为空时可能取不到 |
 
 ::: tip
-对于可能为空的变量，建议用 `&#123;&#123;default channel_name "unknown"&#125;&#125;` 兜底，避免 topic/key 里出现空段。
+对于可能为空的变量，建议用 `default helper` 兜底，避免 topic/key 里出现空段。
 :::
 
 ### 1.3 时间分区变量（UTC）
@@ -49,7 +47,7 @@ lake.{{yyyy}}.{{MM}}.{{dd}}.{{HH}}.ng.uplink.{{event_kind}}
 
 ---
 
-## 2. 关于“缺失变量”的行为（很重要）
+## 2. 关于“缺失变量”的行为
 
 模板引擎是 **non-strict**：
 

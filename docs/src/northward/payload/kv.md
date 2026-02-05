@@ -38,7 +38,7 @@ description: '更紧凑的上行 payload：{ts_ms, values:{key:value}}；可选 
 
 ---
 
-## 2. 适用范围（非常重要）
+## 2. 适用范围
 
 `Kv` 只适用于：
 

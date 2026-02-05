@@ -49,7 +49,7 @@ EnvelopeJson 追求三件事：
 - `rpc_response`
 - `write_point_response`
 
-### 3.2 downlink（平台 → 网关，经插件）
+### 3.2 downlink（平台 → 网关）
 
 - `write_point`
 - `command_received`
@@ -74,7 +74,6 @@ EnvelopeJson 追求三件事：
 ## 5. `payload.data` 里是什么
 
 `payload.data` 的具体字段取决于事件类型（对应 `NorthwardData` 或 `NorthwardEvent` 的具体结构）。  
-产品文档落地时会分别在插件页给出“最常见的 Telemetry/Attributes/WritePoint”示例，避免用户看不懂内部模型。
 
 ::: tip 最佳实践
 对接初期，先固定用 EnvelopeJson，把链路跑通并稳定可观测；确认无误后再考虑 Kv/TimeseriesRows/MappedJson。

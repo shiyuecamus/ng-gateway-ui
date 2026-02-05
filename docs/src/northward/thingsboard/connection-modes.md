@@ -23,7 +23,7 @@ ThingsBoard 配置分两块：
 
 ---
 
-## 3. ConnectionConfig（`connection`）
+## 3. ConnectionConfig
 
 ### 3.1 Token（推荐）
 
@@ -73,7 +73,7 @@ ThingsBoard 配置分两块：
 证书路径必须是运行环境可见路径（容器内路径）。
 :::
 
-### 3.4 Provision（自动获取凭据）
+### 3.4 Provision
 
 ```json
 {
@@ -109,6 +109,7 @@ Provision 详解见：[`Provision（自动注册/凭据获取）`](/northward/th
 | `message_format` | `json` | `json` / `protobuf`（当前 protobuf 未实现） |
 | `qos` | 1 | 0/1/2（非法值会回退到 1） |
 | `retain_messages` | false | retain 标志 |
+| `max_payload_bytes` | 9216 | 单条 MQTT Publish 的最大 payload 字节数（JSON 序列化后）。超过上限会自动“分片/分块”（拆成多条符合 TB Gateway API 的合法消息）。详见：[`max_payload_bytes 与分片算法`](/northward/thingsboard/max-payload-bytes-and-chunking) |
 | `keep_alive` | 60 | keep alive 秒 |
 | `clean_session` | false | clean session |
 

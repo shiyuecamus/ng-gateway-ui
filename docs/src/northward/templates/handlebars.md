@@ -20,7 +20,7 @@ description: '北向 uplink 的 topic/key 支持 Handlebars 模板语法；本�
 
 ## 2. 基本语法
 
-模板变量使用 `{{var}}`：
+模板变量使用 <code v-pre>{{var}}</code>：
 
 ```text
 ng.uplink.{{event_kind}}.{{device_name}}
@@ -32,13 +32,13 @@ ng.uplink.{{event_kind}}.{{device_name}}
 - **不做 HTML escaping**：topic/key 是纯文本
 
 ::: warning 常见坑：变量缺失导致 topic/key 为空
-如果你写了 `{{channel_name}}`，但当前数据类型拿不到 `channel_name`，它会变成空字符串。  
+如果你写了 <code v-pre>{{channel_name}}</code>，但当前数据类型拿不到 `channel_name`，它会变成空字符串。  
 建议用 `default` helper 提供兜底值（见下文）。
 :::
 
 ---
 
-## 3. `default` helper（强烈建议使用）
+## 3. `default` helper
 
 语法：
 
@@ -64,7 +64,7 @@ ng.uplink.{{event_kind}}.{{default device_type "unknown"}}.{{device_name}}
 
 ---
 
-## 5. 推荐的 topic/key 规划（经验规则）
+## 5. 推荐的 topic/key 规划
 
 ### 5.1 topic 用来表达“路由维度”
 
@@ -84,7 +84,7 @@ tenant.{{app_id}}.ng.uplink.{{event_kind}}.{{device_name}}
 
 Kafka/Pulsar 的 key/partition_key 会影响分区：
 
-- 想按设备有序：`{{device_id}}` 或 `{{device_name}}`
+- 想按设备有序：<code v-pre>{{device_id}}</code> 或 <code v-pre>{{device_name}}</code>
 - 想按点位有序：通常不建议（分区过细会影响吞吐）
 
 更深入建议：

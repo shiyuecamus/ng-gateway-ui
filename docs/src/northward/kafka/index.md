@@ -3,7 +3,7 @@ title: 'Kafka（北向插件）'
 description: '把 NG Gateway 数据上送到 Kafka，并可选从 Kafka topic 接收下行控制消息（WritePoint/Command/RPC）。'
 ---
 
-## 1. 这个插件适合什么场景
+## 1. 适用场景
 
 - 把遥测/属性/上下线事件写入 **Kafka**，供数据湖、流计算、告警系统消费
 - 通过 Kafka topic 下发控制消息，实现 **WritePoint / Command / RPC 回执**（可选）

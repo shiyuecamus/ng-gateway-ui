@@ -9,7 +9,7 @@ Kafka 的并行度来自分区（partition），而你选择的 key 决定“同
 
 常见目标：
 
-- **按设备有序**：key = `{{device_id}}`（推荐默认）
+- **按设备有序**：key = <code v-pre>{{device_id}}</code>（推荐默认）
 - **最大并行度**：key 为空或更均匀散列（但设备内顺序不保证）
 
 ::: tip 推荐
@@ -18,7 +18,7 @@ Kafka 的并行度来自分区（partition），而你选择的 key 决定“同
 
 ---
 
-## 2. 幂等 producer（enableIdempotence）
+## 2. 幂等 producer
 
 Kafka 插件默认启用幂等 producer（`enableIdempotence=true`）。
 
@@ -32,7 +32,7 @@ Kafka 插件默认启用幂等 producer（`enableIdempotence=true`）。
 
 ---
 
-## 3. 吞吐调优（从易到难）
+## 3. 吞吐调优
 
 ### 3.1 先确认平台侧消费能力
 

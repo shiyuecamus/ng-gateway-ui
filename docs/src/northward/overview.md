@@ -58,7 +58,7 @@ NG Gateway 的北向架构不仅仅是“把数据发到云端”，而是一个
 
 | 字段 | 类型 | 说明 | 建议 |
 | --- | --- | --- | --- |
-| `maxAttempts` | `number \| null` | 最大重试次数。`null` 表示无限重试；`0` 的语义因实现而异（当前实现中通常等价于“不限制/持续重试”，请谨慎）。 | 生产建议使用有限次数或有限时长；不要无限重试掩盖配置错误。 |
+| `maxAttempts` | `number \| null` | 最大重试次数。`0` 表示禁用重试；`null` 表示无限重试；设置为 `N` 表示最多重试 `N` 次。 | 生产建议使用有限次数或有限时长；不要无限重试掩盖配置错误。 |
 | `initialIntervalMs` | `number` | 初始退避间隔（ms） | 1000~3000 |
 | `maxIntervalMs` | `number` | 最大退避间隔（ms） | 30000~60000 |
 | `multiplier` | `number` | 指数倍率（典型 2.0） | 2.0 |
@@ -67,7 +67,13 @@ NG Gateway 的北向架构不仅仅是“把数据发到云端”，而是一个
 
 ::: warning 关于 `maxAttempts=0` 的注意事项
 不同组件对 `0` 的解释可能不同（常见有“禁用重试”或“无限重试”两种约定）。  
-在本项目当前实现中，多处 `should_retry()` 把 `None | Some(0)` 当作“继续重试”，因此你应把 `0` 当作“无限/不限制”，避免误配。
+本项目（southward driver / northward plugin / collector）对 `RetryPolicy.maxAttempts` 使用**统一语义**：
+
+- `maxAttempts = 0`：禁用重试（失败后立即停止重试）
+- `maxAttempts = null`：无限重试（谨慎使用）
+- `maxAttempts = N`：最多重试 `N` 次
+
+如果你想表达“无限/不限制”，请使用 `null`，不要使用 `0`。
 :::
 
 ### `QueuePolicy`
@@ -120,15 +126,7 @@ NG Gateway 的北向架构不仅仅是“把数据发到云端”，而是一个
 2.  **归一化 (Normalization)**：将协议层输入（Kafka record / Pulsar message / MQTT publish / OPC UA write）归一化为统一的内部事件模型 `NorthwardEvent`（WritePoint / CommandReceived / RpcResponseReceived）。
 3.  **投递 (Dispatch to Core)**：将归一化后的 `NorthwardEvent` 通过 `events_tx` 投递到 Gateway core（Plugin -> Core），形成统一控制面入口。
 4.  **校验与串行化执行 (Validate & Serialize Execute)**：core 对事件做强校验（NotFound/NotWriteable/TypeMismatch/OutOfRange/NotConnected/QueueTimeout 等），并按 **Channel 内严格串行** 的写入/动作队列执行，最终调用 southward driver（`write_point` / `execute_action`）。
-5.  **确认/响应 (Ack/Response)**：根据插件的“回执机制”完成最终确认：
-    - **Kafka/Pulsar**：按 `AckPolicy/FailurePolicy` 决定 commit / ack / nack（避免 poison message 卡死）。
-    - **OPC UA Server**：将执行结果映射为 OPC UA `StatusCode` 返回给客户端，并（成功时）更新 AddressSpace 值。
-    - **ThingsBoard**：按其协议语义完成响应/回执（具体以 handlers 逻辑与平台约定为准）。
-
-::: warning 关于“写回响应是否会再发回平台”
-Core 会生成 `WritePointResponse` / `RpcResponse` 等响应对象；但**是否会被某个北向插件继续上送给平台**取决于插件是否实现对应 uplink 映射。  
-当前版本 Kafka/Pulsar/ThingsBoard 的 uplink 主要覆盖 Telemetry/Attributes/上下线事件；写回响应更多用于网关内部闭环（例如 OPC UA Write 返回状态码）。
-:::
+5.  **确认/响应 (Ack/Response)**：根据插件的“回执机制”完成最终确认.
 
 ## 3. 可靠性与背压
 
@@ -153,7 +151,7 @@ Core 会生成 `WritePointResponse` / `RpcResponse` 等响应对象；但**是�
 
 #### 统一处理流水线（同一套逻辑同时覆盖“离线”和“队列满”）
 
-对每条待上云数据（可抽象为 `Record{kind,key,ts,payload,priority}`）建议按以下顺序处理：
+对每条待上云数据（抽象为 `Record{kind,key,ts,payload,priority}`）：
 
 1. **TTL Gate（按时效性丢弃）**：超过 `maxAgeMs` 的数据直接丢弃（尤其是 Telemetry），并记录丢弃原因（expired）。
 2. **CoalesceLast（按 last 合并）**：对同一 `key` 仅保留最新值，避免把“过期过程数据”持续入队/落盘。  
@@ -179,7 +177,7 @@ Core 会生成 `WritePointResponse` / `RpcResponse` 等响应对象；但**是�
 当前版本的可靠性主要依赖 **内存队列（`QueuePolicy`）+ 连接/发送重试（`RetryPolicy`）**。磁盘 WAL 断网续传与回放机制目前**尚未完整实现**（或实现仍较为粗糙），请不要将其作为强承诺能力依赖。
 ::::
 
-#### 产品级最佳实践计划（建议按此做现场与运维规划）
+#### 产品级最佳实践计划
 
 - **容量预算**：按“点位频率 × 单点平均大小 × 目标断网时长”预估缓冲需求，并为 App 设置合理的 `capacity/bufferCapacity`。
 - **分流隔离**：关键数据与高频遥测拆分到不同 App（不同队列/不同重试策略），避免互相拖累。
@@ -190,9 +188,9 @@ Core 会生成 `WritePointResponse` / `RpcResponse` 等响应对象；但**是�
 对于关键设施，建议将关键数据与遥测数据拆分到不同 App，并优先保障关键 App 的队列容量与重试窗口；对于高频遥测，请使用可预期的背压/丢弃策略以保护网关稳定性。
 :::
 
-### 3.2 策略矩阵与推荐默认（Best Practices）
+### 3.2 策略矩阵与推荐默认
 
-#### 策略矩阵（按数据类型 × 运行状态）
+#### 策略矩阵
 
 | 数据类型 | Normal（在线） | Congested（拥塞） | Offline（离线） | Replay（补传） |
 | :--- | :--- | :--- | :--- | :--- |
@@ -202,30 +200,14 @@ Core 会生成 `WritePointResponse` / `RpcResponse` 等响应对象；但**是�
 
 > 解释：离线与队列满并不冲突。离线时同样必须做合并/采样/TTL，否则 WAL 会被写爆、回放会拖垮系统；拥塞时同样可以（Hybrid）把“压缩后的数据”溢出到 WAL 以缓冲尖峰。
 
-#### 回放隔离（关键时序设计）
+#### 回放隔离
 
 建议采用“两条逻辑通道 + 预算隔离”的设计（Roadmap）：
 
 - **Realtime lane**：实时数据永远优先，保证低延迟。
 - **Replay lane**：历史回放独立限速/并发，并通过“发送预算占比/令牌桶”控制上限（例如回放最多占用 20% 发送预算）。
 
-#### 当前版本可用的落地建议（现在就能做）
-
-当前阶段建议主要通过 `QueuePolicy.dropPolicy` 与 App 拆分实现“粗粒度隔离”（把策略“外置”为多个 App 来隔离资源与失败域）：
-
-- **高优先级保留**：把报警/事件/控制面响应放入独立 App，使用 `dropPolicy=Block`（并设置合理 `blockDuration`）或更大的队列容量。  
-  - *原理：这些数据量小但价值高，应优先获得发送预算与重试窗口。*
-- **低优先级保新弃旧**：高频遥测优先使用 `dropPolicy=Discard`，并在南向侧做变化过滤/降采样；将 “last 合并 / TTL / 采样” 作为未来演进方向（Roadmap）。  
-  - *原理：时序数据的时效性往往比完整性更重要，过期的实时数据可能已无意义。*
-- **按订阅优先级路由**：利用 `AppSubscription.priority` 在资源紧张时优先保障高优先级 App（先保证其队列与发送预算）。
-
-## 4. 并发与隔离模型
-
-NG Gateway 采用 Rust 的 **Actor 模型** 实现高度并发与故障隔离。
-
--   **App/插件隔离**：每个北向 App 运行在独立的 Actor 中。如果某个 App 因配置错误进入失败态，不会影响其他 App 或南向采集任务。
-
-## 5. 数据格式
+## 4. 数据格式
 
 目前北向插件以 **JSON** 载荷为主，并且提供多种“可预测的 JSON 形状”以平衡可读性与吞吐：
 

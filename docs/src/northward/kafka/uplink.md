@@ -35,10 +35,10 @@ Kafka uplink 位于：
 
 ---
 
-## 2. 默认 topic/key（代码默认）
+## 2. 默认 topic/key
 
-- `topic` 默认：`ng.uplink.{{event_kind}}.{{device_name}}`
-- `key` 默认：`{{device_id}}`
+- `topic` 默认：<code v-pre>ng.uplink.{{event_kind}}.{{device_name}}</code>
+- `key` 默认：<code v-pre>{{device_id}}</code>
 
 ::: tip
 如果你希望按时间分区写入数据湖，建议把时间维度放到 topic 里（`yyyy/MM/dd/HH`），并保持 key 按设备分区。
@@ -46,7 +46,7 @@ Kafka uplink 位于：
 
 ---
 
-## 3. Producer 参数（`uplink.producer`）
+## 3. Producer 参数
 
 | 字段 | 默认 | 说明 |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ Kafka uplink 位于：
 
 ---
 
-## 4. Headers（用于可观测性与过滤）
+## 4. Headers
 
 Kafka uplink 会把 RenderContext 的键值对作为 headers 写入（例如 `app_id`、`event_kind`、`device_id` 等）。
 

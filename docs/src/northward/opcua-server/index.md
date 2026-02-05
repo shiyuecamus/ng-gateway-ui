@@ -20,24 +20,14 @@ description: '把 NG Gateway 点位暴露为 OPC UA AddressSpace（Objects/NG-Ga
 
 ---
 
-## 3. 目录导航
+## 3. 快速验证
 
-- 节点映射：[`Node 映射与 NodeId 规则`](/northward/opcua-server/node-mapping)
-- 安全与证书：[`安全与证书（PKI / trusted_client_certs）`](/northward/opcua-server/security)
-- 写回：[`写回链路与状态码映射`](/northward/opcua-server/writeback)
-- 性能与丢弃策略：[`性能调优（update queue）`](/northward/opcua-server/performance)
-- 排障：[`OPC UA Server 排障`](/northward/opcua-server/troubleshooting)
-
----
-
-## 4. 快速验证（UAExpert）
-
-1. 使用 UAExpert 连接 `opc.tcp://<gateway-host>:4840/`
+1. 使用 Prosys OPC UA Browser 连接 `opc.tcp://<gateway-host>:4840/`
 2. 浏览 `Objects` → `NG-Gateway`
 3. 订阅某个点位 variable，观察实时更新
 4. （可选）对可写点位执行 Write，观察是否写入成功
 
-<!-- TODO screenshot: opcua-browse -->
+![Opcua browse](./assets/opcua-browse.png)
 
 ::: warning
 点位节点是“按需创建”的：只有被路由到该 App 的点位（或随后在缓存中更新的点位）才会出现。  

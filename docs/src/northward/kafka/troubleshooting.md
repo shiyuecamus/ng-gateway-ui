@@ -3,7 +3,7 @@ title: 'Kafka 排障'
 description: 'Kafka 插件常见问题定位：连接失败、ACL、TLS/SASL、topic 渲染异常、队列满、消费组 offset 与下行不生效。'
 ---
 
-## 1. 连接失败（Failed）
+## 1. 连接失败
 
 ### 1.1 broker 不可达
 
@@ -11,7 +11,7 @@ description: 'Kafka 插件常见问题定位：连接失败、ACL、TLS/SASL、t
 - 容器网络（DNS、端口映射）
 - broker listener 配置（advertised.listeners）
 
-### 1.2 ACL/鉴权失败（SASL/TLS）
+### 1.2 ACL/鉴权失败
 
 - 机制是否匹配（PLAIN/SCRAM）
 - 用户是否有 topic produce/consume 权限
@@ -31,7 +31,7 @@ description: 'Kafka 插件常见问题定位：连接失败、ACL、TLS/SASL、t
 
 ---
 
-## 3. 队列满（outbound queue rejected）
+## 3. 队列满
 
 含义：
 
@@ -53,6 +53,3 @@ description: 'Kafka 插件常见问题定位：连接失败、ACL、TLS/SASL、t
 2. topic 是否精确匹配（不可模板/不可 wildcard）
 3. payload 是否是正确的 EnvelopeJson/MappedJson
 4. `ackPolicy/failurePolicy` 是否符合预期（是否被 drop/ignore）
-
-下行语义见：[`Kafka 下行（Downlink）`](/northward/kafka/downlink)
-

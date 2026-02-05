@@ -3,7 +3,7 @@ title: 'OPC UA Server 排障'
 description: '常见问题定位：连不上、看不到节点、值不更新、写回失败、证书不信任、端口/endpoint 选择错误。'
 ---
 
-## 1. 连不上（连接失败）
+## 1. 连不上
 
 - 地址是否正确：`opc.tcp://<host>:4840/`
 - 端口是否被占用
@@ -30,8 +30,6 @@ description: '常见问题定位：连不上、看不到节点、值不更新、
 - update queue 是否在丢弃（系统压力大时）
 - 是否订阅了正确的 variable 节点
 - 是否存在点位 meta 缺失导致节点未创建（通常会在收到数据后补建）
-
-见：[`性能调优（update queue）`](/northward/opcua-server/performance)
 
 ---
 

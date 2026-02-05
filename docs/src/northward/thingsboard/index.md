@@ -13,31 +13,18 @@ description: '对接 ThingsBoard 平台：支持 Gateway Telemetry/Attributes/Co
 
 ## 2. 关键能力与限制
 
-::: tip 已实现
+:::: tip 已实现
 - 多种连接模式：Token / UsernamePassword / X509 / Provision
 - Provision：会把凭据持久化到 extension storage（重启后复用）
 - 上行：Gateway Telemetry、Gateway Attributes、Connect/Disconnect
-- 下行：订阅并处理 RPC / Attributes 等业务 topic（转为 NorthwardEvent）
-:::
+- 上行保护：`communication.max_payload_bytes` 自动分块（避免单条 publish 超限）
+- 下行：RPC / Attributes 订阅与事件映射（RPC 支持闭环回包）
+::::
 
-::: warning 当前限制
-- `message_format=protobuf` 当前版本未实现（会报错），详见：[`Protobuf 状态说明`](/northward/thingsboard/protobuf-status)
-:::
+:::: warning 当前限制
+- `message_format=protobuf` 当前版本未实现（会报错）
+- 写点结果不写回 TB：`WritePointResponse` 当前只记录日志（推荐用 RPC 或 desired/reported 模型闭环）
+- `v1/devices/me/attributes/response/+` 与 `v1/devices/me/rpc/response/+` 当前为空实现（收到会忽略）
+::::
 
 ---
-
-## 3. 最快跑通（推荐路径）
-
-1. 选择一个连接模式（推荐先用 Token）
-2. 创建 App 并配置连接
-3. 创建 AppSubscription（订阅设备）
-4. 在 ThingsBoard UI 验证 telemetry/attributes 是否到达
-
-入口：
-
-- 连接模式：[`连接模式与参数`](/northward/thingsboard/connection-modes)
-- 上行格式：[`上行消息格式（TB Gateway API）`](/northward/thingsboard/uplink-format)
-- Provision：[`Provision（自动注册/凭据获取）`](/northward/thingsboard/provision)
-- 下行：[`RPC 与 Attributes 下行`](/northward/thingsboard/rpc-and-attributes)
-- 排障：[`ThingsBoard 排障`](/northward/thingsboard/troubleshooting)
-

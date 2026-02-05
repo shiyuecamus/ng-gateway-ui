@@ -3,7 +3,7 @@ title: '写回链路与状态码映射'
 description: 'OPC UA Write 如何转换为网关 WritePoint，并等待 WritePointResponse；错误如何映射为 OPC UA StatusCode。'
 ---
 
-## 1. 写回链路（实现对齐）
+## 1. 写回链路
 
 当 OPC UA 客户端对某个点位 Variable 执行 Write：
 
@@ -17,7 +17,7 @@ description: 'OPC UA Write 如何转换为网关 WritePoint，并等待 WritePoi
 
 ---
 
-## 2. 类型匹配（严格）
+## 2. 类型匹配
 
 当前写回是严格类型匹配，不做“字符串转数字”等自动转换。
 
@@ -32,7 +32,7 @@ description: 'OPC UA Write 如何转换为网关 WritePoint，并等待 WritePoi
 
 ---
 
-## 3. 错误到 StatusCode 的映射（高层）
+## 3. 错误到 StatusCode 的映射
 
 | 网关错误 | 典型原因 | StatusCode（示意） |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ description: 'OPC UA Write 如何转换为网关 WritePoint，并等待 WritePoi
 
 ---
 
-## 4. timeout_ms（写入超时）
+## 4. 写入超时
 
 配置项：
 
@@ -56,6 +56,3 @@ description: 'OPC UA Write 如何转换为网关 WritePoint，并等待 WritePoi
 
 - core 内写入串行队列的等待
 - southward driver 的写入超时
-
-<!-- TODO screenshot: opcua-write -->
-

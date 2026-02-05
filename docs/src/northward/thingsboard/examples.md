@@ -18,6 +18,7 @@ description: '可复制的 ThingsBoard App 配置示例：Token 连接、Provisi
     "message_format": "json",
     "qos": 1,
     "retain_messages": false,
+    "max_payload_bytes": 9216,
     "keep_alive": 60,
     "clean_session": false
   }
@@ -46,6 +47,7 @@ description: '可复制的 ThingsBoard App 配置示例：Token 连接、Provisi
     "message_format": "json",
     "qos": 1,
     "retain_messages": false,
+    "max_payload_bytes": 9216,
     "keep_alive": 60,
     "clean_session": false
   }

@@ -3,7 +3,7 @@ title: '安全与证书（PKI / trusted_client_certs）'
 description: 'OPC UA Server 的 endpoints、安全模式、PKI 目录结构，以及如何把客户端证书加入 trusted_client_certs。'
 ---
 
-## 1. Endpoints（实现对齐）
+## 1. Endpoints
 
 当前 server 同时暴露两个 endpoint（同一路径 `/`）：
 
@@ -17,7 +17,7 @@ description: 'OPC UA Server 的 endpoints、安全模式、PKI 目录结构，�
 
 ---
 
-## 2. PKI 目录（实现对齐）
+## 2. PKI 目录
 
 server 使用一个稳定的 PKI 目录：
 

@@ -42,9 +42,3 @@ description: '按症状快速定位：不出数据、topic 不对、队列满、
 - payload shape 是否正确（event.kind 与 data 字段）
 
 ---
-
-## 3. 深入排障入口
-
-- [`验证清单（推荐按顺序）`](/northward/troubleshooting/verify-checklist)
-- [`常见错误与处理建议`](/northward/troubleshooting/common-errors)
-

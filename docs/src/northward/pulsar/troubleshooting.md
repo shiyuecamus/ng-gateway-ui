@@ -3,7 +3,7 @@ title: 'Pulsar 排障'
 description: 'Pulsar 常见问题定位：serviceUrl/端口、token 权限、TLS、topic/namespace、backlog 与 ack/nack 行为。'
 ---
 
-## 1. 连接失败（Failed）
+## 1. 连接失败
 
 - `serviceUrl` 协议与端口是否匹配（`pulsar://6650` / `pulsar+ssl://6651`）
 - token 是否有权限（tenant/namespace/topic）

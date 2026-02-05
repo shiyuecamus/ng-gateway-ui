@@ -7,19 +7,19 @@ description: 'Kafka/Pulsar 等插件支持从 topic 接收下行消息并映射�
 
 下行（Downlink）让“平台侧请求”进入网关，并最终触达 southward：
 
-- **WritePoint**：写点（最常见）
-- **CommandReceived**：平台下发命令（动作/Action）
-- **RpcResponseReceived**：平台返回 RPC 响应（回执/交互）
+- **WritePoint**：写点
+- **CommandReceived**：平台下发命令
+- **RpcResponseReceived**：平台返回 RPC 响应
 
 这些下行消息会被插件解析成 `NorthwardEvent`，再由 core 做校验、串行化（按 channel）并分发给设备。
 
 ---
 
-## 2. Topic 限制：只支持精确 topic（非常重要）
+## 2. Topic 限制：只支持精确 topic
 
 当前下行订阅严格要求 **exact topic**：
 
-- 不允许 `{{template}}`
+- 不允许 <code v-pre>{{template}}</code>
 - 不允许 `*` wildcard
 - 不允许 `re:`/`regex:` 前缀
 
@@ -29,7 +29,7 @@ description: 'Kafka/Pulsar 等插件支持从 topic 接收下行消息并映射�
 
 ---
 
-## 3. payload 模式（两种）
+## 3. payload 模式
 
 下行支持两种 payload：
 
@@ -43,7 +43,7 @@ description: 'Kafka/Pulsar 等插件支持从 topic 接收下行消息并映射�
 
 ---
 
-## 4. AckPolicy / FailurePolicy（确认语义）
+## 4. AckPolicy / FailurePolicy
 
 不同 broker 的确认机制不同（Kafka commit / Pulsar ack/nack），但 northward 统一用两组策略表达：
 

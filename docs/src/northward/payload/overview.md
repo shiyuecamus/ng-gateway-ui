@@ -15,17 +15,8 @@ description: '北向上行支持四种 payload：EnvelopeJson、Kv、TimeseriesR
 ::: tip 经验法则
 - 对接初期：用 **EnvelopeJson**（最容易排障）
 - 追求吞吐/落湖：用 **TimeseriesRows** 或 **Kv**
-- 需要对接平台自定义结构：用 **MappedJson**（未来可升级为 Lua Transform）
+- 需要对接平台自定义结构：用 **MappedJson**
 :::
-
----
-
-## 2. 四种模式的文档入口
-
-- EnvelopeJson：[`EnvelopeJson（稳定包络）`](/northward/payload/envelope-json)
-- Kv：[`Kv（ts + values）`](/northward/payload/kv)
-- TimeseriesRows：[`TimeseriesRows（行式）`](/northward/payload/timeseries-rows)
-- MappedJson：[`MappedJson（JMESPath 映射）`](/northward/payload/mapped-json)
 
 ---
 

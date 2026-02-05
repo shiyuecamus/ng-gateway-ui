@@ -84,83 +84,89 @@ function sidebar(): DefaultTheme.SidebarItem[] {
         },
         { link: '/southward/iec104-bulk-import', text: 'IEC104 批量导入示例' },
         {
-          text: 'Modbus',
+          text: '驱动',
           collapsed: true,
           items: [
-            { link: '/southward/modbus/', text: '驱动概览与配置' },
-            { link: '/southward/modbus/addressing', text: '地址与 quantity' },
-            { link: '/southward/modbus/batching', text: '批量读写与调优' },
-          ],
-        },
-        {
-          text: '西门子 S7',
-          collapsed: true,
-          items: [
-            { link: '/southward/s7/', text: '驱动概览与配置' },
-            { link: '/southward/s7/addressing', text: 'S7 地址语法' },
-          ],
-        },
-        {
-          text: 'IEC 60870-5-104',
-          collapsed: true,
-          items: [
-            { link: '/southward/iec104/', text: '驱动概览与配置' },
-            { link: '/southward/iec104/typeid', text: 'TypeID 与建模' },
-            { link: '/southward/iec104/link-timers', text: '链路定时器与背压' },
-          ],
-        },
-        {
-          text: 'DLT645',
-          collapsed: true,
-          items: [
-            { link: '/southward/dlt645/', text: '驱动概览与配置' },
             {
-              link: '/southward/dlt645/address-di',
-              text: '表地址 / DI / 小数位',
+              text: 'Modbus',
+              collapsed: true,
+              items: [
+                { link: '/southward/modbus/', text: '驱动概览与配置' },
+                { link: '/southward/modbus/addressing', text: '地址与 quantity' },
+                { link: '/southward/modbus/batching', text: '批量读写与调优' },
+              ],
             },
-          ],
-        },
-        {
-          text: 'CJT188',
-          collapsed: true,
-          items: [
-            { link: '/southward/cjt188/', text: '驱动概览与配置' },
-            { link: '/southward/cjt188/address-di', text: '地址 / 类型 / DI' },
-          ],
-        },
-        {
-          text: 'OPC UA',
-          collapsed: true,
-          items: [
-            { link: '/southward/opcua/', text: '驱动概览与配置' },
-            { link: '/southward/opcua/nodeid', text: 'NodeId 语法与获取' },
-            { link: '/southward/opcua/security', text: '安全与认证' },
-          ],
-        },
-        {
-          text: 'Ethernet-IP',
-          collapsed: true,
-          items: [
-            { link: '/southward/ethernet-ip/', text: '驱动概览与配置' },
-            { link: '/southward/ethernet-ip/tag', text: 'Tag 建模与限制' },
-          ],
-        },
-        {
-          text: 'DNP3',
-          collapsed: true,
-          items: [
-            { link: '/southward/dnp3/', text: '驱动概览与配置' },
-            { link: '/southward/dnp3/groups', text: '对象组/索引/命令类型' },
-            { link: '/southward/dnp3/crob', text: 'CROB ControlCode' },
-          ],
-        },
-        {
-          text: '三菱 MC',
-          collapsed: true,
-          items: [
-            { link: '/southward/mc/', text: '驱动概览与配置' },
-            { link: '/southward/mc/addressing', text: 'MC 地址语法' },
-            { link: '/southward/mc/batching', text: '批量读写与调优' },
+            {
+              text: '西门子 S7',
+              collapsed: true,
+              items: [
+                { link: '/southward/s7/', text: '驱动概览与配置' },
+                { link: '/southward/s7/addressing', text: 'S7 地址语法' },
+              ],
+            },
+            {
+              text: 'IEC 60870-5-104',
+              collapsed: true,
+              items: [
+                { link: '/southward/iec104/', text: '驱动概览与配置' },
+                { link: '/southward/iec104/typeid', text: 'TypeID 与建模' },
+                { link: '/southward/iec104/link-timers', text: '链路定时器与背压' },
+              ],
+            },
+            {
+              text: 'DLT645',
+              collapsed: true,
+              items: [
+                { link: '/southward/dlt645/', text: '驱动概览与配置' },
+                {
+                  link: '/southward/dlt645/address-di',
+                  text: '表地址 / DI / 小数位',
+                },
+              ],
+            },
+            {
+              text: 'CJT188',
+              collapsed: true,
+              items: [
+                { link: '/southward/cjt188/', text: '驱动概览与配置' },
+                { link: '/southward/cjt188/address-di', text: '地址 / 类型 / DI' },
+              ],
+            },
+            {
+              text: 'OPC UA',
+              collapsed: true,
+              items: [
+                { link: '/southward/opcua/', text: '驱动概览与配置' },
+                { link: '/southward/opcua/nodeid', text: 'NodeId 语法与获取' },
+                { link: '/southward/opcua/security', text: '安全与认证' },
+              ],
+            },
+            {
+              text: 'Ethernet-IP',
+              collapsed: true,
+              items: [
+                { link: '/southward/ethernet-ip/', text: '驱动概览与配置' },
+                { link: '/southward/ethernet-ip/tag', text: 'Tag 建模与限制' },
+              ],
+            },
+            {
+              text: 'DNP3',
+              collapsed: true,
+              items: [
+                { link: '/southward/dnp3/', text: '驱动概览与配置' },
+                { link: '/southward/dnp3/groups', text: '对象组/索引/命令类型' },
+                { link: '/southward/dnp3/crob', text: 'CROB ControlCode' },
+              ],
+            },
+            {
+              text: '三菱 MC',
+              collapsed: true,
+              items: [
+                { link: '/southward/mc/', text: '驱动概览与配置' },
+                { link: '/southward/mc/addressing', text: 'MC 地址语法' },
+                { link: '/southward/mc/batching', text: '批量读写与调优' },
+              ],
+            },
           ],
         },
       ],
@@ -170,7 +176,14 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       text: '北向',
       items: [
         { link: '/northward/overview', text: '北向总览' },
-        { link: '/northward/quick-start', text: '快速开始' },
+        {
+          text: '模板',
+          collapsed: true,
+          items: [
+            { link: '/northward/templates/variables', text: '变量' },
+            { link: '/northward/templates/handlebars', text: 'Handlebars' },
+          ],
+        },
         {
           text: '上行 Payload',
           collapsed: true,
@@ -192,24 +205,7 @@ function sidebar(): DefaultTheme.SidebarItem[] {
             { link: '/northward/downlink/mapped-json', text: 'MappedJson + Filter' },
           ],
         },
-        {
-          text: '最佳实践',
-          collapsed: true,
-          items: [
-            { link: '/northward/best-practices/architecture', text: '架构与隔离' },
-            { link: '/northward/best-practices/performance', text: '性能与吞吐' },
-            { link: '/northward/best-practices/reliability', text: '可靠性与弱网' },
-          ],
-        },
-        {
-          text: '排障',
-          collapsed: true,
-          items: [
-            { link: '/northward/troubleshooting/overview', text: '排障索引' },
-            { link: '/northward/troubleshooting/verify-checklist', text: '验证清单' },
-            { link: '/northward/troubleshooting/common-errors', text: '常见错误' },
-          ],
-        },
+        { link: '/northward/troubleshooting', text: '排障索引' },
         {
           text: '插件',
           collapsed: true,
@@ -220,9 +216,9 @@ function sidebar(): DefaultTheme.SidebarItem[] {
               collapsed: true,
               items: [
                 { link: '/northward/kafka/connection-security', text: '连接与安全' },
-                { link: '/northward/kafka/uplink', text: '上行（Uplink）' },
+                { link: '/northward/kafka/uplink', text: '上行' },
                 { link: '/northward/kafka/partitions', text: '分区与调优' },
-                { link: '/northward/kafka/downlink', text: '下行（Downlink）' },
+                { link: '/northward/kafka/downlink', text: '下行' },
                 { link: '/northward/kafka/examples', text: '配置示例' },
                 { link: '/northward/kafka/troubleshooting', text: '排障' },
               ],
@@ -233,9 +229,9 @@ function sidebar(): DefaultTheme.SidebarItem[] {
               collapsed: true,
               items: [
                 { link: '/northward/pulsar/connection-auth', text: '连接与鉴权' },
-                { link: '/northward/pulsar/uplink', text: '上行（Uplink）' },
+                { link: '/northward/pulsar/uplink', text: '上行' },
                 { link: '/northward/pulsar/partitions', text: '分区与调优' },
-                { link: '/northward/pulsar/downlink', text: '下行（Downlink）' },
+                { link: '/northward/pulsar/downlink', text: '下行' },
                 { link: '/northward/pulsar/examples', text: '配置示例' },
                 { link: '/northward/pulsar/troubleshooting', text: '排障' },
               ],
@@ -248,10 +244,9 @@ function sidebar(): DefaultTheme.SidebarItem[] {
                 { link: '/northward/thingsboard/connection-modes', text: '连接模式' },
                 { link: '/northward/thingsboard/provision', text: 'Provision' },
                 { link: '/northward/thingsboard/uplink-format', text: '上行格式' },
+                { link: '/northward/thingsboard/max-payload-bytes-and-chunking', text: 'Payload 上限与分片' },
                 { link: '/northward/thingsboard/rpc-and-attributes', text: 'RPC/Attributes 下行' },
-                { link: '/northward/thingsboard/protobuf-status', text: 'Protobuf 状态' },
                 { link: '/northward/thingsboard/examples', text: '配置示例' },
-                { link: '/northward/thingsboard/troubleshooting', text: '排障' },
               ],
             },
             {
@@ -262,13 +257,12 @@ function sidebar(): DefaultTheme.SidebarItem[] {
                 { link: '/northward/opcua-server/node-mapping', text: 'Node 映射' },
                 { link: '/northward/opcua-server/security', text: '安全与证书' },
                 { link: '/northward/opcua-server/writeback', text: '写回' },
-                { link: '/northward/opcua-server/performance', text: '性能调优' },
                 { link: '/northward/opcua-server/troubleshooting', text: '排障' },
               ],
             },
-            { link: '/northward/mqtt', text: 'MQTT（占位）' },
-            { link: '/northward/websocket', text: 'WebSocket（占位）' },
-            { link: '/northward/http', text: 'HTTP（占位）' },
+            // { link: '/northward/mqtt', text: 'MQTT（占位）' },
+            // { link: '/northward/websocket', text: 'WebSocket（占位）' },
+            // { link: '/northward/http', text: 'HTTP（占位）' },
           ],
         },
       ],
@@ -279,11 +273,9 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       items: [
         { link: '/ops/data-monitor', text: '数据监控' },
         { link: '/ops/action-debug', text: 'Action 调试' },
+        { link: '/ops/net-debug', text: '网络调试' },
+        { link: '/ops/branding', text: '白标' },
         { link: '/ops/configuration', text: '配置管理' },
-        { link: '/ops/logging', text: '日志管理' },
-        { link: '/ops/metrics', text: '指标管理' },
-        { link: '/ops/tracing', text: '指标追踪' },
-        { link: '/ops/faq', text: '常见问题及故障排查' },
       ],
     },
     {
