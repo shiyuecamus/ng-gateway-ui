@@ -7,6 +7,8 @@ description: 'NG Gateway Action 调试产品文档：按通道/设备选择动�
 
 “Action 调试”用于对某个设备的 **Action（下行/指令/写入/控制动作）** 做一次“可控、可观测”的在线调试：你选择通道与设备、选择 Action，系统会根据 Action 的输入定义动态生成表单，提交后展示结构化返回结果与耗时。
 
+![Action debug page](./assets/action-debug-page.png)
+
 ## 适用场景
 
 - **指令联调**：验证设备写入/控制是否可达、参数编码是否正确、驱动是否按预期执行
@@ -38,7 +40,9 @@ Action 往往是“有副作用”的：它可能导致设备启停、写寄存�
    - 点击“测试/执行”（UI 文案：`page.southward.action.test`）
    - 右侧展示 JSON 结果
 
-## 参数表单的“类型规则”（决定你该怎么填）
+![Action debug result](./assets/action-debug-result.png)
+
+## 参数表单的“类型规则”
 
 Action 调试会根据 Action 的输入参数定义渲染组件，关键规则如下：
 

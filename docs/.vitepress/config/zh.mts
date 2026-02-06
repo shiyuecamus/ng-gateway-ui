@@ -272,6 +272,7 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       text: '运维',
       items: [
         { link: '/ops/data-monitor', text: '数据监控' },
+        { link: '/ops/observability', text: '可观测性' },
         { link: '/ops/action-debug', text: 'Action 调试' },
         { link: '/ops/net-debug', text: '网络调试' },
         { link: '/ops/branding', text: '白标' },

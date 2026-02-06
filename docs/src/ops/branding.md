@@ -3,9 +3,11 @@ title: '白标（Branding）'
 description: 'NG Gateway 白标能力产品文档：在线修改产品标题、Logo 与 Favicon；包含格式/大小限制、缓存策略与常见刷新问题处理。'
 ---
 
-# 白标（Branding）
+# 白标
 
 “白标”用于将管理控制台替换为你的品牌形象，包括 **产品名称（标题）**、**Logo** 与 **Favicon**。该配置是**全局生效**的：影响所有用户（包括登录页等未认证页面）。
+
+![Branding page](./assets/branding-page.png)
 
 ## 权限与影响范围
 

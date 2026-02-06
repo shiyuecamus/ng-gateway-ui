@@ -7,6 +7,8 @@ description: 'NG Gateway 网络调试产品文档：Ping（ICMP/TCP）、TCP 连
 
 “网络调试”提供三类内置诊断能力：**Ping**、**TCP Connect**、**HTTP Request**。它们都由网关使用库函数实现，不执行任何 shell 命令，避免命令注入风险，并且包含最小 SSRF 防护（避免把网关变成内网扫描器）。
 
+![Net debug page](./assets/net-debug-page.png)
+
 ## 1) Ping（ICMP / TCP）
 
 ### 能解决什么问题
@@ -33,6 +35,9 @@ description: 'NG Gateway 网络调试产品文档：Ping（ICMP/TCP）、TCP 连
 - `rttAvgMs`（若有成功样本）
 - `samples[]`：每个序号的 OK/FAIL 与 RTT/错误
 - `note`：当检测到常见权限问题（例如容器缺少 `CAP_NET_RAW`）时会给出提示
+
+![Net debug icmp result](./assets/net-debug-icmp-result.png)
+![Net debug tcp result](./assets/net-debug-tcp-result.png)
 
 ### 常见问题
 
@@ -63,6 +68,8 @@ description: 'NG Gateway 网络调试产品文档：Ping（ICMP/TCP）、TCP 连
 - `banner`：读到的文本（若有）
 - `error`：失败原因（超时/拒绝/无法路由等）
 
+![Net debug telnet result](./assets/net-debug-telnet-result.png)
+
 ## 3) HTTP Request（应用层诊断）
 
 ### 能解决什么问题
@@ -91,8 +98,4 @@ description: 'NG Gateway 网络调试产品文档：Ping（ICMP/TCP）、TCP 连
 - `bodyTruncated`：是否发生截断
 - `error`：错误信息（DNS/TLS/超时/连接失败等）
 
-## 推荐排障路径
-
-1. **先 TCP**：确认端口可达（最便宜、语义最明确）
-2. **再 Ping**：确认链路质量与丢包（必要时用 TCP mode）
-3. **最后 HTTP**：验证应用层（鉴权、重定向、证书、响应内容）
+![Net debug http result](./assets/net-debug-http-result.png)

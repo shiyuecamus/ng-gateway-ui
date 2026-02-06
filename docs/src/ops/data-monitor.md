@@ -7,13 +7,15 @@ description: 'NG Gateway 数据监控最佳实践：通过 WebSocket 实时查�
 
 “数据监控”用于在管理控制台中实时查看某个设备的 **Telemetry** 与 **Attributes（client/shared/server）**，适合现场排障与联调验证：你能快速回答“设备有没有上报”“值有没有变化”“最后更新时间是什么时候”。
 
+![Data monitor page](./assets/data-monitor-page.png)
+
 ## 适用场景
 
 - **现场排障**：设备数据断续、延迟变大、疑似丢数据时，快速确认网关侧是否已采集到最新值
 - **联调验证**：驱动/点位映射刚改完，确认 key 是否正确、值是否按预期变化
-- **与北向链路解耦**：先确认“采集是否正常”，再去看“上云是否正常”（避免两头同时猜）
+- **与北向链路解耦**：先确认“采集是否正常”，再去看“上云是否正常”，避免两头同时猜
 
-## 核心概念：Telemetry vs Attributes
+## Telemetry vs Attributes
 
 - **Telemetry**：通常代表高频采集/上报的时序数据（点位值、传感器数据等）
 - **Attributes**：通常代表相对静态或低频变化的属性
@@ -37,6 +39,8 @@ description: 'NG Gateway 数据监控最佳实践：通过 WebSocket 实时查�
    - **Value**：当前值（可能为对象/数组等复杂 JSON）
    - **Source Type**：`telemetry` 或 `attributes`
    - **Last Update**：该设备最后更新时间（服务端时间戳）
+
+![Data monitor filters](./assets/data-monitor-filters.png)
 
 ## 刷新语义与性能边界
 

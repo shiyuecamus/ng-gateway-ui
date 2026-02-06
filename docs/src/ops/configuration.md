@@ -3,14 +3,16 @@ title: '配置管理（系统配置 & 日志）'
 description: 'NG Gateway 产品级配置管理文档：运行时调参（Collector/Southward/Northward）、日志系统（格式/落盘/轮转/清理/下载）、全局与 per-channel/app 日志级别（TTL override）与最佳实践。'
 ---
 
-# 配置管理（系统配置 & 日志）
+# 配置管理
 
 本页覆盖两类“可运维、可治理”的关键能力：
 
 - **系统配置（Runtime Tuning）**：在不重启进程的前提下调整 Collector/Southward/Northward 的运行参数（并可持久化到配置文件）
 - **日志系统（Logging）**：全局日志级别、临时日志级别覆盖（per-channel/per-app，带 TTL 自动回滚）、日志输出格式与落盘策略、文件下载与清理
 
-## 0. 重要设计：来源（source）与环境变量覆盖（envOverridden）
+![Configuration entry](./assets/configuration-entry.png)
+
+## 0. 重要设计
 
 每个可调配置项都带有“来源”信息：
 
@@ -28,7 +30,7 @@ description: 'NG Gateway 产品级配置管理文档：运行时调参（Collect
 - **K8s/容器化**：用 Env 做“环境级基线”，用 UI 做“临时调参/验证”，并在变更确认后回写到 values/config
 - **裸机/边缘网关**：优先使用配置文件作为单一事实来源，Env 仅用于敏感信息或临时覆盖
 
-## 1. 系统配置（Runtime Tuning）
+## 1. 系统配置
 
 系统配置页聚焦“会影响吞吐/延迟/背压”的核心参数。每次 PATCH 都会返回 `ApplySystemSettingsResult`，明确告诉你：
 
@@ -40,6 +42,8 @@ description: 'NG Gateway 产品级配置管理文档：运行时调参（Collect
 - 影响语义（impact）：热更新/需重启组件/需重启进程
 
 > 服务端做了并发保护：系统设置 PATCH 会串行化，但不会阻塞其他 API（避免 UI “整站卡死”）。
+
+![Configuration system cards](./assets/configuration-system-card.png)
 
 ### 1.1 Collector（采集引擎）
 
@@ -108,6 +112,8 @@ description: 'NG Gateway 产品级配置管理文档：运行时调参（Collect
 - **(B) 临时覆盖（TTL override）**：按 Channel/App 临时调高或调低，自动回滚
 - **(C) 输出与文件治理**：格式、落盘、轮转、保留、清理、下载
 
+![Configuration logging card](./assets/configuration-longging-card.png)
+
 ### 2.1 全局日志级别（baseline）
 
 接口：
@@ -143,6 +149,9 @@ UI 入口：
 - **南向 → 通道（Channel）** 列表 → 右侧操作栏 **“日志级别”**（`mdi:math-log` 图标）
 - 弹窗内可设置 level 与 TTL，并展示倒计时进度条；到期会自动刷新为“无覆盖”状态
 
+![Configuration channel log step1](./assets/configuration-channel-log-step1.png)
+![Configuration channel log step2](./assets/configuration-channel-log-step2.png)
+
 语义要点：
 
 - TTL 有**统一护栏**：`minMs / maxMs / defaultMs`，用于避免滥用
@@ -161,6 +170,9 @@ UI 入口：
 
 - **北向 → App** 列表 → 右侧操作栏 **“日志级别”**（`mdi:math-log` 图标）
 - 交互与 Channel 一致：level + TTL + 倒计时，到期自动回滚
+
+![Configuration app log step1](./assets/configuration-app-log-step1.png)
+![Configuration app log step2](./assets/configuration-app-log-step2.png)
 
 #### 最佳实践：如何用 TTL override 排障
 
@@ -217,13 +229,15 @@ UI 入口：
 - `POST /api/system/settings/logging_files/cleanup`：按策略清理（支持 dryRun）
 - `GET/PATCH /api/system/settings/logging_cleanup`：清理任务开关与周期
 
+![Configuration log files download](./assets/configuration-log-files-download.png)
+
 产品级安全点（你可以写进 SOP）：
 
 - 下载接口会对文件名做安全校验，避免路径穿越
 - 打包下载使用流式输出，优先减少大文件的内存占用
 - 清理支持 **dryRun**：先看“会删什么、释放多少”，再真正删除
 
-## 3. 推荐 SOP：一次完整的“现场排障”配置操作
+## 3. 推荐 SOP
 
 1. 打开 [`数据监控`](./data-monitor.md)，确认设备值是否在变化、最后更新时间是否推进
 2. 若怀疑网络问题，先用 [`网络调试`](./net-debug.md)：
@@ -232,9 +246,3 @@ UI 入口：
    - 对目标 **Channel 或 App** 设置日志级别 override（DEBUG，TTL=5min）
 4. 在 5 分钟窗口内复现问题
 5. 下载日志包并回滚覆盖（或等 TTL 自动回滚）
-
-## 4. 相关链接
-
-- [`Metrics 与可观测性`](./metrics.md)
-- [`故障排查`](./troubleshooting.md)
-
