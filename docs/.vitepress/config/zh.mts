@@ -292,18 +292,10 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       collapsed: true,
       text: '指南',
       items: [
-        { link: '/guide/other/release', text: '发布日志' },
         { link: '/guide/introduction/roadmap', text: '路线图' },
+        { link: '/guide/tools', text: '模拟器及工具' },
       ],
-    },
-    {
-      collapsed: true,
-      text: '附录',
-      items: [
-        { link: '/appendix/data-types', text: '数据类型' },
-        { link: '/appendix/protocol-docs', text: '协议文档' },
-      ],
-    },
+    }
   ];
 }
 
@@ -317,7 +309,7 @@ function nav(): DefaultTheme.NavItem[] {
       text: version,
       items: [
         {
-          link: 'https://github.com/vbenjs/vue-vben-admin/releases',
+          link: 'https://github.com/shiyuecamus/ng-gateway/releases',
           text: '更新日志',
         },
       ],

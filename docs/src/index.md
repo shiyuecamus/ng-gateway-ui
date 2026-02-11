@@ -20,50 +20,50 @@ hero:
 
 features:
   - icon: ⚡️
-    title: Rust 高性能内核
-    details: 基于 tokio 异步与背压设计，面向高吞吐数据采集与转发场景。
+    title: Rust 异步高性能内核
+    details: 基于 tokio 的结构化并发与资源隔离，在高并发采集/转发场景保持吞吐稳定且可预测。
     link: /overview/architecture#rust-core
-    linkText: Rust 内核
+    linkText: 架构概览
+  - icon: 🌊
+    title: 可控背压与失败语义
+    details: 全链路有界队列 + 明确失败策略（超时/重试/退避/丢弃/阻塞），避免“慢”演化为 OOM 与雪崩（WAL 续传在 Roadmap）。
+    link: /overview/architecture#failure-semantics
+    linkText: 失败语义
+  - icon: 🧠
+    title: 协议批量算法
+    details: Modbus / S7 等内置批处理读写计划，尽可能把“逐点轮询”压缩为少量请求，显著降低 RTT 与设备压力。
+    link: /southward/modbus/batching
+    linkText: 批量规划与调优
   - icon: 🔌
-    title: 南向多协议接入
-    details: 内置Modbus / S7 / IEC104 / DLT645 / CJT188 等驱动体系，面向南向设备读写、控制，强调容错与稳定性。
+    title: 南向多协议驱动生态
+    details: cdylib 驱动运行时可插拔（安装 / Probe / 启用）；内置支持 Modbus / S7 / IEC104 / OPC UA / EtherNet/IP 等。
     link: /southward/overview
-    linkText: 南向文档
-  - icon: 📡
-    title: 北向多应用接入
-    details: 内置 Thingsboard / OPC UA Server / Kafka / MQTT 等插件体系，面向北向应用对接，强调容错与稳定性。
+    linkText: 南向总览
+  - icon: ☁️
+    title: 北向插件与双向链路
+    details: cdylib 插件运行时可插拔（安装 / Probe / 启用）；内置支持 ThingsBoard / Kafka / Pulsar / OPC UA Server 等。
     link: /northward/overview
-    linkText: 北向文档
-  - icon: 🧩
-    title: 插件化扩展
-    details: 南向驱动、北向应用以插件形式演进，支持运行时热插拔、自定义开发、按需启用、独立配置、。
-    link: /dev/plugin-dev
-    linkText: 插件开发
-  - icon: 🛡️
-    title: 安全与认证
-    details: TLS 证书、鉴权与权限控制，覆盖设备接入与北向通信的安全基线。
-    link: /ops/tls
-    linkText: TLS 与安全
-  - icon: 🔁
-    title: 稳健的容错机制
-    details: 超时、重试、退避、队列背压与降级策略，避免瞬时故障拖垮网关。
-    link: /ops/troubleshooting
-    linkText: 故障排查
+    linkText: 北向总览
+  - icon: 🧬
+    title: UI 自动建模与批量导入
+    details: Driver Metadata Schema 自动渲染表单并生成 Excel 模板，支撑大规模设备/点位的快速建模与一致校验。
+    link: /southward/driver-metadata-schema
+    linkText: Schema 与 Excel
+  - icon: 🛠️
+    title: 运维调参与日志治理
+    details: 支持运行时调参（Collector/Southward/Northward）与 per-channel/app 日志级别 TTL 覆盖，排障可控、成本可控。
+    link: /ops/configuration
+    linkText: 配置管理
   - icon: 📈
-    title: 可观测性
-    details: tracing 日志与 Metrics 指标，帮助快速定位性能瓶颈与链路异常。
-    link: /ops/metrics
-    linkText: 运维观测
+    title: 可观测性闭环
+    details: Prometheus `/metrics` + UI WS 聚合指标 + 设备实时快照，配套标准化排障 SOP，快速定位“采集/路由/上报”瓶颈。
+    link: /ops/observability
+    linkText: 可观测性
   - icon: 🚢
-    title: 部署与升级
-    details: 支持 宿主机/Docker/Helm 等部署形态，配套升级、回滚与配置管理建议。
-    link: /install/helm
-    linkText: helm部署指南
-  - icon: 🧱
-    title: 二次开发友好
-    details: 统一的数据模型与扩展接口，驱动/插件二开路径清晰、可测试、可维护。
-    link: /dev/driver-dev
-    linkText: 驱动开发
+    title: All-in-one 部署与升级
+    details: 单服务同时提供 Web UI（/）与 API（/api）；支持 Docker/Helm 部署与持久化数据卷，升级路径清晰。
+    link: /install/docker
+    linkText: Docker 快速开始
 ---
 
 <!-- <script setup>

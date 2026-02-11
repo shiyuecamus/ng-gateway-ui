@@ -2,7 +2,9 @@
 
 如果你觉得这个项目对你有帮助，你可以帮作者买一杯咖啡表示支持!
 
-![](https://unpkg.com/@vbenjs/static-source@0.1.7/source/sponsor.png)
+| ![](https://i.postimg.cc/prNmr9qT/ali_pay.png) | ![](https://i.postimg.cc/VvyJvSDv/wechat_pay.png) |
+| :---: | :---: |
+| alipay | wechat pay |
 
 您的赞助将帮助我们：
 

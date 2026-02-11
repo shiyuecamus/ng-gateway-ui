@@ -19,13 +19,12 @@ description: 'ThingsBoard Provision 工作原理、TB 侧配置要点、重试�
 
 ## 2. 你需要在 ThingsBoard 侧准备什么
 
-你需要在 TB 中配置 Device Profile 或 Provision 配置，获得：
+你需要在 TB 中配置 Device Profile 配置，获得：
 
 - `provision_device_key`
 - `provision_device_secret`
-- 选择 `provision_method`（AccessToken/MqttBasic/X509）
 
-<!-- TODO screenshot: tb-provision-config -->
+![Tb provision](./assets/provision.png)
 
 ::: tip device_name 的来源
 当前实现中，ProvisionRequest 的 `device_name` 使用 **App 名称**（app_name）。  

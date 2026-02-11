@@ -11,17 +11,26 @@ description: 以 Modbus 为 Demo，讲清楚如何在 NG Gateway 中从 0 到 1 
 - **能被 UI 自动建模**：通过 Driver Metadata Schema 自动渲染配置表单与 Excel 导入模板
 - **能跑得稳/跑得快**：高吞吐、低延迟、弱网容错、可追踪、可排障
 
-本文以仓库自带的 `ng-driver-modbus` 为 Demo（路径：`ng-gateway-southward/modbus`），但我们会把它抽象成通用方法论，适用于任意协议（S7 / DNP3 / IEC104 / 自研设备等）。
-
 ## 0. 前置条件与硬性约束
 
-### 0.1 你需要准备什么
+### 0.1 关键概念
+在 NG Gateway 中，“南向驱动”不是一个单纯的协议解析库，而是一个 **被网关托管生命周期** 的组件：
+
+- **网关侧 - Host** 负责：
+  - 动态加载/探测驱动库
+  - 统一日志桥接、动态日志级别、可观测性汇聚
+  - 按配置创建 Channel/Device/Point/Action 的 runtime 视图，并驱动采集/写回
+- **驱动侧 - Driver cdylib** 负责：
+  - 实现“如何连接设备 + 如何采集 + 如何写回/执行动作”
+  - 提供一份 **静态元数据 Schema**（UI和excel导入用），以及必要的 ABI 导出符号
+
+### 0.2 你需要准备什么
 
 - **Rust 开发环境**：安装最新 stable 工具链。
 - **网关本地环境**：参考 [本地开发](/dev/local-dev) 搭建好后端与 WebUI，确保能运行。
 - **协议模拟器**：准备好你要开发的协议模拟器（如 Modbus Slave / TCP Server），用于本地联调。
 
-### 0.2 硬性约束
+### 0.3 硬性约束
 
 ::: warning 必须遵守的契约
 1. **`metadata_fn` 必须纯**：不得读文件、环境变量或网络。Probe 阶段必须可复现且零副作用。
@@ -31,6 +40,13 @@ description: 以 Modbus 为 Demo，讲清楚如何在 NG Gateway 中从 0 到 1 
 :::
 
 ## 1. 创建插件 crate
+
+在开始编写代码前，先创建一个新的驱动 crate（建议以 `ng-driver-` 作为前缀）。
+
+```bash
+cargo new --lib ng-driver-yourproto
+cd ng-driver-yourproto
+```
 
 ### 1.1 Cargo.toml 最小约束
 
@@ -101,9 +117,11 @@ ng-driver-yourproto/
 
 ## 3. 配置及 Schema
 
-### 3.1 config.rs/types.rs - 运行时配置
+### 3.1 `config.rs/types.rs` - 运行时配置
 
 定义强类型的配置结构，用于运行时逻辑。
+
+:::details `config.rs`
 
 ```rust
 use serde::{Deserialize, Serialize};
@@ -122,9 +140,13 @@ fn default_timeout() -> u64 { 1000 }
 // Device, Point, Action 配置同理...
 ```
 
-### 3.2 metadata.rs - UI/Excel Schema
+:::
+
+### 3.2 `metadata.rs` - UI/Excel Schema
 
 定义 UI 表单结构，支持校验与国际化。
+
+:::details `metadata.rs`
 
 ```rust
 use ng_gateway_sdk::{
@@ -154,12 +176,16 @@ pub(super) fn build_metadata() -> DriverSchemas {
 }
 ```
 
-### 3.3 Schema 设计要点
+:::
 
-- **字段路径 (path)**：必须与 `types.rs` 中的 serde 字段名一致。
+::: warning Schema 设计要点
+
+- **字段路径 (path)**：必须与 `config.rs`/`types.rs` 中的 serde 字段名一致。
 - **校验前置**：利用 `Rules` (min, max, pattern, required) 在 UI 层拦截错误。
 - **默认值**：为非必填项提供合理的 `default_value`。
 - **国际化**：使用 `ui_text!` 宏提供中英文对照。
+
+:::
 
 ## 4. 实现 Model Convert
 
@@ -172,7 +198,7 @@ pub(super) fn build_metadata() -> DriverSchemas {
 > 这样可以显著降低每次采集的 CPU 与分配开销
 :::
 
-::: details converter.rs
+::: details `converter.rs`
 
 ```rust
 use ng_gateway_sdk::{
@@ -265,7 +291,7 @@ impl SouthwardModelConverter for YourConverter {
 - 把“高频细节”留给 `tracing`，把“低频聚合维度”留给 `error_code/error_summary`
 :::
 
-::: details connector.rs
+::: details `connector.rs`
 
 ```rust
 use ng_gateway_sdk::supervision::{Connector, Session, SessionContext, FailureKind, FailurePhase};
@@ -312,7 +338,7 @@ impl Connector for YourConnector {
 
 ### 5.2 Session
 
-> `Session` 表示“一次连上后的生命周期”
+> `Session` 表示“一次 attempt（连接尝试）成功创建后的生命周期”
 
 #### 5.2.1 Session 职责、生产级建议
 ::: tip `职责`
@@ -330,7 +356,7 @@ impl Connector for YourConnector {
   - 监听内部“请求重连”信号：当协议层检测到不可恢复的 transport 异常/长时间超时，调用 `ctx.reconnect.try_request_reconnect(reason)` 触发监督循环重连（**不 await**）
 :::
 
-::: details 生命周期语义速查
+::: details `生命周期语义速查`
 
 - `Connector::connect(ctx)`
   - **做什么**：建立 transport（TCP/UDP/Serial）并完成协议层 connect/握手，构造 `Session`
@@ -349,7 +375,7 @@ impl Connector for YourConnector {
 :::
 
 
-::: details session.rs
+::: details `session.rs`
 
 ```rust
 use ng_gateway_sdk::supervision::{Session, SessionContext, RunOutcome};
@@ -536,7 +562,7 @@ impl Session for YourSession {
 一句话：`apply_runtime_delta` 是让驱动“**在线演进**”的关键入口；在订阅/上报模式下，它决定了你的订阅/映射集与点位模型的始终一致性。
 :::
 
-::: details handle.rs
+::: details `handle.rs`
 
 ```rust
 use ng_gateway_sdk::{
@@ -659,7 +685,7 @@ impl SouthwardHandle for YourHandle {
 
 #### 5.3.4 最佳实践
 
-::: details 热路径性能清单
+::: details `热路径性能清单`
 - **零拷贝优先**：尽量在 `&[u8]`/`Bytes` 上解析；避免在循环中反复 `Vec::new()`
 - **预分配**：`Vec::with_capacity(items.len())`、`HashMap::with_capacity(n)`
 - **减少锁争用**：优先无锁读（如 ArcSwap / watch），必要锁要缩短临界区
@@ -670,7 +696,7 @@ impl SouthwardHandle for YourHandle {
 > 驱动开发时你需要把批量处理/合并请求这些策略抽象为可配置的 Planner，并把默认值设计成“保守但不太慢”。
 :::
 
-::: details 正确处理超时、重试与退避
+::: details `正确处理超时、重试与退避`
 驱动端一般会遇到两类重试：
 
 - **连接生命周期重试（交给网关内核的 supervision loop）**  
@@ -685,7 +711,7 @@ impl SouthwardHandle for YourHandle {
   - 只对明确的瞬时错误重试（超时/连接重置），不要对“非法响应/协议错误”重试
 :::
 
-::: details 错误分类与上下文（Retryable vs Fatal，合并「严禁 unwrap/expect」）
+::: details `错误分类与上下文（Retryable vs Fatal，合并「严禁 unwrap/expect」）`
 驱动是网关稳定性的底座。你需要把错误分成**可重试（Retryable）**与**不可重试（Fatal）**，让 supervision loop 能做出正确决策；同时必须保证任何 I/O、解析、类型转换都通过 `Result` 返回，**严禁** `unwrap()` / `expect()` 导致 panic。
 
 建议把错误至少分为三层（从“系统动作”视角定义）：
@@ -721,7 +747,7 @@ impl SouthwardHandle for YourHandle {
 > 经验法则：如果你在日志/错误里看不到“**哪台设备、哪条链路、哪次请求、哪段协议**”，那这个错误等同于“不可观测”。
 :::
 
-::: details 背压边界（Backpressure）：把压力挡在驱动边界之外
+::: details `背压边界（Backpressure）：把压力挡在驱动边界之外`
 网关的稳定性来自“明确的背压边界”。驱动需要保证：当上游（采集调度/写入请求）变大时，驱动不会无限制创建任务、无限制堆积内存、也不会把设备/链路打爆。
 
 推荐的背压策略（按优先级从强到弱）：
@@ -745,7 +771,7 @@ impl SouthwardHandle for YourHandle {
 - **背压错误应该是“可重试但需要降速”**：上游看到 Backpressure 应减少频率/并发，而不是立刻重试风暴。
 :::
 
-::: details TLS / 凭据 / 日志：安全与可运维性底线
+::: details `TLS / 凭据 / 日志：安全与可运维性底线`
 驱动一旦涉及网络（TCP/TLS/HTTP/MQTT 桥接等），安全与可运维性是“默认要求”，不是加分项。
 
 - **TLS（建议基于 rustls/系统信任库）**
@@ -794,7 +820,7 @@ NG Gateway内核会在加载驱动时：
 use ng_gateway_sdk::ng_driver_factory;
 use crate::connector::YourConnector;
 use crate::metadata::build_metadata;
-// use crate::converter::YourConverter; // 如果实现了 Converter trait
+use crate::converter::YourConverter;
 
 ng_driver_factory!(
     name = "YourProto",
@@ -802,7 +828,7 @@ ng_driver_factory!(
     driver_type = "your-proto", // 全局唯一标识
     component = YourConnector,
     metadata_fn = build_metadata,
-    // model_convert = YourConverter 
+    model_convert = YourConverter 
 );
 ```
 
@@ -865,4 +891,209 @@ ng_driver_factory!(
 
 ## 11. 关键 Demo 代码详解
 
-*(此处可粘贴内置驱动如 Modbus 的关键代码片段进行剖析，例如 Codec 的零拷贝实现、Planner 的批量优化策略等)*
+### 1) Converter：字段级约束在哪里生效？
+
+以 Modbus point 为例，converter 会在 runtime 转换阶段强制要求字段存在且范围合法：
+
+- `functionCode` 必须存在且是数字，并且能映射到合法枚举
+- `address` 必须存在且在 `u16` 范围
+- `quantity` 缺省为 1，并强制 >=1
+
+这保证了热路径不需要在每次采集时做重复校验（性能与稳定性收益都很大）。
+
+关键代码：
+::: details 点击展开：`关键片段`
+```rust
+fn extract_point_driver_config(
+    driver_config: serde_json::Value,
+) -> DriverResult<(ModbusFunctionCode, u16, u16)> {
+    let function_code = driver_config
+        .get("functionCode")
+        .ok_or(DriverError::ConfigurationError(
+            "functionCode is required".to_string(),
+        ))
+        .and_then(Self::parse_function_code)?;
+
+    let address = driver_config
+        .get("address")
+        .and_then(|v| v.as_u64())
+        .ok_or(DriverError::ConfigurationError(
+            "address is required".to_string(),
+        ))
+        .and_then(|v| {
+            u16::try_from(v).map_err(|_| DriverError::ConfigurationError("address out of range".to_string()))
+        })?;
+
+    let quantity = driver_config
+        .get("quantity")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(1);
+    let quantity = u16::try_from(quantity)
+        .map_err(|_| DriverError::ConfigurationError("quantity out of range".to_string()))?
+        .max(1);
+
+    Ok((function_code, address, quantity))
+}
+```
+:::
+
+### 2) Connector：TCP/RTU 的“连接池策略”怎么落地？
+
+Modbus 的 `connect_pool()` 做了两件生产级必须做的事：
+
+- **TCP**：按 `tcpPoolSize` 建立 pool，并 clamp 到 1..=8（避免配置把 PLC/网关打爆）
+- **RTU**：强制单飞（pool size=1），保证串口总线语义
+
+并且：connect 过程尊重 `ctx.cancel`，避免 shutdown 卡死。
+
+关键代码：
+
+::: details 点击展开：`关键片段`
+```rust
+async fn connect_pool(
+    &self,
+    ctx: &SessionContext,
+    cfg: &ModbusChannelConfig,
+) -> DriverResult<Arc<SessionPool>> {
+    match &cfg.connection {
+        ModbusConnection::Tcp { host, port } => {
+            let addr = format!("{host}:{port}")
+                .parse::<SocketAddr>()
+                .map_err(|e| DriverError::ConfigurationError(format!("Invalid socket address: {e}")))?;
+            let size = cfg.tcp_pool_size.clamp(1, 8) as usize;
+            let mut contexts = Vec::with_capacity(size);
+            for _ in 0..size {
+                let fut = connect_tcp_metered_with_timeout(
+                    addr,
+                    Arc::clone(&self.transport_meter),
+                    self.channel.connection_policy.connect_timeout_ms,
+                );
+                let stream = tokio::select! {
+                    _ = ctx.cancel.cancelled() => {
+                        return Err(DriverError::ServiceUnavailable);
+                    }
+                    res = fut => res.map_err(|e| DriverError::SessionError(format!("Modbus TCP connect error: {e}")))?,
+                };
+                contexts.push(tcp::attach(stream));
+            }
+            Ok(Arc::new(SessionPool::new(contexts)))
+        }
+        ModbusConnection::Rtu { port, baud_rate, data_bits, stop_bits, parity } => {
+            if ctx.cancel.is_cancelled() {
+                return Err(DriverError::ServiceUnavailable);
+            }
+            let stream = connect_serial_metered(
+                SerialConnectConfig {
+                    port: port.to_string(),
+                    baud_rate: *baud_rate,
+                    data_bits: (*data_bits).into(),
+                    stop_bits: (*stop_bits).into(),
+                    parity: (*parity).into(),
+                },
+                Arc::clone(&self.transport_meter),
+            )
+            .map_err(|e| DriverError::SessionError(format!("Failed to open serial port {port}: {e}")))?;
+            Ok(Arc::new(SessionPool::new(vec![rtu::attach(stream)])))
+        }
+    }
+}
+```
+:::
+
+### 3) Session：Ready 的定义要“明确、低成本”
+
+Modbus 没有复杂握手，session 的 Ready 定义就是“连接/连接池已建立且可用”。因此：
+
+- `Session::init()`：把 reconnect handle + pool 注入到 data-plane handle（**publish handle 的依赖**）
+- `Session::run()`：等待 cancel；退出时断开所有 context（带 timeout）
+
+这是一种非常好的“attempt 资源边界”写法，如有需要你的新驱动可以直接复用这种结构。
+
+关键代码：
+
+::: details 点击展开：`关键片段`
+```rust
+async fn init(&mut self, ctx: &SessionContext) -> Result<(), Self::Error> {
+    self.handle.set_reconnect(ctx.reconnect.clone());
+    self.handle.attach_pool(Arc::clone(&self.pool));
+    Ok(())
+}
+
+async fn run(self, ctx: SessionContext) -> Result<RunOutcome, Self::Error> {
+    ctx.cancel.cancelled().await;
+    if let Some(pool) = self.handle.detach_pool() {
+        pool.disconnect_all(std::time::Duration::from_secs(2)).await;
+    }
+    Ok(RunOutcome::Disconnected)
+}
+```
+:::
+
+### 4) Handle：超时/传输错误如何触发重连？
+
+Modbus handle 的核心是 `run_op()`：
+
+- 使用 `tokio::time::timeout` 给每次协议操作设置上限（避免无限等待）
+- 捕获 transport error / timeout 时：
+  - 记录结构化 warn
+  - `try_request_reconnect(...)`（**不 await**，避免阻塞热路径）
+  - 返回可诊断的错误给上层
+
+这能把“弱网/设备偶发异常”从热路径中快速隔离，并让 supervision loop 统一治理重连与退避。
+
+关键代码：
+
+::: details 点击展开：`关键片段`
+```rust
+#[inline]
+fn try_request_reconnect(&self, reason: &'static str) {
+    if let Some(h) = self.reconnect.get() {
+        let _ = h.try_request_reconnect(reason);
+    }
+}
+
+#[inline]
+fn pick_ctx(&self) -> DriverResult<Arc<Mutex<Context>>> {
+    let pool = self.pool.load_full();
+    let Some(pool) = pool else {
+        self.try_request_reconnect("modbus no session pool");
+        return Err(DriverError::ServiceUnavailable);
+    };
+    pool.pick().ok_or_else(|| {
+        self.try_request_reconnect("modbus empty session pool");
+        DriverError::ServiceUnavailable
+    })
+}
+
+async fn run_op<T, F, Fut>(
+    &self,
+    ctx: Arc<Mutex<Context>>,
+    op_timeout_ms: u64,
+    op_label: &'static str,
+    op: F,
+) -> DriverResult<T>
+where
+    F: FnOnce(Arc<Mutex<Context>>) -> Fut + Send + 'static,
+    Fut: Future<Output = Result<Result<T, ExceptionCode>, tokio_modbus::Error>> + Send + 'static,
+    T: Send + 'static,
+{
+    let duration = StdDuration::from_millis(op_timeout_ms.max(1));
+    match timeout(duration, op(Arc::clone(&ctx))).await {
+        Ok(Ok(inner)) => inner.map_err(|code| {
+            DriverError::ExecutionError(format!("Modbus exception on {op_label}: {code:?}"))
+        }),
+        Ok(Err(e)) => {
+            let msg = e.to_string();
+            warn!(op = op_label, err = %msg, "Transport error, request reconnect");
+            self.try_request_reconnect("modbus transport error");
+            Err(DriverError::ExecutionError(msg))
+        }
+        Err(_) => {
+            warn!(op = op_label, "Operation timeout, request reconnect");
+            self.try_request_reconnect("modbus timeout");
+            Err(DriverError::Timeout(tokio::time::Duration::from_millis(op_timeout_ms.max(1))))
+        }
+    }
+}
+```
+:::
