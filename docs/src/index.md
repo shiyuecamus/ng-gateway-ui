@@ -36,12 +36,12 @@ features:
     linkText: 批量规划与调优
   - icon: 🔌
     title: 南向多协议驱动生态
-    details: cdylib 驱动运行时可插拔（安装 / Probe / 启用）；内置支持 Modbus / S7 / IEC104 / OPC UA / EtherNet/IP 等。
+    details: 运行时可插拔南向驱动；内置支持 Modbus / S7 / IEC104 / OPC UA / EtherNet/IP 等。
     link: /southward/overview
     linkText: 南向总览
   - icon: ☁️
     title: 北向插件与双向链路
-    details: cdylib 插件运行时可插拔（安装 / Probe / 启用）；内置支持 ThingsBoard / Kafka / Pulsar / OPC UA Server 等。
+    details: 运行时可插拔北向插件；内置支持 ThingsBoard / Kafka / Pulsar / OPC UA Server 等。
     link: /northward/overview
     linkText: 北向总览
   - icon: 🧬

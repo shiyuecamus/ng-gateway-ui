@@ -294,6 +294,14 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       items: [
         { link: '/guide/introduction/roadmap', text: '路线图' },
         { link: '/guide/tools', text: '模拟器及工具' },
+        {
+          text: '性能基准测试',
+          collapsed: true,
+          items: [
+            { link: '/guide/benchmark/modbus', text: 'Modbus' },
+            { link: '/guide/benchmark/opcua', text: 'OPC UA' },
+          ],
+        },
       ],
     }
   ];

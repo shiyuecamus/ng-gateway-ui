@@ -1,0 +1,147 @@
+# OPC UA 性能基准测试
+
+本页面提供了 OPC UA 协议在 `ng-gateway` 上的性能基准测试结果。测试旨在评估网关作为 OPC UA 客户端在不同负载下的吞吐量、延迟和资源消耗。
+
+## 测试环境
+
+<!-- TODO: 补充测试环境详情 -->
+- **硬件**: (例如: Apple M1 Pro, 32GB RAM)
+- **操作系统**: (例如: macOS 14.2)
+- **Rust 版本**: (例如: 1.75.0)
+- **OPC UA Server**: (例如: Prosys OPC UA Simulation Server)
+
+## 测试工具
+
+测试使用 `ng-gateway-bench` 工具进行，该工具内置了多种测试场景，能够模拟不同的设备和点位负载。
+
+### 运行命令
+
+```bash
+# 确保 OPC UA Server 已启动并可通过 endpoint 访问
+# 替换 <YOUR_ENDPOINT_URL> 为实际地址
+# 建议每个场景运行至少 60 秒以获取稳定的 Grafana 截图
+cargo run --release --bin ng-gateway-bench -- --protocol opcua --opcua-endpoint opc.tcp://127.0.0.1:4840 --duration-secs 60 --scenario <SCENARIO_ID>
+```
+
+## 测试场景与结果详情
+
+### 场景 1: 基础采集
+*   **配置**: 1 通道, 10 设备, 1000 点位/设备, 1000ms 周期 (总计 10k 点)
+*   **命令**: `cargo run --release --bin ng-gateway-bench --no-default-features --features opcua -- --protocol opcua --scenario 1 --duration-secs 60`
+
+#### 性能指标
+| 内存使用(peak RSS) | CPU 使用(avg) | 网络带宽消耗 |
+|---|---|---|
+| 18.33 MiB | 1.63% | receive：7kB/s transmit：7kB/s |
+
+#### 资源监控截图
+<!-- TODO: 插入 Scenario 1 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
+<!-- ![Scenario 1 Resource Usage](/images/benchmark/opcua/scenario-1.png) -->
+
+---
+
+### 场景 2: 中等规模采集
+*   **配置**: 5 通道, 10 设备, 1000 点位/设备, 1000ms 周期 (总计 50k 点)
+*   **命令**: `cargo run --release --bin ng-gateway-bench -- --protocol opcua --scenario 2 --duration-secs 60`
+
+#### 性能指标
+| 内存使用(peak RSS) | CPU 使用(avg) | 网络带宽消耗 |
+|---|---|---|
+| (待补充) | (待补充) | (待补充) |
+
+#### 资源监控截图
+<!-- TODO: 插入 Scenario 2 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
+<!-- ![Scenario 2 Resource Usage](/images/benchmark/opcua/scenario-2.png) -->
+
+---
+
+### 场景 3: 大规模采集
+*   **配置**: 10 通道, 10 设备, 1000 点位/设备, 1000ms 周期 (总计 100k 点)
+*   **命令**: `cargo run --release --bin ng-gateway-bench -- --protocol opcua --scenario 3 --duration-secs 120`
+*   **注意**: 此场景负载较高，建议运行时间稍长(120s)以观察稳定性。
+
+#### 性能指标
+| 内存使用(peak RSS) | CPU 使用(avg) | 网络带宽消耗 |
+|---|---|---|
+| (待补充) | (待补充) | (待补充) |
+
+#### 资源监控截图
+<!-- TODO: 插入 Scenario 3 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
+<!-- ![Scenario 3 Resource Usage](/images/benchmark/opcua/scenario-3.png) -->
+
+---
+
+### 场景 4: 高频采集 (单通道)
+*   **配置**: 1 通道, 1 设备, 1000 点位/设备, **100ms** 周期 (总计 1k 点)
+*   **命令**: `cargo run --release --bin ng-gateway-bench -- --protocol opcua --scenario 4 --duration-secs 60`
+
+#### 性能指标
+| 内存使用(peak RSS) | CPU 使用(avg) | 网络带宽消耗 |
+|---|---|---|
+| (待补充) | (待补充) | (待补充) |
+
+#### 资源监控截图
+<!-- TODO: 插入 Scenario 4 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
+<!-- ![Scenario 4 Resource Usage](/images/benchmark/opcua/scenario-4.png) -->
+
+---
+
+### 场景 5: 高频采集 (多通道)
+*   **配置**: 5 通道, 1 设备, 1000 点位/设备, **100ms** 周期 (总计 5k 点)
+*   **命令**: `cargo run --release --bin ng-gateway-bench -- --protocol opcua --scenario 5 --duration-secs 60`
+
+#### 性能指标
+| 内存使用(peak RSS) | CPU 使用(avg) | 网络带宽消耗 |
+|---|---|---|
+| (待补充) | (待补充) | (待补充) |
+
+#### 资源监控截图
+<!-- TODO: 插入 Scenario 5 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
+<!-- ![Scenario 5 Resource Usage](/images/benchmark/opcua/scenario-5.png) -->
+
+---
+
+### 场景 6: 高频采集 (大规模)
+*   **配置**: 10 通道, 1 设备, 1000 点位/设备, **100ms** 周期 (总计 10k 点)
+*   **命令**: `cargo run --release --bin ng-gateway-bench -- --protocol opcua --scenario 6 --duration-secs 60`
+
+#### 性能指标
+| 内存使用(peak RSS) | CPU 使用(avg) | 网络带宽消耗 |
+|---|---|---|
+| (待补充) | (待补充) | (待补充) |
+
+#### 资源监控截图
+<!-- TODO: 插入 Scenario 6 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
+<!-- ![Scenario 6 Resource Usage](/images/benchmark/opcua/scenario-6.png) -->
+
+---
+
+### 场景 7: 混合负载 (采集+下发)
+*   **配置**: 10 通道, 10 设备, 1000 点位/设备, 1000ms 周期 (总计 100k 点) + 随机下发
+*   **命令**: `cargo run --release --bin ng-gateway-bench -- --protocol opcua --scenario 7 --duration-secs 60`
+
+#### 性能指标 (采集)
+| 内存使用(peak RSS) | CPU 使用(avg) | 网络带宽消耗 |
+|---|---|---|
+| (待补充) | (待补充) | (待补充) |
+
+#### 性能指标 (下发)
+| 成功/失败 | 最小延迟 | 最大延迟 | 平均延迟 |
+|---|---|---|---|
+| (待补充) | (待补充) ms | (待补充) ms | (待补充) ms |
+
+#### 资源监控截图
+<!-- TODO: 插入 Scenario 7 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
+<!-- ![Scenario 7 Resource Usage](/images/benchmark/opcua/scenario-7.png) -->
+
+## 结果汇总
+
+| 场景 | 协议 | Channel数量 | 每个Channel设备数 | 每个设备点位数 | 采集频率 | 总计点位 | 点位类型 | 内存使用(peak RSS) | CPU 使用(avg) | 网络带宽消耗 |
+|---:|---|---:|---:|---:|---|---:|---|---|---|---|
+| 1 | opcua | 1 | 10 | 1000 | 1000 ms | 10000 | Float32 | 18.33 MiB | 1.63% | receive：7kB/s transmit：7kB/s |
+| 2 | opcua | 5 | 10 | 1000 | 1000 ms | 50000 | Float32 | (待补充) | (待补充) | (待补充) |
+| 3 | opcua | 10 | 10 | 1000 | 1000 ms | 100000 | Float32 | (待补充) | (待补充) | (待补充) |
+| 4 | opcua | 1 | 1 | 1000 | 100 ms | 1000 | Float32 | (待补充) | (待补充) | (待补充) |
+| 5 | opcua | 5 | 1 | 1000 | 100 ms | 5000 | Float32 | (待补充) | (待补充) | (待补充) |
+| 6 | opcua | 10 | 1 | 1000 | 100 ms | 10000 | Float32 | (待补充) | (待补充) | (待补充) |
+| 7 | opcua | 10 | 10 | 1000 | 1000 ms | 100000 | Float32 | (待补充) | (待补充) | (待补充) |
