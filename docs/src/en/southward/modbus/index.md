@@ -64,10 +64,10 @@ Suggest confirming in host computer/manufacturer manual; if the read float value
 `tcpPoolSize` is used to improve Modbus TCP throughput: The driver maintains a TCP connection pool, and selects connections in a round-robin manner within the pool during collection, thereby allowing multiple requests in flight (Still subject to core concurrency and driver internal planning constraints).
 
 -   **Default Value**: `1`
--   **Recommended Range**: `1..=8` (Too large usually yields insignificant benefits and increases PLC/Gateway resource consumption)
+-   **Recommended Range**: `1..=32` (Too large usually yields insignificant benefits and increases PLC/Gateway resource consumption)
 
 ::: warning
-Only effective for `connection.kind=tcp`; RTU will force single flight (Effective value=1). When you configure `tcpPoolSize > 8`, the driver will clamp to `8` at runtime.
+Only effective for `connection.kind=tcp`; RTU will force single flight (Effective value=1). When you configure `tcpPoolSize > 32`, the driver will clamp to `32` at runtime.
 :::
 
 #### 2.1.6 Batch Read Planning Parameters

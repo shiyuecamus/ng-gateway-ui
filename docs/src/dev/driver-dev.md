@@ -492,7 +492,7 @@ impl Session for YourSession {
 > 经验法则：**宁可少分组，也不要错分组**。错分组会导致协议语义错误（例如把不同 slave/不同 endpoint 混到同一批次），通常比“不分组导致慢一些”更难排障。
 
 :::
-- `collect_max_inflight(&self) -> usize`（可选，限制并发 in-flight 的 `collect_data`，用于保护设备/总线）
+- `collector_concurrency_profile(&self) -> CollectorConcurrencyProfile`（可选，声明采集并发能力：跨组并发 / 组内并发 / lane 数；用于保护设备/总线并让 Collector 自动适配）
 - `write_point`: 写点位值。
 - `execute_action`: 执行动作指令。
 ::: details `write_point/execute_action` 语义要点
@@ -941,7 +941,7 @@ fn extract_point_driver_config(
 
 Modbus 的 `connect_pool()` 做了两件生产级必须做的事：
 
-- **TCP**：按 `tcpPoolSize` 建立 pool，并 clamp 到 1..=8（避免配置把 PLC/网关打爆）
+- **TCP**：按 `tcpPoolSize` 建立 pool，并 clamp 到 1..=32（避免配置把 PLC/网关打爆）
 - **RTU**：强制单飞（pool size=1），保证串口总线语义
 
 并且：connect 过程尊重 `ctx.cancel`，避免 shutdown 卡死。
@@ -960,7 +960,7 @@ async fn connect_pool(
             let addr = format!("{host}:{port}")
                 .parse::<SocketAddr>()
                 .map_err(|e| DriverError::ConfigurationError(format!("Invalid socket address: {e}")))?;
-            let size = cfg.tcp_pool_size.clamp(1, 8) as usize;
+            let size = cfg.tcp_pool_size.clamp(1, 32) as usize;
             let mut contexts = Vec::with_capacity(size);
             for _ in 0..size {
                 let fut = connect_tcp_metered_with_timeout(

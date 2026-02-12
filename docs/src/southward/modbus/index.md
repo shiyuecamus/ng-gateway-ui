@@ -64,10 +64,10 @@ Modbus 寄存器为 16-bit word；当点位数据类型为 32/64-bit 时，会�
 `tcpPoolSize` 用于提升 Modbus TCP 的吞吐：驱动会维护一个 TCP 连接池，采集时在池内做 round-robin 选择连接，从而允许多个请求并发在飞（仍受 core 并发与驱动内部计划约束）。
 
 - **默认值**：`1`
-- **推荐范围**：`1..=8`（过大收益通常不明显，且会增加 PLC/网关资源消耗）
+- **推荐范围**：`1..=32`（过大收益通常不明显，且会增加 PLC/网关资源消耗）
 
 ::: warning 
-仅对 `connection.kind=tcp` 生效；RTU 会强制单飞（有效值=1）。当你配置 `tcpPoolSize > 8` 时，驱动会在运行时 clamp 到 `8`。
+仅对 `connection.kind=tcp` 生效；RTU 会强制单飞（有效值=1）。当你配置 `tcpPoolSize > 32` 时，驱动会在运行时 clamp 到 `32`。
 :::
 
 #### 2.1.6 批量读取规划参数

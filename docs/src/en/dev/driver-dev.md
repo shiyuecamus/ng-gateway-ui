@@ -492,7 +492,7 @@ Must obey:
 > Rule of Thumb: **Better group less than group wrong**. Wrong grouping leads to protocol semantic errors (e.g., mixing different slaves/endpoints into same batch), usually harder to troubleshoot than "Slower due to no grouping".
 
 :::
--   `collect_max_inflight(&self) -> usize` (Optional, limit concurrent in-flight `collect_data`, used to protect device/bus)
+-   `collector_concurrency_profile(&self) -> CollectorConcurrencyProfile` (Optional, declare collection concurrency capability: cross-group / intra-group / I/O lanes; used to protect device/bus and let the Collector adapt automatically)
 -   `write_point`: Write point value.
 -   `execute_action`: Execute action command.
 ::: details `write_point/execute_action` Semantic Key Points
@@ -905,7 +905,7 @@ This ensures hot path does not need repeated validation for every collection (Si
 
 Modbus `connect_pool()` does two production-mandatory things:
 
--   **TCP**: Establish pool by `tcpPoolSize`, and clamp to 1..=8 (Avoid config blowing up PLC/Gateway)
+-   **TCP**: Establish pool by `tcpPoolSize`, and clamp to 1..=32 (Avoid config blowing up PLC/Gateway)
 -   **RTU**: Force single flight (pool size=1), guarantee serial bus semantics
 
 And: connect process respects `ctx.cancel`, avoiding shutdown hang.
