@@ -36,7 +36,7 @@ cargo run --release --bin ng-gateway-bench -- --protocol modbus --modbus-host 12
 
 #### 资源监控截图
 <!-- TODO: 插入 Scenario 1 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-![Scenario 1 Resource Usage](/images/benchmark/modbus/scenario-1.png)
+<!-- ![Scenario 1 Resource Usage](/images/benchmark/modbus/scenario-1.png) -->
 
 ---
 
@@ -51,7 +51,7 @@ cargo run --release --bin ng-gateway-bench -- --protocol modbus --modbus-host 12
 
 #### 资源监控截图
 <!-- TODO: 插入 Scenario 2 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-![Scenario 2 Resource Usage](/images/benchmark/modbus/scenario-2.png)
+<!-- ![Scenario 2 Resource Usage](/images/benchmark/modbus/scenario-2.png) -->
 
 ---
 
@@ -67,7 +67,7 @@ cargo run --release --bin ng-gateway-bench -- --protocol modbus --modbus-host 12
 
 #### 资源监控截图
 <!-- TODO: 插入 Scenario 3 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-![Scenario 3 Resource Usage](/images/benchmark/modbus/scenario-3.png)
+<!-- ![Scenario 3 Resource Usage](/images/benchmark/modbus/scenario-3.png) -->
 
 ---
 
@@ -82,7 +82,7 @@ cargo run --release --bin ng-gateway-bench -- --protocol modbus --modbus-host 12
 
 #### 资源监控截图
 <!-- TODO: 插入 Scenario 4 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-![Scenario 4 Resource Usage](/images/benchmark/modbus/scenario-4.png)
+<!-- ![Scenario 4 Resource Usage](/images/benchmark/modbus/scenario-4.png) -->
 
 ---
 
@@ -97,7 +97,7 @@ cargo run --release --bin ng-gateway-bench -- --protocol modbus --modbus-host 12
 
 #### 资源监控截图
 <!-- TODO: 插入 Scenario 5 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-![Scenario 5 Resource Usage](/images/benchmark/modbus/scenario-5.png)
+<!-- ![Scenario 5 Resource Usage](/images/benchmark/modbus/scenario-5.png) -->
 
 ---
 
@@ -112,7 +112,7 @@ cargo run --release --bin ng-gateway-bench -- --protocol modbus --modbus-host 12
 
 #### 资源监控截图
 <!-- TODO: 插入 Scenario 6 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-![Scenario 6 Resource Usage](/images/benchmark/modbus/scenario-6.png)
+<!-- ![Scenario 6 Resource Usage](/images/benchmark/modbus/scenario-6.png) -->
 
 ---
 
@@ -132,7 +132,7 @@ cargo run --release --bin ng-gateway-bench -- --protocol modbus --modbus-host 12
 
 #### 资源监控截图
 <!-- TODO: 插入 Scenario 7 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-![Scenario 7 Resource Usage](/images/benchmark/modbus/scenario-7.png)
+<!-- ![Scenario 7 Resource Usage](/images/benchmark/modbus/scenario-7.png) -->
 
 ## 结果汇总
 
