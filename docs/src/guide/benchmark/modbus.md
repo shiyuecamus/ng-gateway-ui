@@ -97,13 +97,13 @@ cd deploy/compose/bench && docker compose up -d
 | 4 | 1 | 1 | 1,000 | 100 ms | 1,000 | Float32 | 44.8 MiB | 2.60% | rx: 47.8 kB/s<br>tx: 13.5 kB/s |
 | 5 | 5 | 1 | 1,000 | 100 ms | 5,000 | Float32 | 50.9 MiB | 4.61% | rx: 265.0 kB/s<br>tx: 87.3 kB/s |
 | 6 | 10 | 1 | 1,000 | 100 ms | 10,000 | Float32 | 55.2 MiB | 7.56% | rx: 530.0 kB/s<br>tx: 173.0 kB/s |
-| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (待补充) | (待补充) | (待补充) |
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | 153 MiB | 7.03% | rx: 542.0 kB/s<br>tx: 144.0 kB/s |
 
 ### 混合负载性能表
 
 | 场景 | 通道数 | 设备数/通道 | 点位数/设备 | 采集频率 | 总计点位 | 点位类型 | 下发方式 | 下发点位数 | 测试次数 | 最小响应时间 | 最大响应时间 | 平均响应时间 |
 |---:|---:|---:|---:|---|---:|---|---|---:|---:|---|---|---|
-| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (待补充) | (待补充) | 100 | (待补充) | (待补充) | (待补充) |
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | API | 100 | 100 | 14.572 ms | 536.517 ms | 75.600 ms |
 
 ## 测试场景与结果详情
 
@@ -229,11 +229,8 @@ cd deploy/compose/bench && docker compose up -d
 
 | 成功/失败 | 最小延迟 | 最大延迟 | 平均延迟 |
 |---|---|---|---|
-| (待补充) | (待补充) ms | (待补充) ms | (待补充) ms |
+| 100/0 | 14.572 ms | 536.517 ms | 75.600 ms |
 
 #### 资源监控截图
 
-![Scenario 3 Cpu](./assets/modbus-scenario3-cpu.png)
-![Scenario 3 Memory](./assets/modbus-scenario3-memory.png)
-![Scenario 3 Network](./assets/modbus-scenario3-network.png)
-
+![Scenario 7 Console](./assets/modbus-scenario7-console.png)
