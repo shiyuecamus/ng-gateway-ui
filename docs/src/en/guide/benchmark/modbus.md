@@ -1,147 +1,244 @@
 # Modbus Benchmark
 
-This page provides benchmark results for the Modbus protocol on `ng-gateway`. The tests aim to evaluate the gateway's throughput, latency, and resource consumption under various workloads.
+This document records the performance benchmark process and results of `NG Gateway` for the **Modbus TCP** protocol. The tests run the gateway in a **resource-constrained** Docker container (1 CPU / 1 GB memory), using an external Modbus slave simulator to provide real protocol interaction workloads, and leveraging a **Prometheus + Grafana + cAdvisor** monitoring stack to collect container-level resource metrics in real time, systematically evaluating the gateway's resource consumption and operational stability under different collection scales and frequencies.
+
+The tests cover the following dimensions:
+
+- **Collection Scale Gradient**: From a single channel with 10 devices (10,000 points) scaling up to 10 channels with 100 devices (100,000 points)
+- **Collection Frequency Comparison**: Standard cycle (1000 ms) vs. high-frequency collection (100 ms)
+- **Mixed Workload Stress Test**: Large-scale data collection coMiBined with concurrent random command dispatching
 
 ## Test Environment
 
-<!-- TODO: Supplement with test environment details -->
-- **Hardware**: (e.g., Apple M1 Pro, 32GB RAM)
-- **OS**: (e.g., macOS 14.2)
-- **Rust Version**: (e.g., 1.75.0)
-- **Modbus Simulator**: (e.g., Modbus Slave / Diagslave)
+### Hardware Platform
 
-## Test Tool
+| Item | Specification |
+|---|---|
+| CPU | 4 Cores |
+| Memory | 24 GB |
+| OS | Debian GNU/Linux 12 |
 
-The tests are performed using the `ng-gateway-bench` tool, which includes multiple built-in test scenarios to simulate different device and data point loads.
+### Gateway Deployment
 
-### Run Command
+The gateway is deployed as a `docker compose` container with **resource limits** to simulate a constrained edge-side environment:
+
+| Resource | Limit | Reservation |
+|---|---|---|
+| CPU | 1.0 Core | 0.5 Core |
+| Memory | 1000 MiB | 256 MiB |
+
+::: tip
+Resource constraints are configured via Docker Compose `deploy.resources.limits`, consistent with Kubernetes Pod resource quota semantics. See `deploy/compose/bench/docker-compose.yaml` for details.
+:::
+
+## Test Tools
+
+### Modbus Slave Simulator
+
+[Modbus Slave](https://www.modbustools.com/download.html) (by Witte Software) is used as the Modbus TCP slave simulator. Modbus Slave is a widely adopted commercial-grade simulation tool in the industrial automation field, supporting Modbus TCP / RTU / ASCII protocols. It can simultaneously simulate multiple independent slave instances and provides flexible register type configuration, auto-increment, and randomized data simulation capabilities, making it suitable for driver development debugging and performance benchmarking.
+
+**Simulation Topology:**
+
+| Item | Configuration |
+|---|---|
+| Independent TCP Connections | 10 (listening ports 500 ~ 509) |
+| Slaves per Connection | 10 (Slave ID 1 ~ 10) |
+| Total Simulated Slaves | **100** |
+
+::: tip Mapping Relationship
+
+- Each TCP port maps to a **Channel** in `ng-gateway` — an independent Modbus TCP connection
+- Each Slave ID maps to a **Device** within the channel — polled via function codes at different slave addresses
+- Test scenarios connect to a subset or all ports as needed to build collection workloads ranging from 10,000 to 100,000 points
+
+:::
+
+### Performance Monitoring Stack
+
+Resource metrics during testing are collected using the **cAdvisor + Prometheus + Grafana** stack, all orchestrated alongside the gateway container via the same `docker compose` file:
+
+| Component | Version | Role |
+|---|---|---|
+| [cAdvisor](https://github.com/google/cadvisor) | v0.51.0 | Collects container-level resource metrics: CPU usage, memory (RSS / Cache), network bytes sent/received |
+| [Prometheus](https://prometheus.io/) | latest | Scrapes cAdvisor `/metrics` endpoint every **2s**, persists time-series data |
+| [Grafana](https://grafana.com/) | latest | Visualization dashboards with pre-configured cAdvisor Docker container monitoring |
+
+**Core Metrics Collected:**
+
+| Metric | Prometheus Metric | Description |
+|---|---|---|
+| CPU Usage | `container_cpu_usage_seconds_total` | CPU usage percentage per container |
+| Memory Usage | `container_memory_rss` | Resident Set Size |
+| Network Receive | `container_network_receive_bytes_total` | Total bytes received (rate computed) |
+| Network Transmit | `container_network_transmit_bytes_total` | Total bytes transmitted (rate computed) |
+
+**Quick Start:**
 
 ```bash
-# Ensure Modbus simulator is running
-# Replace <YOUR_MODBUS_HOST> with actual address
-# Recommended to run each scenario for at least 60 seconds to get stable Grafana screenshots
-cargo run --release --bin ng-gateway-bench -- --protocol modbus --modbus-host 127.0.0.1 --duration-secs 60 --scenario <SCENARIO_ID>
+cd deploy/compose/bench && docker compose up -d
 ```
+
+| Service | Access URL |
+|---|---|
+| Grafana | http://localhost:3000 (admin / admin) |
+| Prometheus | http://localhost:9090 |
+| cAdvisor | http://localhost:8080 |
+| ng-gateway | http://localhost:8978 |
+
+## Summary
+
+### Data Collection Performance
+
+| Scenario | Channels | Devices/Channel | Points/Device | Frequency | Total Points | Type | Memory | CPU | Network Bandwidth |
+|---:|---:|---:|---:|---|---:|---|---|---|---|
+| 1 | 1 | 10 | 1,000 | 1000 ms | 10,000 | Float32 | 50.8 MiB | 2.62% | rx: 55.2 kB/s<br>tx: 14 kB/s |
+| 2 | 5 | 10 | 1,000 | 1000 ms | 50,000 | Float32 | 103 MiB | 4.41% | rx: 269.0 kB/s<br>tx: 72.0 kB/s |
+| 3 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (TBD) | (TBD) | (TBD) |
+| 4 | 1 | 1 | 1,000 | 100 ms | 1,000 | Float32 | (TBD) | (TBD) | (TBD) |
+| 5 | 5 | 1 | 1,000 | 100 ms | 5,000 | Float32 | (TBD) | (TBD) | (TBD) |
+| 6 | 10 | 1 | 1,000 | 100 ms | 10,000 | Float32 | (TBD) | (TBD) | (TBD) |
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (TBD) | (TBD) | (TBD) |
+
+### Mixed Load Performance (Downlink Latency)
+
+| Scenario | Channels | Devices/Channel | Points/Device | Frequency | Total Points | Type | Downlink Method | Downlink Points | Iterations | Min Latency | Max Latency | Avg Latency |
+|---:|---:|---:|---:|---|---:|---|---|---:|---:|---|---|---|
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (TBD) | (TBD) | 100 | (TBD) | (TBD) | (TBD) |
 
 ## Test Scenarios & Results
 
 ### Scenario 1: Basic Collection
-*   **Config**: 1 Channel, 10 Devices, 1000 Points/Device, 1000ms Period (Total 10k pts)
-*   **Command**: `cargo run --release --bin ng-gateway-bench -- --protocol modbus --scenario 1 --duration-secs 60`
+
+*   **Config**: 1 Channel · 10 Devices · 1,000 Points/Device · 1000 ms Period (Total **10,000** Points)
 
 #### Metrics
-| Memory (Peak RSS) | CPU (Avg) | Network Bandwidth |
-|---|---|---|
-| (TBD) | (TBD) | (TBD) |
 
-#### Resource Monitor Screenshot
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshot for Scenario 1 -->
-<!-- ![Scenario 1 Resource Usage](/images/benchmark/modbus/scenario-1.png) -->
+| Memory | CPU | Network Bandwidth |
+|---|---|---|
+| 50.8 MiB | 2.62% | rx: 55.2 kB/s<br>tx: 14 kB/s |
+
+#### Resource Monitor Screenshots
+
+![Scenario 1 Cpu](./assets/modbus-scenario1-cpu.png)
+![Scenario 1 Memory](./assets/modbus-scenario1-memory.png)
+![Scenario 1 Network](./assets/modbus-scenario1-network.png)
 
 ---
 
 ### Scenario 2: Medium Scale Collection
-*   **Config**: 5 Channels, 10 Devices, 1000 Points/Device, 1000ms Period (Total 50k pts)
-*   **Command**: `cargo run --release --bin ng-gateway-bench -- --protocol modbus --scenario 2 --duration-secs 60`
+
+*   **Config**: 5 Channels · 10 Devices · 1,000 Points/Device · 1000 ms Period (Total **50,000** Points)
 
 #### Metrics
-| Memory (Peak RSS) | CPU (Avg) | Network Bandwidth |
-|---|---|---|
-| (TBD) | (TBD) | (TBD) |
 
-#### Resource Monitor Screenshot
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshot for Scenario 2 -->
-<!-- ![Scenario 2 Resource Usage](/images/benchmark/modbus/scenario-2.png) -->
+| Memory | CPU | Network Bandwidth |
+|---|---|---|
+| 103 MiB | 4.41% | rx: 269.0 kB/s<br>tx: 72.0 kB/s |
+
+#### Resource Monitor Screenshots
+
+![Scenario 2 Cpu](./assets/modbus-scenario2-cpu.png)
+![Scenario 2 Memory](./assets/modbus-scenario2-memory.png)
+![Scenario 2 Network](./assets/modbus-scenario2-network.png)
 
 ---
 
 ### Scenario 3: Large Scale Collection
-*   **Config**: 10 Channels, 10 Devices, 1000 Points/Device, 1000ms Period (Total 100k pts)
-*   **Command**: `cargo run --release --bin ng-gateway-bench -- --protocol modbus --scenario 3 --duration-secs 120`
-*   **Note**: This is a high load scenario, recommended to run longer (120s) to observe stability.
+
+*   **Config**: 10 Channels · 10 Devices · 1,000 Points/Device · 1000 ms Period (Total **100,000** Points)
 
 #### Metrics
-| Memory (Peak RSS) | CPU (Avg) | Network Bandwidth |
+
+| Memory | CPU | Network Bandwidth |
 |---|---|---|
 | (TBD) | (TBD) | (TBD) |
 
-#### Resource Monitor Screenshot
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshot for Scenario 3 -->
-<!-- ![Scenario 3 Resource Usage](/images/benchmark/modbus/scenario-3.png) -->
+#### Resource Monitor Screenshots
+
+<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 3 -->
+<!-- ![Scenario 3 Cpu](./assets/modbus-scenario3-cpu.png) -->
+<!-- ![Scenario 3 Memory](./assets/modbus-scenario3-memory.png) -->
+<!-- ![Scenario 3 Network](./assets/modbus-scenario3-network.png) -->
 
 ---
 
 ### Scenario 4: High Frequency (Single Channel)
-*   **Config**: 1 Channel, 1 Device, 1000 Points/Device, **100ms** Period (Total 1k pts)
-*   **Command**: `cargo run --release --bin ng-gateway-bench -- --protocol modbus --scenario 4 --duration-secs 60`
+
+*   **Config**: 1 Channel · 1 Device · 1,000 Points/Device · **100 ms** Period (Total **1,000** Points)
 
 #### Metrics
-| Memory (Peak RSS) | CPU (Avg) | Network Bandwidth |
+
+| Memory | CPU | Network Bandwidth |
 |---|---|---|
 | (TBD) | (TBD) | (TBD) |
 
-#### Resource Monitor Screenshot
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshot for Scenario 4 -->
-<!-- ![Scenario 4 Resource Usage](/images/benchmark/modbus/scenario-4.png) -->
+#### Resource Monitor Screenshots
+
+<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 4 -->
+<!-- ![Scenario 4 Cpu](./assets/modbus-scenario4-cpu.png) -->
+<!-- ![Scenario 4 Memory](./assets/modbus-scenario4-memory.png) -->
+<!-- ![Scenario 4 Network](./assets/modbus-scenario4-network.png) -->
 
 ---
 
 ### Scenario 5: High Frequency (Multi Channel)
-*   **Config**: 5 Channels, 1 Device, 1000 Points/Device, **100ms** Period (Total 5k pts)
-*   **Command**: `cargo run --release --bin ng-gateway-bench -- --protocol modbus --scenario 5 --duration-secs 60`
+
+*   **Config**: 5 Channels · 1 Device · 1,000 Points/Device · **100 ms** Period (Total **5,000** Points)
 
 #### Metrics
-| Memory (Peak RSS) | CPU (Avg) | Network Bandwidth |
+
+| Memory | CPU | Network Bandwidth |
 |---|---|---|
 | (TBD) | (TBD) | (TBD) |
 
-#### Resource Monitor Screenshot
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshot for Scenario 5 -->
-<!-- ![Scenario 5 Resource Usage](/images/benchmark/modbus/scenario-5.png) -->
+#### Resource Monitor Screenshots
+
+<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 5 -->
+<!-- ![Scenario 5 Cpu](./assets/modbus-scenario5-cpu.png) -->
+<!-- ![Scenario 5 Memory](./assets/modbus-scenario5-memory.png) -->
+<!-- ![Scenario 5 Network](./assets/modbus-scenario5-network.png) -->
 
 ---
 
 ### Scenario 6: High Frequency (Large Scale)
-*   **Config**: 10 Channels, 1 Device, 1000 Points/Device, **100ms** Period (Total 10k pts)
-*   **Command**: `cargo run --release --bin ng-gateway-bench -- --protocol modbus --scenario 6 --duration-secs 60`
+
+*   **Config**: 10 Channels · 1 Device · 1,000 Points/Device · **100 ms** Period (Total **10,000** Points)
 
 #### Metrics
-| Memory (Peak RSS) | CPU (Avg) | Network Bandwidth |
+
+| Memory | CPU | Network Bandwidth |
 |---|---|---|
 | (TBD) | (TBD) | (TBD) |
 
-#### Resource Monitor Screenshot
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshot for Scenario 6 -->
-<!-- ![Scenario 6 Resource Usage](/images/benchmark/modbus/scenario-6.png) -->
+#### Resource Monitor Screenshots
+
+<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 6 -->
+<!-- ![Scenario 6 Cpu](./assets/modbus-scenario6-cpu.png) -->
+<!-- ![Scenario 6 Memory](./assets/modbus-scenario6-memory.png) -->
+<!-- ![Scenario 6 Network](./assets/modbus-scenario6-network.png) -->
 
 ---
 
 ### Scenario 7: Mixed Workload (Collection + Downlink)
-*   **Config**: 10 Channels, 10 Devices, 1000 Points/Device, 1000ms Period (Total 100k pts) + Random Downlink
-*   **Command**: `cargo run --release --bin ng-gateway-bench -- --protocol modbus --scenario 7 --duration-secs 60`
+
+*   **Config**: 10 Channels · 10 Devices · 1,000 Points/Device · 1000 ms Period (Total **100,000** Points) + Random Command Dispatching
 
 #### Metrics (Collection)
-| Memory (Peak RSS) | CPU (Avg) | Network Bandwidth |
+
+| Memory | CPU | Network Bandwidth |
 |---|---|---|
 | (TBD) | (TBD) | (TBD) |
 
 #### Metrics (Downlink)
+
 | Success/Fail | Min Latency | Max Latency | Avg Latency |
 |---|---|---|---|
 | (TBD) | (TBD) ms | (TBD) ms | (TBD) ms |
 
-#### Resource Monitor Screenshot
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshot for Scenario 7 -->
-<!-- ![Scenario 7 Resource Usage](/images/benchmark/modbus/scenario-7.png) -->
+#### Resource Monitor Screenshots
 
-## Summary
+<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 7 -->
+<!-- ![Scenario 7 Cpu](./assets/modbus-scenario7-cpu.png) -->
+<!-- ![Scenario 7 Memory](./assets/modbus-scenario7-memory.png) -->
+<!-- ![Scenario 7 Network](./assets/modbus-scenario7-network.png) -->
 
-| Scenario | Protocol | Channels | Devices/Channel | Points/Device | Frequency | Total Points | Type | Memory (Peak RSS) | CPU (Avg) | Bandwidth |
-|---:|---|---:|---:|---:|---|---:|---|---|---|---|
-| 1 | modbus | 1 | 10 | 1000 | 1000 ms | 10000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 2 | modbus | 5 | 10 | 1000 | 1000 ms | 50000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 3 | modbus | 10 | 10 | 1000 | 1000 ms | 100000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 4 | modbus | 1 | 1 | 1000 | 100 ms | 1000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 5 | modbus | 5 | 1 | 1000 | 100 ms | 5000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 6 | modbus | 10 | 1 | 1000 | 100 ms | 10000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 7 | modbus | 10 | 10 | 1000 | 1000 ms | 100000 | Float32 | (TBD) | (TBD) | (TBD) |

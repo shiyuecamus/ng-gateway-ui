@@ -41,3 +41,54 @@ html.dark {
   height: auto;
   margin: 0 auto;
 }
+
+/**
+ * Docs layout: reclaim width from the right-side outline.
+ *
+ * VitePress uses a doc container + right aside (outline). On large screens the
+ * default aside width/padding can waste space and make wide tables hard to read.
+ * We intentionally keep the override minimal and scoped to desktop.
+ */
+@media (min-width: 960px) {
+  /* Expand the overall layout container a bit. */
+  .VPDoc .container {
+    max-width: var(--vp-layout-max-width) !important;
+  }
+
+  /* Make the main content column wider. */
+  .VPDoc .content-container,
+  .VPDoc.has-aside .content-container {
+    max-width: var(--vp-doc-max-width) !important;
+  }
+
+  /* Shrink the right-side aside column (outline) and reduce its gap. */
+  .VPDoc .aside {
+    padding-left: 16px !important;
+    max-width: calc(var(--vp-aside-width) + 16px) !important;
+  }
+
+  .VPDoc .aside-container,
+  .VPDoc .aside-curtain {
+    width: var(--vp-aside-width) !important;
+  }
+
+  /* Reduce content horizontal padding a bit to reclaim extra space. */
+  .VPDoc .content {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  .VPDocAside {
+    width: 100% !important;
+  }
+
+  .VPDocAside .content {
+    padding-left: 12px !important;
+    padding-right: 0 !important;
+  }
+
+  .VPDocAside .outline,
+  .VPDocOutline {
+    padding-right: 0 !important;
+  }
+}
