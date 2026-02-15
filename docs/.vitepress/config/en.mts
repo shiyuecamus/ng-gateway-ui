@@ -21,7 +21,7 @@ export const en = defineConfig({
     },
     footer: {
       copyright: `Copyright © 2020-${new Date().getFullYear()} Shiyuecamus`,
-      message: 'Released under the MIT License.',
+      message: 'Released under the Apache License 2.0.',
     },
     langMenuLabel: 'Language',
     lastUpdated: {
@@ -284,19 +284,19 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       ],
     },
     {
+      text: 'Benchmark',
+      collapsed: true,
+      items: [
+        { link: '/en/guide/benchmark/modbus', text: 'Modbus' },
+        { link: '/en/guide/benchmark/opcua', text: 'OPC UA' },
+      ],
+    },
+    {
       collapsed: true,
       text: 'Guide',
       items: [
         { link: '/en/guide/introduction/roadmap', text: 'Roadmap' },
         { link: '/en/guide/tools', text: 'Simulators & Tools' },
-        {
-          text: 'Benchmark',
-          collapsed: true,
-          items: [
-            { link: '/en/guide/benchmark/modbus', text: 'Modbus' },
-            { link: '/en/guide/benchmark/opcua', text: 'OPC UA' },
-          ],
-        },
       ],
     },
   ];

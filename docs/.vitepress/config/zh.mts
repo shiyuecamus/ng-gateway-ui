@@ -21,7 +21,7 @@ export const zh = defineConfig({
     },
     footer: {
       copyright: `Copyright © 2020-${new Date().getFullYear()} Shiyuecamus`,
-      message: '基于 MIT 许可发布.',
+      message: '基于 Apache License 2.0 许可发布.',
     },
     langMenuLabel: '多语言',
     lastUpdated: {
@@ -289,19 +289,19 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       ],
     },
     {
+      text: '性能基准测试',
+      collapsed: true,
+      items: [
+        { link: '/guide/benchmark/modbus', text: 'Modbus' },
+        { link: '/guide/benchmark/opcua', text: 'OPC UA' },
+      ],
+    },
+    {
       collapsed: true,
       text: '指南',
       items: [
         { link: '/guide/introduction/roadmap', text: '路线图' },
         { link: '/guide/tools', text: '模拟器及工具' },
-        {
-          text: '性能基准测试',
-          collapsed: true,
-          items: [
-            { link: '/guide/benchmark/modbus', text: 'Modbus' },
-            { link: '/guide/benchmark/opcua', text: 'OPC UA' },
-          ],
-        },
       ],
     }
   ];

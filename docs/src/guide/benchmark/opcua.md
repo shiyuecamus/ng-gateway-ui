@@ -91,19 +91,19 @@ cd deploy/compose/bench && docker compose up -d
 
 | 场景 | 通道数 | 设备数/通道 | 点位数/设备 | 采集频率 | 总计点位 | 点位类型 | 内存 | CPU | 网络带宽消耗 |
 |---:|---:|---:|---:|---|---:|---|---|---|---|
-| 1 | 1 | 10 | 1,000 | 1000 ms | 10,000 | Float32 | 18.33 MiB | 1.63% | rx: 7 kB/s<br>tx: 7 kB/s |
-| 2 | 5 | 10 | 1,000 | 1000 ms | 50,000 | Float32 | (待补充) | (待补充) | (待补充) |
-| 3 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (待补充) | (待补充) | (待补充) |
-| 4 | 1 | 1 | 1,000 | 100 ms | 1,000 | Float32 | (待补充) | (待补充) | (待补充) |
-| 5 | 5 | 1 | 1,000 | 100 ms | 5,000 | Float32 | (待补充) | (待补充) | (待补充) |
-| 6 | 10 | 1 | 1,000 | 100 ms | 10,000 | Float32 | (待补充) | (待补充) | (待补充) |
-| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (待补充) | (待补充) | (待补充) |
+| 1 | 1 | 10 | 1,000 | 1000 ms | 10,000 | Float32 | 67.1 MiB | 3.12% | rx: 434.0 kB/s<br>tx: 356.0 kB/s |
+| 2 | 5 | 10 | 1,000 | 1000 ms | 50,000 | Float32 | 115.0 Mib | 5.71% | rx: 1.32 MB/s<br>tx: 1.19 MB/s |
+| 3 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | 165.0 MiB | 8.28% | rx: 2.38 MB/s<br>tx: 1.95 MB/s |
+| 4 | 1 | 1 | 1,000 | 100 ms | 1,000 | Float32 | 45.0 MiB | 3.50% | rx: 216.0 kB/s<br>tx: 178.0 kB/s |
+| 5 | 5 | 1 | 1,000 | 100 ms | 5,000 | Float32 | 51.6 MiB | 6.82% | rx: 1.08 MB/s<br>tx: 887.0 kB/s |
+| 6 | 10 | 1 | 1,000 | 100 ms | 10,000 | Float32 | 56.3 MiB | 9.48% | rx: 2.16 MB/s<br>tx: 1.78 MB/s |
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | 165.0 MiB | 8.28% | rx: 2.38 MB/s<br>tx: 1.95 MB/s |
 
-### 混合负载性能表（数据下发延迟）
+### 混合负载性能表
 
 | 场景 | 通道数 | 设备数/通道 | 点位数/设备 | 采集频率 | 总计点位 | 点位类型 | 下发方式 | 下发点位数 | 测试次数 | 最小响应时间 | 最大响应时间 | 平均响应时间 |
 |---:|---:|---:|---:|---|---:|---|---|---:|---:|---|---|---|
-| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (待补充) | (待补充) | 100 | (待补充) | (待补充) | (待补充) |
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | API | 100 | 100 | 1.795 ms | 113.257 ms | 4.194 ms |
 
 ## 测试场景与结果详情
 
@@ -115,14 +115,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | 内存 | CPU | 网络带宽消耗 |
 |---|---|---|
-| 18.33 MiB | 1.63% | rx: 7 kB/s<br>tx: 7 kB/s |
+| 67.1 MiB | 3.12% | rx: 434.0 kB/s<br>tx: 356.0 kB/s |
 
 #### 资源监控截图
 
-<!-- TODO: 插入 Scenario 1 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-<!-- ![Scenario 1 Cpu](./assets/opcua-scenario1-cpu.png) -->
-<!-- ![Scenario 1 Memory](./assets/opcua-scenario1-memory.png) -->
-<!-- ![Scenario 1 Network](./assets/opcua-scenario1-network.png) -->
+![Scenario 1 Cpu](./assets/opcua-scenario1-cpu.png)
+![Scenario 1 Memory](./assets/opcua-scenario1-memory.png)
+![Scenario 1 Network](./assets/opcua-scenario1-network.png)
 
 ---
 
@@ -134,14 +133,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | 内存 | CPU | 网络带宽消耗 |
 |---|---|---|
-| (待补充) | (待补充) | (待补充) |
+| 115.0 Mib | 5.71% | rx: 1.32 MB/s<br>tx: 1.19 MB/s |
 
 #### 资源监控截图
 
-<!-- TODO: 插入 Scenario 2 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-<!-- ![Scenario 2 Cpu](./assets/opcua-scenario2-cpu.png) -->
-<!-- ![Scenario 2 Memory](./assets/opcua-scenario2-memory.png) -->
-<!-- ![Scenario 2 Network](./assets/opcua-scenario2-network.png) -->
+![Scenario 2 Cpu](./assets/opcua-scenario2-cpu.png)
+![Scenario 2 Memory](./assets/opcua-scenario2-memory.png)
+![Scenario 2 Network](./assets/opcua-scenario2-network.png)
 
 ---
 
@@ -153,14 +151,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | 内存 | CPU | 网络带宽消耗 |
 |---|---|---|
-| (待补充) | (待补充) | (待补充) |
+| 165.0 MiB | 8.28% | rx: 2.38 MB/s<br>tx: 1.95 MB/s |
 
 #### 资源监控截图
 
-<!-- TODO: 插入 Scenario 3 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-<!-- ![Scenario 3 Cpu](./assets/opcua-scenario3-cpu.png) -->
-<!-- ![Scenario 3 Memory](./assets/opcua-scenario3-memory.png) -->
-<!-- ![Scenario 3 Network](./assets/opcua-scenario3-network.png) -->
+![Scenario 3 Cpu](./assets/opcua-scenario3-cpu.png)
+![Scenario 3 Memory](./assets/opcua-scenario3-memory.png)
+![Scenario 3 Network](./assets/opcua-scenario3-network.png)
 
 ---
 
@@ -172,14 +169,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | 内存 | CPU | 网络带宽消耗 |
 |---|---|---|
-| (待补充) | (待补充) | (待补充) |
+| 45.0 MiB | 3.50% | rx: 216.0 kB/s<br>tx: 178.0 kB/s |
 
 #### 资源监控截图
 
-<!-- TODO: 插入 Scenario 4 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-<!-- ![Scenario 4 Cpu](./assets/opcua-scenario4-cpu.png) -->
-<!-- ![Scenario 4 Memory](./assets/opcua-scenario4-memory.png) -->
-<!-- ![Scenario 4 Network](./assets/opcua-scenario4-network.png) -->
+![Scenario 4 Cpu](./assets/opcua-scenario4-cpu.png)
+![Scenario 4 Memory](./assets/opcua-scenario4-memory.png)
+![Scenario 4 Network](./assets/opcua-scenario4-network.png)
 
 ---
 
@@ -191,14 +187,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | 内存 | CPU | 网络带宽消耗 |
 |---|---|---|
-| (待补充) | (待补充) | (待补充) |
+| 51.6 MiB | 6.82% | rx: 1.08 MB/s<br>tx: 887.0 kB/s |
 
 #### 资源监控截图
 
-<!-- TODO: 插入 Scenario 5 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-<!-- ![Scenario 5 Cpu](./assets/opcua-scenario5-cpu.png) -->
-<!-- ![Scenario 5 Memory](./assets/opcua-scenario5-memory.png) -->
-<!-- ![Scenario 5 Network](./assets/opcua-scenario5-network.png) -->
+![Scenario 5 Cpu](./assets/opcua-scenario5-cpu.png)
+![Scenario 5 Memory](./assets/opcua-scenario5-memory.png)
+![Scenario 5 Network](./assets/opcua-scenario5-network.png)
 
 ---
 
@@ -210,14 +205,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | 内存 | CPU | 网络带宽消耗 |
 |---|---|---|
-| (待补充) | (待补充) | (待补充) |
+| 56.3 MiB | 9.48% | rx: 2.16 MB/s<br>tx: 1.78 MB/s |
 
 #### 资源监控截图
 
-<!-- TODO: 插入 Scenario 6 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-<!-- ![Scenario 6 Cpu](./assets/opcua-scenario6-cpu.png) -->
-<!-- ![Scenario 6 Memory](./assets/opcua-scenario6-memory.png) -->
-<!-- ![Scenario 6 Network](./assets/opcua-scenario6-network.png) -->
+![Scenario 6 Cpu](./assets/opcua-scenario6-cpu.png)
+![Scenario 6 Memory](./assets/opcua-scenario6-memory.png)
+![Scenario 6 Network](./assets/opcua-scenario6-network.png)
 
 ---
 
@@ -229,18 +223,17 @@ cd deploy/compose/bench && docker compose up -d
 
 | 内存 | CPU | 网络带宽消耗 |
 |---|---|---|
-| (待补充) | (待补充) | (待补充) |
+| 165.0 MiB | 8.28% | rx: 2.38 MB/s<br>tx: 1.95 MB/s |
 
 #### 性能指标（下发）
 
 | 成功/失败 | 最小延迟 | 最大延迟 | 平均延迟 |
 |---|---|---|---|
-| (待补充) | (待补充) ms | (待补充) ms | (待补充) ms |
+| 100 / 0 | 1,795 ms | 113.257 ms | 4.194 ms |
 
 #### 资源监控截图
 
-<!-- TODO: 插入 Scenario 7 运行期间的 Grafana (CPU/Memory/Network) 截图 -->
-<!-- ![Scenario 7 Cpu](./assets/opcua-scenario7-cpu.png) -->
-<!-- ![Scenario 7 Memory](./assets/opcua-scenario7-memory.png) -->
-<!-- ![Scenario 7 Network](./assets/opcua-scenario7-network.png) -->
-
+![Scenario 7 Console](./assets/opcua-scenario7-console.png)
+![Scenario 3 Cpu](./assets/opcua-scenario3-cpu.png)
+![Scenario 3 Memory](./assets/opcua-scenario3-memory.png)
+![Scenario 3 Network](./assets/opcua-scenario3-network.png)

@@ -6,7 +6,7 @@ The tests cover the following dimensions:
 
 - **Collection Scale Gradient**: From a single channel with 10 devices (10,000 points) scaling up to 10 channels with 100 devices (100,000 points)
 - **Collection Frequency Comparison**: Standard cycle (1000 ms) vs. high-frequency collection (100 ms)
-- **Mixed Workload Stress Test**: Large-scale data collection coMiBined with concurrent random command dispatching
+- **Mixed Workload Stress Test**: Large-scale data collection combined with concurrent random command dispatching
 
 ## Test Environment
 
@@ -91,19 +91,19 @@ cd deploy/compose/bench && docker compose up -d
 
 | Scenario | Channels | Devices/Channel | Points/Device | Frequency | Total Points | Type | Memory | CPU | Network Bandwidth |
 |---:|---:|---:|---:|---|---:|---|---|---|---|
-| 1 | 1 | 10 | 1,000 | 1000 ms | 10,000 | Float32 | 18.33 MiB | 1.63% | rx: 7 kB/s<br>tx: 7 kB/s |
-| 2 | 5 | 10 | 1,000 | 1000 ms | 50,000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 3 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 4 | 1 | 1 | 1,000 | 100 ms | 1,000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 5 | 5 | 1 | 1,000 | 100 ms | 5,000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 6 | 10 | 1 | 1,000 | 100 ms | 10,000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (TBD) | (TBD) | (TBD) |
+| 1 | 1 | 10 | 1,000 | 1000 ms | 10,000 | Float32 | 67.1 MiB | 3.12% | rx: 434.0 kB/s<br>tx: 356.0 kB/s |
+| 2 | 5 | 10 | 1,000 | 1000 ms | 50,000 | Float32 | 115.0 Mib | 5.71% | rx: 1.32 MB/s<br>tx: 1.19 MB/s |
+| 3 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | 165.0 MiB | 8.28% | rx: 2.38 MB/s<br>tx: 1.95 MB/s |
+| 4 | 1 | 1 | 1,000 | 100 ms | 1,000 | Float32 | 45.0 MiB | 3.50% | rx: 216.0 kB/s<br>tx: 178.0 kB/s |
+| 5 | 5 | 1 | 1,000 | 100 ms | 5,000 | Float32 | 51.6 MiB | 6.82% | rx: 1.08 MB/s<br>tx: 887.0 kB/s |
+| 6 | 10 | 1 | 1,000 | 100 ms | 10,000 | Float32 | 56.3 MiB | 9.48% | rx: 2.16 MB/s<br>tx: 1.78 MB/s |
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | 165.0 MiB | 8.28% | rx: 2.38 MB/s<br>tx: 1.95 MB/s |
 
-### Mixed Load Performance (Downlink Latency)
+### Mixed Load Performance
 
 | Scenario | Channels | Devices/Channel | Points/Device | Frequency | Total Points | Type | Downlink Method | Downlink Points | Iterations | Min Latency | Max Latency | Avg Latency |
 |---:|---:|---:|---:|---|---:|---|---|---:|---:|---|---|---|
-| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (TBD) | (TBD) | 100 | (TBD) | (TBD) | (TBD) |
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | API | 100 | 100 | 1.795 ms | 113.257 ms | 4.194 ms |
 
 ## Test Scenarios & Results
 
@@ -115,14 +115,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| 18.33 MiB | 1.63% | rx: 7 kB/s<br>tx: 7 kB/s |
+| 67.1 MiB | 3.12% | rx: 434.0 kB/s<br>tx: 356.0 kB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 1 -->
-<!-- ![Scenario 1 Cpu](./assets/opcua-scenario1-cpu.png) -->
-<!-- ![Scenario 1 Memory](./assets/opcua-scenario1-memory.png) -->
-<!-- ![Scenario 1 Network](./assets/opcua-scenario1-network.png) -->
+![Scenario 1 Cpu](./assets/opcua-scenario1-cpu.png)
+![Scenario 1 Memory](./assets/opcua-scenario1-memory.png)
+![Scenario 1 Network](./assets/opcua-scenario1-network.png)
 
 ---
 
@@ -134,14 +133,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 115.0 Mib | 5.71% | rx: 1.32 MB/s<br>tx: 1.19 MB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 2 -->
-<!-- ![Scenario 2 Cpu](./assets/opcua-scenario2-cpu.png) -->
-<!-- ![Scenario 2 Memory](./assets/opcua-scenario2-memory.png) -->
-<!-- ![Scenario 2 Network](./assets/opcua-scenario2-network.png) -->
+![Scenario 2 Cpu](./assets/opcua-scenario2-cpu.png)
+![Scenario 2 Memory](./assets/opcua-scenario2-memory.png)
+![Scenario 2 Network](./assets/opcua-scenario2-network.png)
 
 ---
 
@@ -153,14 +151,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 165.0 MiB | 8.28% | rx: 2.38 MB/s<br>tx: 1.95 MB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 3 -->
-<!-- ![Scenario 3 Cpu](./assets/opcua-scenario3-cpu.png) -->
-<!-- ![Scenario 3 Memory](./assets/opcua-scenario3-memory.png) -->
-<!-- ![Scenario 3 Network](./assets/opcua-scenario3-network.png) -->
+![Scenario 3 Cpu](./assets/opcua-scenario3-cpu.png)
+![Scenario 3 Memory](./assets/opcua-scenario3-memory.png)
+![Scenario 3 Network](./assets/opcua-scenario3-network.png)
 
 ---
 
@@ -172,14 +169,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 45.0 MiB | 3.50% | rx: 216.0 kB/s<br>tx: 178.0 kB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 4 -->
-<!-- ![Scenario 4 Cpu](./assets/opcua-scenario4-cpu.png) -->
-<!-- ![Scenario 4 Memory](./assets/opcua-scenario4-memory.png) -->
-<!-- ![Scenario 4 Network](./assets/opcua-scenario4-network.png) -->
+![Scenario 4 Cpu](./assets/opcua-scenario4-cpu.png)
+![Scenario 4 Memory](./assets/opcua-scenario4-memory.png)
+![Scenario 4 Network](./assets/opcua-scenario4-network.png)
 
 ---
 
@@ -191,14 +187,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 51.6 MiB | 6.82% | rx: 1.08 MB/s<br>tx: 887.0 kB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 5 -->
-<!-- ![Scenario 5 Cpu](./assets/opcua-scenario5-cpu.png) -->
-<!-- ![Scenario 5 Memory](./assets/opcua-scenario5-memory.png) -->
-<!-- ![Scenario 5 Network](./assets/opcua-scenario5-network.png) -->
+![Scenario 5 Cpu](./assets/opcua-scenario5-cpu.png)
+![Scenario 5 Memory](./assets/opcua-scenario5-memory.png)
+![Scenario 5 Network](./assets/opcua-scenario5-network.png)
 
 ---
 
@@ -210,14 +205,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 56.3 MiB | 9.48% | rx: 2.16 MB/s<br>tx: 1.78 MB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 6 -->
-<!-- ![Scenario 6 Cpu](./assets/opcua-scenario6-cpu.png) -->
-<!-- ![Scenario 6 Memory](./assets/opcua-scenario6-memory.png) -->
-<!-- ![Scenario 6 Network](./assets/opcua-scenario6-network.png) -->
+![Scenario 6 Cpu](./assets/opcua-scenario6-cpu.png)
+![Scenario 6 Memory](./assets/opcua-scenario6-memory.png)
+![Scenario 6 Network](./assets/opcua-scenario6-network.png)
 
 ---
 
@@ -229,18 +223,17 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 165.0 MiB | 8.28% | rx: 2.38 MB/s<br>tx: 1.95 MB/s |
 
 #### Metrics (Downlink)
 
 | Success/Fail | Min Latency | Max Latency | Avg Latency |
 |---|---|---|---|
-| (TBD) | (TBD) ms | (TBD) ms | (TBD) ms |
+| 100 / 0 | 1,795 ms | 113.257 ms | 4.194 ms |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 7 -->
-<!-- ![Scenario 7 Cpu](./assets/opcua-scenario7-cpu.png) -->
-<!-- ![Scenario 7 Memory](./assets/opcua-scenario7-memory.png) -->
-<!-- ![Scenario 7 Network](./assets/opcua-scenario7-network.png) -->
-
+![Scenario 7 Console](./assets/opcua-scenario7-console.png)
+![Scenario 3 Cpu](./assets/opcua-scenario3-cpu.png)
+![Scenario 3 Memory](./assets/opcua-scenario3-memory.png)
+![Scenario 3 Network](./assets/opcua-scenario3-network.png)

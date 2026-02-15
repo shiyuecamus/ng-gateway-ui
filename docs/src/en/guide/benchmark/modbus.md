@@ -6,7 +6,7 @@ The tests cover the following dimensions:
 
 - **Collection Scale Gradient**: From a single channel with 10 devices (10,000 points) scaling up to 10 channels with 100 devices (100,000 points)
 - **Collection Frequency Comparison**: Standard cycle (1000 ms) vs. high-frequency collection (100 ms)
-- **Mixed Workload Stress Test**: Large-scale data collection coMiBined with concurrent random command dispatching
+- **Mixed Workload Stress Test**: Large-scale data collection combined with concurrent random command dispatching
 
 ## Test Environment
 
@@ -27,7 +27,7 @@ The gateway is deployed as a `docker compose` container with **resource limits**
 | CPU | 1.0 Core | 0.5 Core |
 | Memory | 1000 MiB | 256 MiB |
 
-::: tip
+::: tip 
 Resource constraints are configured via Docker Compose `deploy.resources.limits`, consistent with Kubernetes Pod resource quota semantics. See `deploy/compose/bench/docker-compose.yaml` for details.
 :::
 
@@ -93,17 +93,17 @@ cd deploy/compose/bench && docker compose up -d
 |---:|---:|---:|---:|---|---:|---|---|---|---|
 | 1 | 1 | 10 | 1,000 | 1000 ms | 10,000 | Float32 | 50.8 MiB | 2.62% | rx: 55.2 kB/s<br>tx: 14 kB/s |
 | 2 | 5 | 10 | 1,000 | 1000 ms | 50,000 | Float32 | 103 MiB | 4.41% | rx: 269.0 kB/s<br>tx: 72.0 kB/s |
-| 3 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 4 | 1 | 1 | 1,000 | 100 ms | 1,000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 5 | 5 | 1 | 1,000 | 100 ms | 5,000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 6 | 10 | 1 | 1,000 | 100 ms | 10,000 | Float32 | (TBD) | (TBD) | (TBD) |
-| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (TBD) | (TBD) | (TBD) |
+| 3 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | 153 MiB | 7.03% | rx: 542.0 kB/s<br>tx: 144.0 kB/s |
+| 4 | 1 | 1 | 1,000 | 100 ms | 1,000 | Float32 | 44.8 MiB | 2.60% | rx: 47.8 kB/s<br>tx: 13.5 kB/s |
+| 5 | 5 | 1 | 1,000 | 100 ms | 5,000 | Float32 | 50.9 MiB | 4.61% | rx: 265.0 kB/s<br>tx: 87.3 kB/s |
+| 6 | 10 | 1 | 1,000 | 100 ms | 10,000 | Float32 | 55.2 MiB | 7.56% | rx: 530.0 kB/s<br>tx: 173.0 kB/s |
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | 153 MiB | 7.03% | rx: 542.0 kB/s<br>tx: 144.0 kB/s |
 
-### Mixed Load Performance (Downlink Latency)
+### Mixed Load Performance
 
 | Scenario | Channels | Devices/Channel | Points/Device | Frequency | Total Points | Type | Downlink Method | Downlink Points | Iterations | Min Latency | Max Latency | Avg Latency |
 |---:|---:|---:|---:|---|---:|---|---|---:|---:|---|---|---|
-| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | (TBD) | (TBD) | 100 | (TBD) | (TBD) | (TBD) |
+| 7 | 10 | 10 | 1,000 | 1000 ms | 100,000 | Float32 | API | 100 | 100 | 14.572 ms | 536.517 ms | 75.600 ms |
 
 ## Test Scenarios & Results
 
@@ -151,14 +151,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 153 MiB | 7.03% | rx: 542.0 kB/s<br>tx: 144.0 kB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 3 -->
-<!-- ![Scenario 3 Cpu](./assets/modbus-scenario3-cpu.png) -->
-<!-- ![Scenario 3 Memory](./assets/modbus-scenario3-memory.png) -->
-<!-- ![Scenario 3 Network](./assets/modbus-scenario3-network.png) -->
+![Scenario 3 Cpu](./assets/modbus-scenario3-cpu.png)
+![Scenario 3 Memory](./assets/modbus-scenario3-memory.png)
+![Scenario 3 Network](./assets/modbus-scenario3-network.png)
 
 ---
 
@@ -170,14 +169,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 44.8 MiB | 2.60% | rx: 47.8 kB/s<br>tx: 13.5 kB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 4 -->
-<!-- ![Scenario 4 Cpu](./assets/modbus-scenario4-cpu.png) -->
-<!-- ![Scenario 4 Memory](./assets/modbus-scenario4-memory.png) -->
-<!-- ![Scenario 4 Network](./assets/modbus-scenario4-network.png) -->
+![Scenario 4 Cpu](./assets/modbus-scenario4-cpu.png)
+![Scenario 4 Memory](./assets/modbus-scenario4-memory.png)
+![Scenario 4 Network](./assets/modbus-scenario4-network.png)
 
 ---
 
@@ -189,14 +187,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 50.9 MiB | 4.61% | rx: 265.0 kB/s<br>tx: 87.3 kB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 5 -->
-<!-- ![Scenario 5 Cpu](./assets/modbus-scenario5-cpu.png) -->
-<!-- ![Scenario 5 Memory](./assets/modbus-scenario5-memory.png) -->
-<!-- ![Scenario 5 Network](./assets/modbus-scenario5-network.png) -->
+![Scenario 5 Cpu](./assets/modbus-scenario5-cpu.png)
+![Scenario 5 Memory](./assets/modbus-scenario5-memory.png)
+![Scenario 5 Network](./assets/modbus-scenario5-network.png)
 
 ---
 
@@ -208,14 +205,13 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 55.2 Mib | 7.56% | rx: 530.0 kB/s<br>tx: 173.0 kB/s |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 6 -->
-<!-- ![Scenario 6 Cpu](./assets/modbus-scenario6-cpu.png) -->
-<!-- ![Scenario 6 Memory](./assets/modbus-scenario6-memory.png) -->
-<!-- ![Scenario 6 Network](./assets/modbus-scenario6-network.png) -->
+![Scenario 6 Cpu](./assets/modbus-scenario6-cpu.png)
+![Scenario 6 Memory](./assets/modbus-scenario6-memory.png)
+![Scenario 6 Network](./assets/modbus-scenario6-network.png)
 
 ---
 
@@ -227,18 +223,17 @@ cd deploy/compose/bench && docker compose up -d
 
 | Memory | CPU | Network Bandwidth |
 |---|---|---|
-| (TBD) | (TBD) | (TBD) |
+| 153 MiB | 7.03% | rx: 542.0 kB/s<br>tx: 144.0 kB/s |
 
 #### Metrics (Downlink)
 
 | Success/Fail | Min Latency | Max Latency | Avg Latency |
 |---|---|---|---|
-| (TBD) | (TBD) ms | (TBD) ms | (TBD) ms |
+| 100 / 0 | 14.572 ms | 536.517 ms | 75.600 ms |
 
 #### Resource Monitor Screenshots
 
-<!-- TODO: Insert Grafana (CPU/Memory/Network) screenshots for Scenario 7 -->
-<!-- ![Scenario 7 Cpu](./assets/modbus-scenario7-cpu.png) -->
-<!-- ![Scenario 7 Memory](./assets/modbus-scenario7-memory.png) -->
-<!-- ![Scenario 7 Network](./assets/modbus-scenario7-network.png) -->
-
+![Scenario 7 Console](./assets/modbus-scenario7-console.png)
+![Scenario 3 Cpu](./assets/modbus-scenario3-cpu.png)
+![Scenario 3 Memory](./assets/modbus-scenario3-memory.png)
+![Scenario 3 Network](./assets/modbus-scenario3-network.png)

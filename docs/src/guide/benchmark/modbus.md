@@ -229,8 +229,11 @@ cd deploy/compose/bench && docker compose up -d
 
 | 成功/失败 | 最小延迟 | 最大延迟 | 平均延迟 |
 |---|---|---|---|
-| 100/0 | 14.572 ms | 536.517 ms | 75.600 ms |
+| 100 / 0 | 14.572 ms | 536.517 ms | 75.600 ms |
 
 #### 资源监控截图
 
 ![Scenario 7 Console](./assets/modbus-scenario7-console.png)
+![Scenario 3 Cpu](./assets/modbus-scenario3-cpu.png)
+![Scenario 3 Memory](./assets/modbus-scenario3-memory.png)
+![Scenario 3 Network](./assets/modbus-scenario3-network.png)
