@@ -8,7 +8,7 @@ hero:
   text: Next-generation high-performance IoT gateway
   tagline: Runtime hot-plug extensions, stable high throughput
   image:
-    src: https://i.postimg.cc/MTkKmT2b/image.png
+    src: /branding/logo.png
     alt: NG Gateway
   actions:
     - theme: brand

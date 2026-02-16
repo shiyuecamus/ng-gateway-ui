@@ -8,7 +8,7 @@ hero:
   text: 新一代高性能 IoT 网关
   tagline: 运行时热插拔扩展，稳定高吞吐
   image:
-    src: https://i.postimg.cc/MTkKmT2b/image.png
+    src: /branding/logo.png
     alt: NG Gateway
   actions:
     - theme: brand

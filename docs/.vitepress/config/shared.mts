@@ -65,7 +65,7 @@ export const shared = defineConfig({
   srcDir: 'src',
   themeConfig: {
     i18nRouting: true,
-    logo: 'https://i.postimg.cc/MTkKmT2b/image.png',
+    logo: with_base(site_base, 'branding/logo.png'),
     search: {
       options: {
         locales: {
@@ -199,12 +199,12 @@ function pwa(): PwaOptions {
       icons: [
         {
           sizes: '192x192',
-          src: 'https://i.postimg.cc/MTkKmT2b/image.png',
+          src: with_base(site_base, 'branding/pwa-192.png'),
           type: 'image/png',
         },
         {
           sizes: '512x512',
-          src: 'https://i.postimg.cc/MTkKmT2b/image.png',
+          src: with_base(site_base, 'branding/pwa-512.png'),
           type: 'image/png',
         },
       ],
