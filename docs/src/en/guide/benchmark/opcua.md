@@ -171,10 +171,10 @@ cd deploy/compose/bench && docker compose up -d
 
 | Service | Access URL |
 |---|---|
-| Grafana | http://localhost:3000 (admin / admin) |
-| Prometheus | http://localhost:9090 |
-| cAdvisor | http://localhost:8080 |
-| ng-gateway | http://localhost:8978 |
+| Grafana | `http://localhost:3000` (admin / admin) |
+| Prometheus | `http://localhost:9090` |
+| cAdvisor | `http://localhost:8080` |
+| ng-gateway | `http://localhost:8978` |
 
 ## Summary
 
