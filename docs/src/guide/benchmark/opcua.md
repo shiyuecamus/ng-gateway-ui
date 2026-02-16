@@ -28,7 +28,98 @@
 | 内存 | 1000 MiB | 256 MiB |
 
 ::: tip
-资源约束通过 Docker Compose `deploy.resources.limits` 配置，与 Kubernetes Pod 资源配额语义一致。详见 `deploy/compose/bench/docker-compose.yaml`。
+资源约束通过 Docker Compose `deploy.resources.limits` 配置，与 Kubernetes Pod 资源配额语义一致。
+:::
+
+::: details docker-compose.yaml
+
+```yaml
+services:
+  gateway:
+    image: ${GATEWAY_IMAGE:-shiyuecamus/ng-gateway}:${GATEWAY_TAG:-latest}
+    container_name: ng-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_HTTP_PORT:-8978}:5678"
+      - "${GATEWAY_WS_PORT:-8979}:5679"
+    volumes:
+      - gateway-data:/app/data
+      - gateway-drivers:/app/drivers/custom
+      - gateway-plugins:/app/plugins/custom
+    deploy:
+      resources:
+        limits:
+          cpus: "${BENCH_CPU_LIMIT:-1.0}"
+          memory: "${BENCH_MEM_LIMIT:-1000M}"
+        reservations:
+          cpus: "${BENCH_CPU_RESERVE:-0.5}"
+          memory: "${BENCH_MEM_RESERVE:-256M}"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    container_name: ng-cadvisor
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=2s
+      - --store_container_labels=true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /sys:/sys:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ng-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ng-prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    depends_on:
+      - cadvisor
+      - gateway
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ng-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ng-grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  ng-prometheus-data:
+  ng-grafana-data:
+  gateway-data:
+  gateway-drivers:
+  gateway-plugins:
+```
+
 :::
 
 ## 测试工具
