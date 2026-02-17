@@ -71,7 +71,8 @@
     "bytes": "单位：字节",
     "days": "单位：天",
     "seconds": "单位：秒",
-    "milliseconds": "单位：毫秒"
+    "milliseconds": "单位：毫秒",
+    "count": "个"
   },
   "status": {
     "title": "状态",

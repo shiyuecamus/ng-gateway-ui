@@ -131,6 +131,7 @@
       "size": "大小",
       "checksum": "校验和",
       "install": {
+        "title": "安装北向插件",
         "uploadText": "请上传插件文件",
         "step1": "上传",
         "step2": "预览",
@@ -509,6 +510,7 @@
       "checksum": "校验和",
       "metadata": "元数据",
       "install": {
+        "title": "安装驱动",
         "uploadText": "请上传驱动文件",
         "step1": "上传",
         "step2": "预览",

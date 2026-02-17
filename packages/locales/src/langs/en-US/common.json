@@ -71,7 +71,8 @@
     "bytes": "Unit: Bytes",
     "days": "Unit: Days",
     "seconds": "Unit: Seconds",
-    "milliseconds": "Unit: Milliseconds"
+    "milliseconds": "Unit: Milliseconds",
+    "count": ""
   },
   "status": {
     "title": "Status",

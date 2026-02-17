@@ -121,7 +121,7 @@ const [Modal, modalApi] = useVbenModal({
   class: 'w-2/3',
   destroyOnClose: true,
   fullscreenButton: false,
-  title: '安装北向插件',
+  title: $t('page.northward.plugin.install.title'),
   showConfirmButton: false,
   showCancelButton: false,
   onCancel() {

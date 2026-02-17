@@ -131,6 +131,7 @@
       "size": "Size",
       "checksum": "Checksum",
       "install": {
+        "title": "Install Northward Plugin",
         "uploadText": "Please upload the plugin file",
         "step1": "Upload",
         "step2": "Preview",
@@ -509,6 +510,7 @@
       "checksum": "Checksum",
       "metadata": "Metadata",
       "install": {
+        "title": "Install Driver",
         "uploadText": "Please upload the driver file",
         "step1": "Upload",
         "step2": "Preview",

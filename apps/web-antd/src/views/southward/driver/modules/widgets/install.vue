@@ -123,7 +123,7 @@ const [Modal, modalApi] = useVbenModal({
   class: 'w-2/3',
   destroyOnClose: true,
   fullscreenButton: false,
-  title: '安装驱动',
+  title: $t('page.southward.driver.install.title'),
   showConfirmButton: false,
   showCancelButton: false,
   onCancel() {
