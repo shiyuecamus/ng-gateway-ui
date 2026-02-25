@@ -31,6 +31,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   shiyuecamus/ng-gateway:latest
 ```
 
@@ -43,6 +44,7 @@ docker run -d --name ng-gateway \
 | `-v gateway-data:/app/data` | **Important**: Persist core data (SQLite database, configuration, etc.) |
 | `-v gateway-drivers:/app/drivers/custom` | Persist custom drivers |
 | `-v gateway-plugins:/app/plugins/custom` | Persist custom plugins |
+| `-v gateway-ai:/app/ai` | Persist AI models and related data |
 :::
 
 ## 3. Upgrade / Uninstall
@@ -62,6 +64,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   shiyuecamus/ng-gateway:latest
 ```
 
@@ -80,6 +83,7 @@ The above uninstallation will not delete volumes like `gateway-data`; if you wan
 -   **Data & Configuration Persistence**: `/app/data` (Recommended to use `gateway-data` volume)
 -   **Custom Driver Directory**: `/app/drivers/custom` (Recommended to use `gateway-drivers` volume)
 -   **Custom Plugin Directory**: `/app/plugins/custom` (Recommended to use `gateway-plugins` volume)
+-   **AI Models & Data Directory**: `/app/ai` (Recommended to use `gateway-ai` volume)
 
 ## 5. Configuration Method
 
@@ -95,6 +99,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   -p 8978:5678 \
   -p 8979:5679 \
   shiyuecamus/ng-gateway:latest
@@ -120,6 +125,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   -p 8978:5678 \
   -p 8979:5679 \
   shiyuecamus/ng-gateway:latest
@@ -172,6 +178,7 @@ services:
       - gateway-data:/app/data
       - gateway-drivers:/app/drivers/custom
       - gateway-plugins:/app/plugins/custom
+      - gateway-ai:/app/ai
     environment:
       - TZ=Asia/Shanghai
       # - RUST_LOG=info # Adjust log level
@@ -180,6 +187,7 @@ volumes:
   gateway-data:
   gateway-drivers:
   gateway-plugins:
+  gateway-ai:
 ```
 
 Start:

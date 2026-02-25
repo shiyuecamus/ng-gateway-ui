@@ -31,6 +31,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   shiyuecamus/ng-gateway:latest
 ```
 
@@ -43,6 +44,7 @@ docker run -d --name ng-gateway \
 | `-v gateway-data:/app/data` | **重要**：持久化核心数据（SQLite 数据库、配置等） |
 | `-v gateway-drivers:/app/drivers/custom` | 持久化自定义驱动 |
 | `-v gateway-plugins:/app/plugins/custom` | 持久化自定义插件 |
+| `-v gateway-ai:/app/ai` | 持久化 AI 模型与数据 |
 :::
 
 ## 3. 升级 / 卸载
@@ -62,6 +64,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   shiyuecamus/ng-gateway:latest
 ```
 
@@ -81,6 +84,7 @@ docker rm -f ng-gateway
 - **数据与配置持久化**：`/app/data`（建议用 `gateway-data` volume）
 - **自定义驱动目录**：`/app/drivers/custom`（建议用 `gateway-drivers` volume）
 - **自定义插件目录**：`/app/plugins/custom`（建议用 `gateway-plugins` volume）
+- **AI 模型与数据目录**：`/app/ai`（建议用 `gateway-ai` volume）
 
 ## 5. 配置方式
 
@@ -96,6 +100,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   -p 8978:5678 \
   -p 8979:5679 \
   shiyuecamus/ng-gateway:latest
@@ -121,6 +126,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   -p 8978:5678 \
   -p 8979:5679 \
   shiyuecamus/ng-gateway:latest
@@ -173,6 +179,7 @@ services:
       - gateway-data:/app/data
       - gateway-drivers:/app/drivers/custom
       - gateway-plugins:/app/plugins/custom
+      - gateway-ai:/app/ai
     environment:
       - TZ=Asia/Shanghai
       # - RUST_LOG=info # 调整日志级别
@@ -181,6 +188,7 @@ volumes:
   gateway-data:
   gateway-drivers:
   gateway-plugins:
+  gateway-ai:
 ```
 
 启动：

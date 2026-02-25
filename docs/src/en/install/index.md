@@ -31,6 +31,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   shiyuecamus/ng-gateway:latest
 ```
 
@@ -62,6 +63,7 @@ docker run -d --name ng-gateway \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
+  -v gateway-ai:/app/ai \
   shiyuecamus/ng-gateway:latest
 ```
 

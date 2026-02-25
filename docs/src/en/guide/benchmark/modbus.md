@@ -46,6 +46,7 @@ services:
       - gateway-data:/app/data
       - gateway-drivers:/app/drivers/custom
       - gateway-plugins:/app/plugins/custom
+      - gateway-ai:/app/ai
     deploy:
       resources:
         limits:
@@ -118,6 +119,7 @@ volumes:
   gateway-data:
   gateway-drivers:
   gateway-plugins:
+  gateway-ai:
 ```
 
 :::
