@@ -1,4 +1,6 @@
 export type * from './action';
+export type * from './ai';
+export * from './ai';
 export type * from './app';
 export * from './app';
 export type * from './app-sub';

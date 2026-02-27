@@ -524,6 +524,269 @@
       "uninstallTips": "卸载后将删除所有关联的通道、设备、点位和动作数据。"
     }
   },
+  "ai": {
+    "title": "AI视觉分析",
+    "common": {
+      "action": "操作",
+      "enabled": "启用",
+      "disabled": "禁用",
+      "yes": "是",
+      "no": "否"
+    },
+    "overview": {
+      "title": "AI概览",
+      "engineStatus": "引擎状态",
+      "registeredModels": "已注册模型",
+      "activePipelines": "活跃Pipeline",
+      "status": {
+        "running": "运行中",
+        "disabled": "未启用"
+      }
+    },
+    "model": {
+      "title": "模型管理",
+      "name": "名称",
+      "version": "版本",
+      "task": "任务类型",
+      "fileSize": "文件大小(Byte)",
+      "loaded": "已加载",
+      "actions": {
+        "load": "加载",
+        "unload": "卸载",
+        "upload": "上传模型"
+      },
+      "upload": {
+        "title": "上传模型",
+        "id": "模型ID",
+        "name": "模型名称",
+        "version": "版本",
+        "task": "任务类型",
+        "file": "模型文件",
+        "pickFile": "选择模型文件"
+      },
+      "messages": {
+        "loadSuccess": "模型「{name}」加载成功",
+        "unloadSuccess": "模型「{name}」卸载成功",
+        "deleteConfirm": "确认删除模型「{name}」？",
+        "deleteSuccess": "模型「{name}」删除成功",
+        "fileRequired": "请先选择模型文件",
+        "basicRequired": "请填写模型基础信息",
+        "uploadSuccess": "模型「{name}」上传成功"
+      }
+    },
+    "algorithm": {
+      "title": "算法管理",
+      "name": "名称",
+      "version": "版本",
+      "moduleType": "模块类型",
+      "fileSize": "文件大小(Byte)",
+      "actions": {
+        "upload": "上传算法",
+        "test": "测试"
+      },
+      "upload": {
+        "title": "上传算法",
+        "name": "算法名称",
+        "description": "描述",
+        "version": "版本",
+        "moduleType": "模块类型",
+        "file": "WASM 文件",
+        "pickFile": "选择 WASM 文件"
+      },
+      "test": {
+        "title": "算法测试",
+        "frameWidth": "帧宽度",
+        "frameHeight": "帧高度",
+        "result": "测试结果"
+      },
+      "messages": {
+        "uploadRequired": "请填写算法名称并选择 WASM 文件",
+        "uploadSuccess": "算法「{name}」上传成功",
+        "deleteConfirm": "确认删除算法「{name}」？",
+        "deleteSuccess": "算法「{name}」删除成功"
+      }
+    },
+    "pipeline": {
+      "title": "Pipeline管理",
+      "id": "Pipeline ID",
+      "name": "Pipeline 名称",
+      "channelId": "通道ID",
+      "stageCount": "Stage数量",
+      "ruleCount": "规则数量",
+      "annotation": "标注",
+      "actions": {
+        "create": "新建Pipeline",
+        "validate": "校验"
+      },
+      "editor": {
+        "createTitle": "新建Pipeline",
+        "updateTitle": "编辑Pipeline",
+        "configJson": "Pipeline配置(JSON)",
+        "placeholders": {
+          "channel": "请选择通道"
+        },
+        "messages": {
+          "channelLoadFailed": "通道列表加载失败，请确认南向通道权限或接口状态"
+        },
+        "sections": {
+          "base": "基础信息",
+          "sampling": "Sampling 配置",
+          "roi": "ROI 配置",
+          "stages": "Stages 配置",
+          "alarmRules": "告警规则配置",
+          "annotation": "标注配置"
+        },
+        "actions": {
+          "addStage": "新增 Stage",
+          "addRule": "新增规则",
+          "addRoi": "新增 ROI",
+          "addPoint": "新增点位",
+          "addConfigEntry": "新增配置项"
+        },
+        "sampling": {
+          "type": "采样策略",
+          "everyNFrames": "每 N 帧处理一次",
+          "fps": "目标 FPS"
+        },
+        "roi": {
+          "enable": "启用主 ROI",
+          "multiRoiJson": "多 ROI(JSON，坐标归一化)",
+          "multiRoi": "多 ROI 列表",
+          "regionTitle": "ROI #{index}"
+        },
+        "stage": {
+          "type": "Stage 类型",
+          "modelId": "模型ID",
+          "confidenceThreshold": "置信度阈值",
+          "nmsIouThreshold": "NMS IoU 阈值",
+          "inputWidth": "输入宽度",
+          "inputHeight": "输入高度",
+          "enablePreprocess": "启用预处理覆盖",
+          "enablePostprocess": "启用后处理覆盖",
+          "resizeMode": "Resize 模式",
+          "channelOrder": "通道顺序",
+          "padValue": "Pad 值",
+          "normalizationPreset": "归一化预设",
+          "postType": "后处理类型",
+          "nmsVariant": "NMS 变体",
+          "topK": "Top-K",
+          "maxDetections": "最大检测数",
+          "numKeypoints": "关键点数量",
+          "anomalyThreshold": "异常阈值",
+          "applySoftmax": "启用 Softmax",
+          "softNmsSigma": "Soft-NMS Sigma",
+          "preprocessJson": "预处理覆盖(JSON)",
+          "postprocessJson": "后处理覆盖(JSON)",
+          "moduleId": "模块ID",
+          "configJson": "配置(JSON)",
+          "configEntries": "配置项",
+          "algorithm": "Tracker 算法",
+          "maxAge": "最大存活帧",
+          "reidModelId": "ReID 模型ID"
+        },
+        "config": {
+          "key": "键",
+          "value": "值"
+        },
+        "rule": {
+          "name": "规则名称",
+          "severity": "严重级别",
+          "cooldownSecs": "冷却时间(秒)",
+          "conditionType": "条件类型",
+          "class": "类别",
+          "classOptional": "类别(可选)",
+          "minConfidence": "最小置信度",
+          "threshold": "阈值",
+          "zoneJson": "区域点位(JSON)",
+          "zonePoints": "区域点位",
+          "lineJson": "越线定义(JSON)",
+          "lineStartX": "起点 X",
+          "lineStartY": "起点 Y",
+          "lineEndX": "终点 X",
+          "lineEndY": "终点 Y",
+          "direction": "方向",
+          "minScore": "最小分数",
+          "moduleId": "模块ID",
+          "configJson": "配置(JSON)",
+          "configEntries": "配置项"
+        },
+        "annotation": {
+          "drawBboxes": "绘制框",
+          "drawLabels": "绘制标签",
+          "drawConfidence": "绘制置信度",
+          "drawTrackIds": "绘制轨迹ID",
+          "drawSegmentation": "绘制分割",
+          "segmentationAlpha": "分割透明度",
+          "segmentationBackgroundClass": "分割背景类",
+          "lineThickness": "线宽",
+          "fontScale": "字体缩放",
+          "jpegQuality": "JPEG质量",
+          "maxOutputDimension": "最大输出尺寸"
+        }
+      },
+      "editorTips": {
+        "jsonFieldHint": "支持 JSON 输入"
+      },
+      "stageTitle": "Stage #{index}",
+      "ruleTitle": "规则 #{index}",
+      "validation": {
+        "title": "Pipeline校验结果",
+        "valid": "是否通过",
+        "pass": "通过",
+        "fail": "失败",
+        "errors": "错误列表",
+        "warnings": "告警列表",
+        "none": "无",
+        "channelRequired": "请选择通道",
+        "idRequired": "请输入 Pipeline ID",
+        "nameRequired": "请输入 Pipeline 名称",
+        "everyNFramesRequired": "fixed_interval 模式下 every_n_frames 必须 >= 1",
+        "fpsRequired": "target_fps 模式下 fps 必须 > 0",
+        "segmentationAlphaRange": "segmentation_alpha 必须在 0-1 之间",
+        "jpegQualityRange": "jpeg_quality 必须在 1-100 之间",
+        "invalidRoi": "ROI 非法：请确保坐标在 0-1 且 min < max",
+        "invalidRoiRegion": "第 {index} 个 ROI 区域非法",
+        "stageRequired": "至少需要一个 Stage",
+        "stageModelRequired": "第 {index} 个 Stage 缺少 model_id",
+        "stageModuleRequired": "第 {index} 个 Stage 缺少 module_id",
+        "stageConfigKeyRequired": "第 {index} 个 Stage 存在空配置键",
+        "reidModelRequired": "第 {index} 个 Stage 的 deep_sort 缺少 reid_model_id",
+        "ruleNameRequired": "第 {index} 条规则缺少名称",
+        "ruleClassRequired": "第 {index} 条 class_detected 规则缺少类别",
+        "zonePointsRequired": "第 {index} 条 zone_intrusion 规则至少需要 3 个点",
+        "zonePointOutOfRange": "第 {index} 条 zone_intrusion 规则点位需在 [0,1]",
+        "linePointOutOfRange": "第 {index} 条 line_crossing 规则点位需在 [0,1]",
+        "ruleModuleRequired": "第 {index} 条 custom_wasm 规则缺少 module_id",
+        "ruleConfigKeyRequired": "第 {index} 条 custom_wasm 规则存在空配置键",
+        "basicRequired": "请填写 Pipeline 基础信息",
+        "invalidJson": "存在非法 JSON，请检查后重试",
+        "invalidForm": "表单参数不合法，请检查后重试"
+      },
+      "enums": {
+        "stage": {
+          "inference": "推理",
+          "frameTransform": "帧变换",
+          "tracker": "跟踪",
+          "resultProcessor": "结果处理"
+        },
+        "tracker": {
+          "sort": "SORT",
+          "deepSort": "DeepSORT"
+        },
+        "alarm": {
+          "classDetected": "类别检测",
+          "countExceeds": "数量超限",
+          "zoneIntrusion": "区域入侵",
+          "lineCrossing": "越线",
+          "anomalyDetected": "异常检测",
+          "customWasm": "自定义 WASM"
+        }
+      },
+      "messages": {
+        "deleteConfirm": "确认删除通道 {channelId} 的 Pipeline「{name}」？"
+      }
+    }
+  },
   "maintenance": {
     "title": "运维",
     "monitor": {

@@ -524,6 +524,266 @@
       "uninstallTips": "Uninstalling will delete all associated channel, device, point and action data."
     }
   },
+  "ai": {
+    "title": "AI Vision Analysis",
+    "common": {
+      "action": "Action",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "overview": {
+      "title": "AI Overview",
+      "engineStatus": "Engine Status",
+      "registeredModels": "Registered Models",
+      "activePipelines": "Active Pipelines",
+      "status": {
+        "running": "Running",
+        "disabled": "Disabled"
+      }
+    },
+    "model": {
+      "title": "Model Management",
+      "name": "Name",
+      "version": "Version",
+      "task": "Task",
+      "fileSize": "File Size (Byte)",
+      "loaded": "Loaded",
+      "actions": {
+        "load": "Load",
+        "unload": "Unload",
+        "upload": "Upload Model"
+      },
+      "upload": {
+        "title": "Upload Model",
+        "id": "Model ID",
+        "name": "Model Name",
+        "version": "Version",
+        "task": "Task",
+        "file": "Model File",
+        "pickFile": "Select Model File"
+      },
+      "messages": {
+        "loadSuccess": "Model \"{name}\" loaded",
+        "unloadSuccess": "Model \"{name}\" unloaded",
+        "deleteConfirm": "Delete model \"{name}\"?",
+        "deleteSuccess": "Model \"{name}\" deleted",
+        "fileRequired": "Please select model file",
+        "basicRequired": "Please fill model basic information",
+        "uploadSuccess": "Model \"{name}\" uploaded"
+      }
+    },
+    "algorithm": {
+      "title": "Algorithm Management",
+      "name": "Name",
+      "version": "Version",
+      "moduleType": "Module Type",
+      "fileSize": "File Size (Byte)",
+      "actions": {
+        "upload": "Upload Algorithm",
+        "test": "Test"
+      },
+      "upload": {
+        "title": "Upload Algorithm",
+        "name": "Algorithm Name",
+        "description": "Description",
+        "version": "Version",
+        "moduleType": "Module Type",
+        "file": "WASM File",
+        "pickFile": "Select WASM File"
+      },
+      "test": {
+        "title": "Algorithm Test",
+        "frameWidth": "Frame Width",
+        "frameHeight": "Frame Height",
+        "result": "Result"
+      },
+      "messages": {
+        "uploadRequired": "Please input name and select wasm file",
+        "uploadSuccess": "Algorithm \"{name}\" uploaded",
+        "deleteConfirm": "Delete algorithm \"{name}\"?",
+        "deleteSuccess": "Algorithm \"{name}\" deleted"
+      }
+    },
+    "pipeline": {
+      "title": "Pipeline Management",
+      "id": "Pipeline ID",
+      "name": "Pipeline Name",
+      "channelId": "Channel ID",
+      "stageCount": "Stages",
+      "ruleCount": "Rules",
+      "annotation": "Annotation",
+      "actions": {
+        "create": "Create Pipeline",
+        "validate": "Validate"
+      },
+      "editor": {
+        "createTitle": "Create Pipeline",
+        "updateTitle": "Edit Pipeline",
+        "configJson": "Pipeline Config (JSON)",
+        "placeholders": {
+          "channel": "Select channel"
+        },
+        "messages": {
+          "channelLoadFailed": "Failed to load channels, please check permission or API status"
+        },
+        "sections": {
+          "base": "Basic Information",
+          "sampling": "Sampling",
+          "roi": "ROI",
+          "stages": "Stages",
+          "alarmRules": "Alarm Rules",
+          "annotation": "Annotation"
+        },
+        "actions": {
+          "addStage": "Add Stage",
+          "addRule": "Add Rule",
+          "addRoi": "Add ROI",
+          "addPoint": "Add Point",
+          "addConfigEntry": "Add Config Entry"
+        },
+        "sampling": {
+          "type": "Sampling Type",
+          "everyNFrames": "Every N Frames",
+          "fps": "Target FPS"
+        },
+        "roi": {
+          "enable": "Enable Primary ROI",
+          "multiRoiJson": "Multi ROI (JSON, normalized)",
+          "multiRoi": "Multi ROI List",
+          "regionTitle": "ROI #{index}"
+        },
+        "stage": {
+          "type": "Stage Type",
+          "modelId": "Model ID",
+          "confidenceThreshold": "Confidence Threshold",
+          "nmsIouThreshold": "NMS IoU Threshold",
+          "inputWidth": "Input Width",
+          "inputHeight": "Input Height",
+          "enablePreprocess": "Enable Preprocess Override",
+          "enablePostprocess": "Enable Postprocess Override",
+          "resizeMode": "Resize Mode",
+          "channelOrder": "Channel Order",
+          "padValue": "Pad Value",
+          "normalizationPreset": "Normalization Preset",
+          "postType": "Postprocess Type",
+          "nmsVariant": "NMS Variant",
+          "topK": "Top-K",
+          "maxDetections": "Max Detections",
+          "numKeypoints": "Num Keypoints",
+          "anomalyThreshold": "Anomaly Threshold",
+          "applySoftmax": "Apply Softmax",
+          "softNmsSigma": "Soft-NMS Sigma",
+          "preprocessJson": "Preprocess Override (JSON)",
+          "postprocessJson": "Postprocess Override (JSON)",
+          "moduleId": "Module ID",
+          "configJson": "Config (JSON)",
+          "configEntries": "Config Entries",
+          "algorithm": "Tracker Algorithm",
+          "maxAge": "Max Age",
+          "reidModelId": "ReID Model ID"
+        },
+        "config": {
+          "key": "Key",
+          "value": "Value"
+        },
+        "rule": {
+          "name": "Rule Name",
+          "severity": "Severity",
+          "cooldownSecs": "Cooldown (seconds)",
+          "conditionType": "Condition Type",
+          "class": "Class",
+          "classOptional": "Class (optional)",
+          "minConfidence": "Min Confidence",
+          "threshold": "Threshold",
+          "zoneJson": "Zone Points (JSON)",
+          "zonePoints": "Zone Points",
+          "lineJson": "Crossing Line (JSON)",
+          "lineStartX": "Start X",
+          "lineStartY": "Start Y",
+          "lineEndX": "End X",
+          "lineEndY": "End Y",
+          "direction": "Direction",
+          "minScore": "Min Score",
+          "moduleId": "Module ID",
+          "configJson": "Config (JSON)",
+          "configEntries": "Config Entries"
+        },
+        "annotation": {
+          "drawBboxes": "Draw Bboxes",
+          "drawLabels": "Draw Labels",
+          "drawConfidence": "Draw Confidence",
+          "drawTrackIds": "Draw Track IDs",
+          "drawSegmentation": "Draw Segmentation",
+          "segmentationAlpha": "Segmentation Alpha",
+          "segmentationBackgroundClass": "Segmentation Background Class",
+          "lineThickness": "Line Thickness",
+          "fontScale": "Font Scale",
+          "jpegQuality": "JPEG Quality",
+          "maxOutputDimension": "Max Output Dimension"
+        }
+      },
+      "stageTitle": "Stage #{index}",
+      "ruleTitle": "Rule #{index}",
+      "validation": {
+        "title": "Pipeline Validation Result",
+        "valid": "Valid",
+        "pass": "Pass",
+        "fail": "Fail",
+        "errors": "Errors",
+        "warnings": "Warnings",
+        "none": "None",
+        "channelRequired": "Please select a channel",
+        "idRequired": "Pipeline ID is required",
+        "nameRequired": "Pipeline name is required",
+        "everyNFramesRequired": "every_n_frames must be >= 1 in fixed_interval mode",
+        "fpsRequired": "fps must be > 0 in target_fps mode",
+        "segmentationAlphaRange": "segmentation_alpha must be between 0 and 1",
+        "jpegQualityRange": "jpeg_quality must be between 1 and 100",
+        "invalidRoi": "Invalid ROI: coordinates must be in [0,1] and min < max",
+        "invalidRoiRegion": "ROI region {index} is invalid",
+        "stageRequired": "At least one stage is required",
+        "stageModelRequired": "Stage {index} is missing model_id",
+        "stageModuleRequired": "Stage {index} is missing module_id",
+        "stageConfigKeyRequired": "Stage {index} has empty config key",
+        "reidModelRequired": "Stage {index} deep_sort is missing reid_model_id",
+        "ruleNameRequired": "Rule {index} is missing name",
+        "ruleClassRequired": "Rule {index} class_detected is missing class",
+        "zonePointsRequired": "Rule {index} zone_intrusion requires at least 3 points",
+        "zonePointOutOfRange": "Rule {index} zone point must be in [0,1]",
+        "linePointOutOfRange": "Rule {index} line point must be in [0,1]",
+        "ruleModuleRequired": "Rule {index} custom_wasm is missing module_id",
+        "ruleConfigKeyRequired": "Rule {index} custom_wasm has empty config key",
+        "basicRequired": "Please fill pipeline basic fields",
+        "invalidJson": "Invalid JSON detected, please verify and retry",
+        "invalidForm": "Invalid form values, please verify and retry"
+      },
+      "enums": {
+        "stage": {
+          "inference": "Inference",
+          "frameTransform": "Frame Transform",
+          "tracker": "Tracker",
+          "resultProcessor": "Result Processor"
+        },
+        "tracker": {
+          "sort": "SORT",
+          "deepSort": "DeepSORT"
+        },
+        "alarm": {
+          "classDetected": "Class Detected",
+          "countExceeds": "Count Exceeds",
+          "zoneIntrusion": "Zone Intrusion",
+          "lineCrossing": "Line Crossing",
+          "anomalyDetected": "Anomaly Detected",
+          "customWasm": "Custom WASM"
+        }
+      },
+      "messages": {
+        "deleteConfirm": "Delete pipeline \"{name}\" on channel {channelId}?"
+      }
+    }
+  },
   "maintenance": {
     "title": "Maintenance",
     "monitor": {
