@@ -19,6 +19,7 @@ export type * from './import';
 export type * from './metrics';
 export type * from './monitor';
 export type * from './net-debug';
+export type * from './network';
 export * from './plugin';
 export type * from './plugin';
 export type * from './point';
