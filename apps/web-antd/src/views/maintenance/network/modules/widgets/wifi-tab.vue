@@ -17,11 +17,11 @@ import {
   Card,
   Descriptions,
   Divider,
+  Drawer,
   Empty,
   List,
   message,
-  Space,
-  Spin,
+  Skeleton,
   Tag,
 } from 'ant-design-vue';
 
@@ -36,13 +36,15 @@ import {
 import { prefixToSubnetMask, signalQualityLevel } from '../schemas';
 import WifiConnectModal from './wifi-connect-modal.vue';
 
-defineProps<{
+const props = defineProps<{
   readOnly: boolean;
+  isMobile: boolean;
 }>();
 
 const { handleRequest } = useRequestHandler();
 
 const scanning = ref(false);
+const initialLoading = ref(true);
 const accessPoints = ref<WifiAccessPoint[]>([]);
 const wifiStatus = ref<WifiStaStatus | null>(null);
 const bestWifiIface = ref<NetworkInterfaceSummary | null>(null);
@@ -51,6 +53,17 @@ const connectModalOpen = ref(false);
 const selectedAp = ref<WifiAccessPoint | null>(null);
 const connecting = ref(false);
 const disconnecting = ref(false);
+
+const connectResult = ref<'idle' | 'success' | 'failed'>('idle');
+let connectResultTimer: ReturnType<typeof setTimeout> | undefined;
+
+// Pull-to-refresh state
+const pullContainer = ref<HTMLElement | null>(null);
+const pullDistance = ref(0);
+const isPulling = ref(false);
+const pullThreshold = 60;
+
+const descColumn = computed(() => (props.isMobile ? 1 : { xs: 1, sm: 2 }));
 
 async function loadWifiInterface() {
   await handleRequest(
@@ -82,21 +95,37 @@ async function loadStatus() {
 function openConnect(ap: WifiAccessPoint) {
   selectedAp.value = ap;
   connectModalOpen.value = true;
+  connectResult.value = 'idle';
 }
 
 function openConnectHidden() {
   selectedAp.value = null;
   connectModalOpen.value = true;
+  connectResult.value = 'idle';
 }
 
 async function doConnect(request: WifiConnectRequest) {
   connecting.value = true;
+  connectResult.value = 'idle';
+  clearTimeout(connectResultTimer);
+
   await handleRequest(
     () => connectWifi(request),
     (data) => {
       wifiStatus.value = data;
-      connectModalOpen.value = false;
+      connectResult.value = 'success';
       message.success($t('page.maintenance.network.wifiConfig.connectSuccess'));
+      connectResultTimer = setTimeout(() => {
+        connectModalOpen.value = false;
+        connectResult.value = 'idle';
+      }, 1500);
+    },
+    () => {
+      connectResult.value = 'failed';
+      message.error($t('page.maintenance.network.wifiConfig.connectFailed'));
+      connectResultTimer = setTimeout(() => {
+        connectResult.value = 'idle';
+      }, 3000);
     },
   );
   connecting.value = false;
@@ -140,8 +169,38 @@ function securityShortLabel(sec: string): string {
   return map[sec] ?? sec;
 }
 
+// Pull-to-refresh handlers (mobile only)
+let startY = 0;
+function onTouchStart(e: TouchEvent) {
+  if (!props.isMobile || scanning.value) return;
+  const el = pullContainer.value;
+  if (el && el.scrollTop === 0) {
+    startY = e.touches[0]!.clientY;
+    isPulling.value = true;
+  }
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (!isPulling.value) return;
+  const delta = e.touches[0]!.clientY - startY;
+  if (delta > 0) {
+    pullDistance.value = Math.min(delta * 0.4, pullThreshold * 1.5);
+    if (delta > 10) e.preventDefault();
+  }
+}
+
+async function onTouchEnd() {
+  if (!isPulling.value) return;
+  isPulling.value = false;
+  if (pullDistance.value >= pullThreshold) {
+    await doScan();
+  }
+  pullDistance.value = 0;
+}
+
 onMounted(async () => {
   await Promise.all([loadWifiInterface(), doScan(), loadStatus()]);
+  initialLoading.value = false;
 });
 </script>
 
@@ -149,13 +208,16 @@ onMounted(async () => {
   <div>
     <!-- Wi-Fi interface status preview -->
     <Card v-if="bestWifiIface" size="small" class="mb-4">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+      <div class="mb-3 flex items-center gap-3">
+        <div
+          class="flex items-center justify-center rounded-lg bg-primary/10"
+          :class="isMobile ? 'h-9 w-9' : 'h-10 w-10'"
+        >
           <IconifyIcon icon="mdi:wifi" class="text-primary size-5" />
         </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold">{{ bestWifiIface.displayName || bestWifiIface.name }}</span>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="truncate text-sm font-semibold">{{ bestWifiIface.displayName || bestWifiIface.name }}</span>
             <Tag
               :color="bestWifiIface.linkState === 'up' ? 'success' : 'default'"
               size="small"
@@ -169,11 +231,11 @@ onMounted(async () => {
               {{ bestWifiIface.connectedSsid }}
             </Tag>
           </div>
-          <div v-if="bestWifiIface.macAddress" class="text-xs text-gray-400">
+          <div v-if="bestWifiIface.macAddress" class="truncate text-xs text-gray-400">
             {{ bestWifiIface.macAddress }}
           </div>
         </div>
-        <div class="ml-auto">
+        <div class="shrink-0">
           <Button
             v-if="wifiStatus?.connected && !props.readOnly"
             danger
@@ -190,7 +252,7 @@ onMounted(async () => {
       <Descriptions
         v-if="wifiStatus?.connected"
         size="small"
-        :column="{ xs: 1, sm: 2 }"
+        :column="descColumn"
         bordered
       >
         <Descriptions.Item label="SSID">
@@ -203,7 +265,7 @@ onMounted(async () => {
           </span>
         </Descriptions.Item>
         <Descriptions.Item :label="$t('page.maintenance.network.wifiConfig.ip')">
-          {{ wifiStatus.ipAddress ?? '—' }}
+          <span class="break-all">{{ wifiStatus.ipAddress ?? '—' }}</span>
         </Descriptions.Item>
         <Descriptions.Item :label="$t('page.maintenance.network.subnetMask')">
           {{ prefixToSubnetMask(bestWifiIface?.ipv4?.addresses?.[0]?.prefixLength) }}
@@ -227,8 +289,12 @@ onMounted(async () => {
             Ch {{ wifiStatus.channel }}
           </span>
         </Descriptions.Item>
-        <Descriptions.Item v-if="wifiStatus.dns?.length" :label="$t('page.maintenance.network.wifiConfig.dns')" :span="2">
-          {{ wifiStatus.dns.join(', ') }}
+        <Descriptions.Item
+          v-if="wifiStatus.dns?.length"
+          :label="$t('page.maintenance.network.wifiConfig.dns')"
+          :span="isMobile ? 1 : 2"
+        >
+          <span class="break-all">{{ wifiStatus.dns.join(', ') }}</span>
         </Descriptions.Item>
       </Descriptions>
 
@@ -236,11 +302,11 @@ onMounted(async () => {
       <Descriptions
         v-else
         size="small"
-        :column="{ xs: 1, sm: 2 }"
+        :column="descColumn"
         bordered
       >
         <Descriptions.Item :label="$t('page.maintenance.network.ipAddress')">
-          {{ bestWifiIface.ipv4?.addresses?.[0]?.address ?? '—' }}
+          <span class="break-all">{{ bestWifiIface.ipv4?.addresses?.[0]?.address ?? '—' }}</span>
         </Descriptions.Item>
         <Descriptions.Item :label="$t('page.maintenance.network.subnetMask')">
           {{ prefixToSubnetMask(bestWifiIface.ipv4?.addresses?.[0]?.prefixLength) }}
@@ -258,9 +324,9 @@ onMounted(async () => {
         <Descriptions.Item
           v-if="bestWifiIface.ipv4?.dns?.length"
           :label="$t('page.maintenance.network.dnsServers')"
-          :span="2"
+          :span="isMobile ? 1 : 2"
         >
-          {{ bestWifiIface.ipv4.dns.join(', ') }}
+          <span class="break-all">{{ bestWifiIface.ipv4.dns.join(', ') }}</span>
         </Descriptions.Item>
       </Descriptions>
     </Card>
@@ -270,74 +336,165 @@ onMounted(async () => {
       {{ $t('page.maintenance.network.wifiConfig.scanTitle') }}
     </Divider>
 
-    <div class="mb-3 flex items-center justify-end">
-      <Space>
-        <Button v-if="!readOnly" size="small" @click="openConnectHidden">
-          {{ $t('page.maintenance.network.wifiConfig.connectToHidden') }}
-        </Button>
-        <Button type="primary" ghost size="small" :loading="scanning" @click="doScan">
-          {{ scanning
-            ? $t('page.maintenance.network.wifiConfig.scanning')
-            : $t('page.maintenance.network.wifiConfig.scan') }}
-        </Button>
-      </Space>
+    <div class="mb-3 flex items-center justify-end gap-2">
+      <Button v-if="!readOnly" size="small" @click="openConnectHidden">
+        {{ isMobile
+          ? $t('page.maintenance.network.wifiConfig.hiddenNetwork')
+          : $t('page.maintenance.network.wifiConfig.connectToHidden') }}
+      </Button>
+      <Button type="primary" ghost size="small" :loading="scanning" @click="doScan">
+        {{ scanning
+          ? $t('page.maintenance.network.wifiConfig.scanning')
+          : $t('page.maintenance.network.wifiConfig.scan') }}
+      </Button>
     </div>
 
-    <Spin :spinning="scanning">
-      <Empty
-        v-if="accessPoints.length === 0 && !scanning"
-        :description="$t('page.maintenance.network.wifiConfig.noNetworks')"
+    <!-- Pull-to-refresh indicator (mobile) -->
+    <div
+      v-if="isMobile && pullDistance > 0"
+      class="flex items-center justify-center py-2 text-xs text-gray-400 transition-opacity"
+      :style="{ height: `${pullDistance}px` }"
+    >
+      <IconifyIcon
+        icon="mdi:arrow-down"
+        class="mr-1 size-4 transition-transform"
+        :class="{ 'rotate-180': pullDistance >= pullThreshold }"
       />
+      {{ pullDistance >= pullThreshold
+        ? $t('page.maintenance.network.wifiConfig.releaseToRefresh')
+        : $t('page.maintenance.network.wifiConfig.pullToRefresh') }}
+    </div>
 
-      <List v-else size="small" :data-source="accessPoints">
-        <template #renderItem="{ item }">
-          <List.Item class="!px-3">
-            <div class="flex w-full items-center gap-3">
-              <IconifyIcon
-                :icon="signalIcon(item.signalQuality)"
-                :class="item.isConnected ? 'text-green-500' : 'text-gray-400'"
-                class="size-5 shrink-0"
-              />
+    <!-- Wi-Fi list with pull-to-refresh container -->
+    <div
+      ref="pullContainer"
+      @touchstart.passive="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
+    >
+      <!-- Skeleton screen during initial load -->
+      <div v-if="initialLoading" class="flex flex-col gap-2">
+        <div v-for="i in 5" :key="i" class="flex items-center gap-3 rounded-md px-3 py-3">
+          <Skeleton.Avatar :size="20" shape="square" active />
+          <div class="flex-1">
+            <Skeleton.Input active style="width: 60%; height: 16px" />
+            <Skeleton.Input active style="width: 40%; height: 12px; margin-top: 4px" />
+          </div>
+        </div>
+      </div>
 
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                  <span class="truncate text-sm font-medium">{{ item.ssid }}</span>
-                  <Tag v-if="item.isConnected" color="success" size="small" class="!m-0">
-                    {{ $t('page.maintenance.network.wifiConfig.connected') }}
-                  </Tag>
+      <template v-else>
+        <Empty
+          v-if="accessPoints.length === 0 && !scanning"
+          :description="$t('page.maintenance.network.wifiConfig.noNetworks')"
+        />
+
+        <List v-else size="small" :data-source="accessPoints">
+          <template #renderItem="{ item }">
+            <List.Item
+              class="wifi-list-item !px-3"
+              :class="{ 'wifi-list-item--mobile': isMobile }"
+            >
+              <div class="flex w-full items-center gap-3">
+                <IconifyIcon
+                  :icon="signalIcon(item.signalQuality)"
+                  :class="item.isConnected ? 'text-green-500' : 'text-gray-400'"
+                  class="size-5 shrink-0"
+                />
+
+                <div
+                  class="min-w-0 flex-1"
+                  @click="isMobile && !readOnly && !item.isConnected ? openConnect(item) : undefined"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="truncate text-sm font-medium">{{ item.ssid }}</span>
+                    <Tag v-if="item.isConnected" color="success" size="small" class="!m-0">
+                      {{ $t('page.maintenance.network.wifiConfig.connected') }}
+                    </Tag>
+                  </div>
+                  <div class="text-xs text-gray-400">
+                    <span v-if="securityShortLabel(item.security)">
+                      {{ securityShortLabel(item.security) }}
+                    </span>
+                    <span class="mx-1">·</span>
+                    {{ item.band }}
+                    <span class="mx-1">·</span>
+                    Ch {{ item.channel }}
+                    <span class="mx-1">·</span>
+                    {{ item.signalQuality }}%
+                  </div>
                 </div>
-                <div class="text-xs text-gray-400">
-                  <span v-if="securityShortLabel(item.security)">
-                    {{ securityShortLabel(item.security) }}
-                  </span>
-                  <span class="mx-1">·</span>
-                  {{ item.band }}
-                  <span class="mx-1">·</span>
-                  Ch {{ item.channel }}
-                  <span class="mx-1">·</span>
-                  {{ item.signalQuality }}%
-                </div>
+
+                <Button
+                  v-if="!readOnly && !item.isConnected"
+                  size="small"
+                  @click="openConnect(item)"
+                >
+                  {{ $t('page.maintenance.network.wifiConfig.connect') }}
+                </Button>
               </div>
+            </List.Item>
+          </template>
+        </List>
+      </template>
+    </div>
 
-              <Button
-                v-if="!readOnly && !item.isConnected"
-                size="small"
-                @click="openConnect(item)"
-              >
-                {{ $t('page.maintenance.network.wifiConfig.connect') }}
-              </Button>
-            </div>
-          </List.Item>
-        </template>
-      </List>
-    </Spin>
-
-    <WifiConnectModal
-      :open="connectModalOpen"
-      :ap="selectedAp"
-      :connecting="connecting"
-      @cancel="connectModalOpen = false"
-      @connect="doConnect"
-    />
+    <!-- Desktop: Modal / Mobile: Bottom-sheet Drawer -->
+    <template v-if="isMobile">
+      <Drawer
+        :open="connectModalOpen"
+        :title="selectedAp
+          ? `${$t('page.maintenance.network.wifiConfig.connect')} — ${selectedAp.ssid}`
+          : $t('page.maintenance.network.wifiConfig.connectToHidden')"
+        placement="bottom"
+        height="auto"
+        class="wifi-connect-sheet"
+        :closable="true"
+        :destroy-on-close="true"
+        @close="connectModalOpen = false"
+      >
+        <WifiConnectModal
+          :open="true"
+          :ap="selectedAp"
+          :connecting="connecting"
+          :connect-result="connectResult"
+          :is-mobile="true"
+          :inline-mode="true"
+          @cancel="connectModalOpen = false"
+          @connect="doConnect"
+        />
+      </Drawer>
+    </template>
+    <template v-else>
+      <WifiConnectModal
+        :open="connectModalOpen"
+        :ap="selectedAp"
+        :connecting="connecting"
+        :connect-result="connectResult"
+        :is-mobile="false"
+        @cancel="connectModalOpen = false"
+        @connect="doConnect"
+      />
+    </template>
   </div>
 </template>
+
+<style scoped>
+.wifi-list-item--mobile {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.wifi-list-item--mobile:active {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.wifi-connect-sheet :deep(.ant-drawer-content-wrapper) {
+  border-radius: 12px 12px 0 0;
+  max-height: 80vh;
+}
+
+.wifi-connect-sheet :deep(.ant-drawer-body) {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+</style>

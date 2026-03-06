@@ -10,6 +10,7 @@ import type { NetworkTabKey } from './modules/schemas';
 import { computed, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
+import { useIsMobile } from '@vben-core/composables';
 import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 
@@ -31,6 +32,7 @@ import WiredConfigTab from './modules/widgets/wired-config-tab.vue';
 defineOptions({ name: 'MaintenanceNetwork' });
 
 const { handleRequest } = useRequestHandler();
+const { isMobile } = useIsMobile();
 
 const activeTab = ref<NetworkTabKey>('overview');
 const interfaces = ref<NetworkInterfaceSummary[]>([]);
@@ -50,6 +52,14 @@ const canWifi = computed(
 const canAp = computed(
   () => capabilities.value != null,
 );
+
+const showNoInternetBanner = computed(() => {
+  if (!capabilities.value?.canManageAp) return false;
+  const hasStaConnection = interfaces.value.some(
+    (i) => i.kind === 'wifi' && i.connectedSsid && i.wifiMode === 'station',
+  );
+  return !hasStaConnection;
+});
 
 async function loadInterfaces() {
   loading.value = true;
@@ -96,7 +106,16 @@ onMounted(() => {
 
 <template>
   <Page auto-content-height>
-    <div class="flex h-full flex-col gap-4">
+    <div class="flex h-full flex-col gap-2 sm:gap-4">
+      <Alert
+        v-if="showNoInternetBanner"
+        type="warning"
+        show-icon
+        :message="$t('page.maintenance.network.noInternetBanner')"
+        closable
+        class="!mb-0"
+      />
+
       <Alert
         v-if="capabilities && isReadOnly"
         type="info"
@@ -105,8 +124,16 @@ onMounted(() => {
         class="!mb-0"
       />
 
-      <Card :body-style="{ padding: '16px' }">
-        <Tabs v-model:activeKey="activeTab">
+      <Card
+        :body-style="{ padding: isMobile ? '8px' : '16px' }"
+        class="network-main-card"
+      >
+        <Tabs
+          v-model:activeKey="activeTab"
+          :size="isMobile ? 'small' : 'middle'"
+          :tab-bar-gutter="isMobile ? 4 : undefined"
+          class="network-tabs"
+        >
           <template #rightExtra>
             <Button
               type="primary"
@@ -115,7 +142,8 @@ onMounted(() => {
               :loading="loading"
               @click="refresh"
             >
-              {{ $t('page.maintenance.network.refresh') }}
+              <span v-if="!isMobile">{{ $t('page.maintenance.network.refresh') }}</span>
+              <template v-else>↻</template>
             </Button>
           </template>
 
@@ -123,12 +151,13 @@ onMounted(() => {
             <OverviewCards
               :interfaces="interfaces"
               :loading="loading"
+              :is-mobile="isMobile"
               @detail="openDetail"
             />
           </Tabs.TabPane>
 
           <Tabs.TabPane key="wired" :tab="$t('page.maintenance.network.wired')">
-            <WiredConfigTab :read-only="isReadOnly" />
+            <WiredConfigTab :read-only="isReadOnly" :is-mobile="isMobile" />
           </Tabs.TabPane>
 
           <Tabs.TabPane
@@ -136,7 +165,7 @@ onMounted(() => {
             key="wifi"
             :tab="$t('page.maintenance.network.wifi')"
           >
-            <WifiTab :read-only="isReadOnly" />
+            <WifiTab :read-only="isReadOnly" :is-mobile="isMobile" />
           </Tabs.TabPane>
 
           <Tabs.TabPane
@@ -144,11 +173,11 @@ onMounted(() => {
             key="ap"
             :tab="$t('page.maintenance.network.ap')"
           >
-            <ApTab :capabilities="capabilities" />
+            <ApTab :capabilities="capabilities" :is-mobile="isMobile" />
           </Tabs.TabPane>
 
           <Tabs.TabPane key="dns" :tab="$t('page.maintenance.network.dns')">
-            <DnsTab :read-only="isReadOnly" />
+            <DnsTab :read-only="isReadOnly" :is-mobile="isMobile" />
           </Tabs.TabPane>
         </Tabs>
       </Card>
@@ -158,6 +187,24 @@ onMounted(() => {
       v-model:open="detailDrawerOpen"
       :detail="detailData"
       :loading="detailLoading"
+      :is-mobile="isMobile"
     />
   </Page>
 </template>
+
+<style scoped>
+.network-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 640px) {
+  .network-tabs :deep(.ant-tabs-nav) {
+    margin-bottom: 8px;
+  }
+
+  .network-tabs :deep(.ant-tabs-tab) {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+}
+</style>

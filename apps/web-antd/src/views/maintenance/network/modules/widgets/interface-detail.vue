@@ -13,6 +13,7 @@ const props = defineProps<{
   open: boolean;
   detail: NetworkInterfaceDetail | null;
   loading: boolean;
+  isMobile: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -23,13 +24,19 @@ const title = computed(
   () =>
     `${$t('page.maintenance.network.detailTitle')} — ${props.detail?.displayName || props.detail?.name || ''}`,
 );
+
+const drawerWidth = computed(() => (props.isMobile ? '100%' : 520));
+const labelWidth = computed(() => (props.isMobile ? '110px' : '140px'));
 </script>
 
 <template>
   <Drawer
     :open="open"
     :title="title"
-    :width="520"
+    :width="drawerWidth"
+    :placement="isMobile ? 'bottom' : 'right'"
+    :height="isMobile ? '85%' : undefined"
+    :class="{ 'mobile-drawer': isMobile }"
     @close="emit('update:open', false)"
   >
     <Spin :spinning="loading">
@@ -38,7 +45,7 @@ const title = computed(
         bordered
         size="small"
         :column="1"
-        :label-style="{ width: '140px' }"
+        :label-style="{ width: labelWidth }"
       >
         <Descriptions.Item :label="$t('page.maintenance.network.interfaceName')">
           {{ detail.name }}
@@ -49,14 +56,14 @@ const title = computed(
           </Tag>
         </Descriptions.Item>
         <Descriptions.Item :label="$t('page.maintenance.network.macAddress')">
-          {{ detail.macAddress || '—' }}
+          <span class="break-all">{{ detail.macAddress || '—' }}</span>
         </Descriptions.Item>
 
         <Descriptions.Item
           v-if="detail.ipv4?.addresses?.length"
           :label="$t('page.maintenance.network.ipAddress') + ' (IPv4)'"
         >
-          <div v-for="addr in detail.ipv4.addresses" :key="addr.address">
+          <div v-for="addr in detail.ipv4.addresses" :key="addr.address" class="break-all">
             {{ addr.address }}/{{ addr.prefixLength }}
           </div>
         </Descriptions.Item>
@@ -70,7 +77,7 @@ const title = computed(
           v-if="detail.ipv4?.dns?.length"
           :label="$t('page.maintenance.network.dnsServers') + ' (IPv4)'"
         >
-          {{ detail.ipv4.dns.join(', ') }}
+          <span class="break-all">{{ detail.ipv4.dns.join(', ') }}</span>
         </Descriptions.Item>
 
         <Descriptions.Item
@@ -117,3 +124,9 @@ const title = computed(
     </Spin>
   </Drawer>
 </template>
+
+<style scoped>
+.mobile-drawer :deep(.ant-drawer-content-wrapper) {
+  border-radius: 12px 12px 0 0;
+}
+</style>

@@ -696,7 +696,9 @@
         "connectFailed": "Wi-Fi connection failed",
         "disconnectSuccess": "Wi-Fi disconnected",
         "securityOpen": "Open",
-        "statusTitle": "Current Wi-Fi Connection"
+        "statusTitle": "Current Wi-Fi Connection",
+        "pullToRefresh": "Pull down to refresh",
+        "releaseToRefresh": "Release to refresh"
       },
       "apConfig": {
         "title": "AP Hotspot Config",
@@ -717,8 +719,15 @@
         "notAvailable": "AP hotspot is not supported on this hardware",
         "staApSingle": "Single-card STA+AP concurrent",
         "staApDual": "Dual-card setup",
-        "staApNone": "STA+AP not supported"
-      }
+        "staApNone": "STA+AP not supported",
+        "confirmApply": "Apply AP Configuration",
+        "confirmApplyDesc": "This will restart the AP hotspot. Connected clients may briefly lose connection. Continue?"
+      },
+      "noInternetBanner": "You are connected via AP hotspot — no internet access. Connect to a Wi-Fi network to gain upstream connectivity.",
+      "confirmAction": "Confirm",
+      "confirmCancel": "Cancel",
+      "confirmSwitchIpMode": "Switching IP mode may temporarily interrupt network connectivity. Continue?",
+      "confirmDisconnectWifi": "Are you sure you want to disconnect from the current Wi-Fi network?"
     }
   },
   "monitor": {

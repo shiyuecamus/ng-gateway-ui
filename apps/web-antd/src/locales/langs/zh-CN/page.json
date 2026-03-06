@@ -696,7 +696,9 @@
         "connectFailed": "Wi-Fi 连接失败",
         "disconnectSuccess": "Wi-Fi 已断开",
         "securityOpen": "开放",
-        "statusTitle": "当前 Wi-Fi 连接"
+        "statusTitle": "当前 Wi-Fi 连接",
+        "pullToRefresh": "下拉刷新",
+        "releaseToRefresh": "释放刷新"
       },
       "apConfig": {
         "title": "AP 热点配置",
@@ -717,8 +719,15 @@
         "notAvailable": "当前硬件不支持 AP 热点功能",
         "staApSingle": "单网卡 STA+AP 共存",
         "staApDual": "双网卡方案",
-        "staApNone": "不支持 STA+AP"
-      }
+        "staApNone": "不支持 STA+AP",
+        "confirmApply": "应用 AP 配置",
+        "confirmApplyDesc": "此操作将重启 AP 热点，已连接的客户端可能会短暂断开。是否继续？"
+      },
+      "noInternetBanner": "当前通过 AP 热点连接，无法访问互联网。请连接 Wi-Fi 网络以获得上行连接。",
+      "confirmAction": "确认",
+      "confirmCancel": "取消",
+      "confirmSwitchIpMode": "切换 IP 模式可能会暂时中断网络连接。是否继续？",
+      "confirmDisconnectWifi": "确定要断开当前的 Wi-Fi 连接吗？"
     }
   },
   "monitor": {

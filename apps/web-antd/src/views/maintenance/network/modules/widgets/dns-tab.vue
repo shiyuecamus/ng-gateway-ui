@@ -6,12 +6,13 @@ import { onMounted, ref } from 'vue';
 import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 
-import { Button, Form, Input, message, Space, Spin } from 'ant-design-vue';
+import { Button, Form, Input, message, Spin } from 'ant-design-vue';
 
 import { configureDns, fetchDnsConfig } from '#/api/core';
 
-defineProps<{
+const props = defineProps<{
   readOnly: boolean;
+  isMobile: boolean;
 }>();
 
 const { handleRequest } = useRequestHandler();
@@ -65,7 +66,7 @@ onMounted(() => {
 
 <template>
   <Spin :spinning="loading">
-    <Form layout="vertical" class="max-w-lg">
+    <Form layout="vertical" :class="props.isMobile ? 'w-full' : 'max-w-lg'">
       <Form.Item :label="$t('page.maintenance.network.dnsConfig.globalDns')">
         <div class="flex flex-col gap-2">
           <div
@@ -76,11 +77,12 @@ onMounted(() => {
             <Input
               v-model:value="servers[index]"
               :placeholder="$t('page.maintenance.network.dnsConfig.placeholder')"
-              :disabled="readOnly"
-              class="flex-1"
+              :disabled="props.readOnly"
+              class="flex-1 !text-base"
+              inputmode="decimal"
             />
             <Button
-              v-if="!readOnly"
+              v-if="!props.readOnly"
               type="text"
               danger
               size="small"
@@ -93,17 +95,22 @@ onMounted(() => {
         </div>
       </Form.Item>
 
-      <Form.Item v-if="!readOnly">
-        <Space>
-          <Button @click="addServer">
+      <Form.Item v-if="!props.readOnly">
+        <div :class="props.isMobile ? 'flex flex-col gap-2' : 'flex gap-2'">
+          <Button :block="props.isMobile" @click="addServer">
             {{ $t('page.maintenance.network.dnsConfig.addServer') }}
           </Button>
-          <Button type="primary" :loading="applying" @click="applyDns">
+          <Button
+            type="primary"
+            :loading="applying"
+            :block="props.isMobile"
+            @click="applyDns"
+          >
             {{ applying
               ? $t('page.maintenance.network.dnsConfig.applying')
               : $t('page.maintenance.network.dnsConfig.apply') }}
           </Button>
-        </Space>
+        </div>
       </Form.Item>
     </Form>
   </Spin>

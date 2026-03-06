@@ -5,9 +5,27 @@ import type { ImportmapPluginOptions } from './typing';
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 const getDefaultPwaOptions = (name: string): Partial<PwaPluginOptions> => ({
+  registerType: 'autoUpdate',
+  workbox: {
+    globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+    navigateFallback: 'index.html',
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/unpkg\.com\/.*/i,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'unpkg-cache',
+          expiration: {
+            maxEntries: 30,
+            maxAgeSeconds: 60 * 60 * 24 * 365,
+          },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+    ],
+  },
   manifest: {
-    description:
-      'Vben Admin is a modern admin dashboard template based on Vue 3. ',
+    description: 'NG-Gateway — IoT Gateway Management Console',
     icons: [
       {
         sizes: '192x192',

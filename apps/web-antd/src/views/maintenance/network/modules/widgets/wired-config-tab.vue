@@ -16,11 +16,13 @@ import {
   Card,
   Descriptions,
   Divider,
+  Drawer,
   Empty,
   Form,
   Input,
   InputNumber,
   message,
+  Modal,
   Select,
   Spin,
   Tag,
@@ -32,6 +34,7 @@ import { prefixToSubnetMask } from '../schemas';
 
 const props = defineProps<{
   readOnly: boolean;
+  isMobile: boolean;
 }>();
 
 const { handleRequest } = useRequestHandler();
@@ -99,7 +102,24 @@ watch(selectedName, (name) => {
 
 const isStatic = computed(() => form.value.method === 'static');
 
+const confirmOpen = ref(false);
+
+function requestApply() {
+  if (props.isMobile) {
+    confirmOpen.value = true;
+  } else {
+    Modal.confirm({
+      title: $t('page.maintenance.network.wiredConfig.apply'),
+      content: $t('page.maintenance.network.confirmSwitchIpMode'),
+      okText: $t('page.maintenance.network.confirmAction'),
+      cancelText: $t('page.maintenance.network.confirmCancel'),
+      onOk: () => applyConfig(),
+    });
+  }
+}
+
 async function applyConfig() {
+  confirmOpen.value = false;
   if (!selectedName.value) return;
   if (isStatic.value && (!form.value.ipAddress || !form.value.prefixLength)) {
     message.warning($t('page.maintenance.network.wiredConfig.staticRequired'));
@@ -162,12 +182,15 @@ onMounted(() => { loadStatus(); });
       <!-- Status preview card -->
       <Card v-if="bestIface" size="small" class="mb-4">
         <div class="mb-3 flex items-center gap-3">
-          <div class="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+          <div
+            class="flex items-center justify-center rounded-lg bg-primary/10"
+            :class="isMobile ? 'h-9 w-9' : 'h-10 w-10'"
+          >
             <IconifyIcon icon="mdi:ethernet" class="text-primary size-5" />
           </div>
-          <div>
+          <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold">{{ bestIface.displayName || bestIface.name }}</span>
+              <span class="truncate text-sm font-semibold">{{ bestIface.displayName || bestIface.name }}</span>
               <Tag
                 :color="bestIface.linkState === 'up' ? 'success' : 'default'"
                 size="small"
@@ -178,15 +201,15 @@ onMounted(() => { loadStatus(); });
                   : $t('page.maintenance.network.linkDown') }}
               </Tag>
             </div>
-            <div v-if="bestIface.macAddress" class="text-xs text-gray-400">
+            <div v-if="bestIface.macAddress" class="truncate text-xs text-gray-400">
               {{ bestIface.macAddress }}
             </div>
           </div>
         </div>
 
-        <Descriptions size="small" :column="{ xs: 1, sm: 2 }" bordered>
+        <Descriptions size="small" :column="isMobile ? 1 : { xs: 1, sm: 2 }" bordered>
           <Descriptions.Item :label="$t('page.maintenance.network.ipAddress')">
-            {{ bestIface.ipv4?.addresses?.[0]?.address ?? '—' }}
+            <span class="break-all">{{ bestIface.ipv4?.addresses?.[0]?.address ?? '—' }}</span>
           </Descriptions.Item>
           <Descriptions.Item :label="$t('page.maintenance.network.subnetMask')">
             {{ prefixToSubnetMask(bestIface.ipv4?.addresses?.[0]?.prefixLength) }}
@@ -204,9 +227,9 @@ onMounted(() => { loadStatus(); });
           <Descriptions.Item
             v-if="bestIface.ipv4?.dns?.length"
             :label="$t('page.maintenance.network.dnsServers')"
-            :span="2"
+            :span="isMobile ? 1 : 2"
           >
-            {{ bestIface.ipv4.dns.join(', ') }}
+            <span class="break-all">{{ bestIface.ipv4.dns.join(', ') }}</span>
           </Descriptions.Item>
         </Descriptions>
       </Card>
@@ -217,20 +240,36 @@ onMounted(() => { loadStatus(); });
           {{ $t('page.maintenance.network.wiredConfig.title') }}
         </Divider>
 
-        <Form layout="vertical" class="max-w-lg">
+        <Form layout="vertical" :class="isMobile ? 'w-full' : 'max-w-lg'">
           <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipMode')">
             <Select v-model:value="form.method" :options="ipModeOptions" />
           </Form.Item>
 
           <template v-if="isStatic">
             <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipAddress')" required>
-              <Input v-model:value="form.ipAddress" placeholder="192.168.1.100" />
+              <Input
+                v-model:value="form.ipAddress"
+                placeholder="192.168.1.100"
+                inputmode="decimal"
+                class="!text-base"
+              />
             </Form.Item>
             <Form.Item :label="$t('page.maintenance.network.wiredConfig.prefixLength')" required>
-              <InputNumber v-model:value="form.prefixLength" :min="1" :max="32" class="!w-full" />
+              <InputNumber
+                v-model:value="form.prefixLength"
+                :min="1"
+                :max="32"
+                class="!w-full"
+                inputmode="numeric"
+              />
             </Form.Item>
             <Form.Item :label="$t('page.maintenance.network.wiredConfig.gateway')">
-              <Input v-model:value="form.gateway" placeholder="192.168.1.1" />
+              <Input
+                v-model:value="form.gateway"
+                placeholder="192.168.1.1"
+                inputmode="decimal"
+                class="!text-base"
+              />
             </Form.Item>
           </template>
 
@@ -239,11 +278,17 @@ onMounted(() => { loadStatus(); });
               v-model:value="form.dns"
               :rows="3"
               :placeholder="$t('page.maintenance.network.wiredConfig.dnsHint')"
+              class="!text-base"
             />
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" :loading="applying" @click="applyConfig">
+            <Button
+              type="primary"
+              :loading="applying"
+              :block="isMobile"
+              @click="requestApply"
+            >
               {{ applying
                 ? $t('page.maintenance.network.wiredConfig.applying')
                 : $t('page.maintenance.network.wiredConfig.apply') }}
@@ -251,6 +296,40 @@ onMounted(() => { loadStatus(); });
           </Form.Item>
         </Form>
       </template>
+
+      <!-- Mobile confirmation bottom sheet -->
+      <Drawer
+        v-if="isMobile"
+        :open="confirmOpen"
+        placement="bottom"
+        height="auto"
+        :closable="true"
+        :title="$t('page.maintenance.network.wiredConfig.apply')"
+        class="confirm-sheet"
+        @close="confirmOpen = false"
+      >
+        <p class="mb-4 text-sm text-gray-600">
+          {{ $t('page.maintenance.network.confirmSwitchIpMode') }}
+        </p>
+        <div class="flex gap-3">
+          <Button block @click="confirmOpen = false">
+            {{ $t('page.maintenance.network.confirmCancel') }}
+          </Button>
+          <Button type="primary" block :loading="applying" @click="applyConfig">
+            {{ $t('page.maintenance.network.confirmAction') }}
+          </Button>
+        </div>
+      </Drawer>
     </div>
   </Spin>
 </template>
+
+<style scoped>
+.confirm-sheet :deep(.ant-drawer-content-wrapper) {
+  border-radius: 12px 12px 0 0;
+}
+
+.confirm-sheet :deep(.ant-drawer-body) {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+</style>
