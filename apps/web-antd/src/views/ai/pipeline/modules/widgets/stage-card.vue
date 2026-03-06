@@ -1,280 +1,250 @@
 <script lang="ts" setup>
-import type { PipelineEditorStage } from '../schemas';
+import type { Recordable } from '@vben/types';
+
+import { computed } from 'vue';
 
 import { $t } from '@vben/locales';
-import { Button, Card, Input, InputNumber, Select, Switch } from 'ant-design-vue';
 
-defineOptions({ name: 'AiPipelineStageCard' });
+import {
+  Button,
+  Card,
+  Collapse,
+  CollapsePanel,
+  Form,
+  FormItem,
+  Input,
+  InputNumber,
+  Select,
+  Switch,
+  Tooltip,
+} from 'ant-design-vue';
 
-defineProps<{
-  stage: PipelineEditorStage;
+import {
+  alarmConditionTypeOptions,
+  stageTypeOptions,
+  trackerAlgorithmOptions,
+} from '../schemas';
+
+defineOptions({ name: 'StageCard' });
+
+const props = defineProps<{
+  stage: Recordable<any>;
   index: number;
-  modelOptions: Array<{ label: string; value: string }>;
-  algorithmOptions: Array<{ label: string; value: string }>;
+  total: number;
+  models: Array<{ label: string; value: string }>;
+  algorithms: Array<{ label: string; value: string }>;
 }>();
 
 const emit = defineEmits<{
+  'update:stage': [value: Recordable<any>];
   remove: [];
-  addConfigEntry: [];
-  removeConfigEntry: [entryIndex: number];
+  moveUp: [];
+  moveDown: [];
 }>();
+
+const stageTitle = computed(() => {
+  const typeOpt = stageTypeOptions.find((o) => o.value === props.stage.type);
+  const typeName = typeOpt ? (typeof typeOpt.label === 'function' ? typeOpt.label() : typeOpt.label) : props.stage.type;
+  return `${$t('page.ai.pipeline.stageTitle', { index: props.index + 1 })} — ${typeName}`;
+});
+
+function update(field: string, value: any) {
+  emit('update:stage', { ...props.stage, [field]: value });
+}
 </script>
 
 <template>
-  <Card size="small">
-    <div class="space-y-2">
-      <div class="flex items-center justify-between">
-        <span>{{ $t('page.ai.pipeline.stageTitle', { index: index + 1 }) }}</span>
-        <Button danger type="link" @click="emit('remove')">
-          {{ $t('common.delete') }}
-        </Button>
+  <Card
+    size="small"
+    class="stage-card mb-3 border border-solid border-gray-200 transition-shadow hover:shadow-md"
+  >
+    <template #title>
+      <div class="flex items-center gap-2">
+        <span class="drag-handle cursor-grab text-gray-400 hover:text-gray-600">⠿</span>
+        <span class="text-sm font-medium">{{ stageTitle }}</span>
       </div>
-      <div class="grid grid-cols-2 gap-2">
-        <div>
-          <div class="mb-1">{{ $t('page.ai.pipeline.editor.stage.type') }}</div>
-          <Select
-            v-model:value="stage.type"
-            :options="[
-              { label: 'inference', value: 'inference' },
-              { label: 'frame_transform', value: 'frame_transform' },
-              { label: 'tracker', value: 'tracker' },
-              { label: 'result_processor', value: 'result_processor' },
-            ]"
-          />
-        </div>
-        <div v-if="stage.type === 'frame_transform' || stage.type === 'result_processor'">
-          <div class="mb-1">{{ $t('page.ai.pipeline.editor.stage.moduleId') }}</div>
-          <Select
-            v-model:value="stage.moduleId"
-            :options="algorithmOptions"
-            show-search
-            :placeholder="$t('page.ai.pipeline.editor.stage.moduleId')"
-          />
-        </div>
-        <div v-if="stage.type === 'inference'">
-          <div class="mb-1">{{ $t('page.ai.pipeline.editor.stage.modelId') }}</div>
-          <Select
-            v-model:value="stage.modelId"
-            :options="modelOptions"
-            show-search
-            :placeholder="$t('page.ai.pipeline.editor.stage.modelId')"
-          />
-        </div>
-        <div v-if="stage.type === 'inference'">
-          <div class="mb-1">{{ $t('page.ai.pipeline.editor.stage.confidenceThreshold') }}</div>
-          <InputNumber
-            v-model:value="stage.confidenceThreshold"
-            :min="0"
-            :max="1"
-            :step="0.01"
-            class="w-full"
-          />
-        </div>
-        <div v-if="stage.type === 'inference'">
-          <div class="mb-1">{{ $t('page.ai.pipeline.editor.stage.nmsIouThreshold') }}</div>
-          <InputNumber
-            v-model:value="stage.nmsIouThreshold"
-            :min="0"
-            :max="1"
-            :step="0.01"
-            class="w-full"
-          />
-        </div>
-        <div v-if="stage.type === 'inference'">
-          <div class="mb-1">{{ $t('page.ai.pipeline.editor.stage.inputWidth') }}</div>
-          <InputNumber
-            v-model:value="stage.inputWidth"
-            :min="1"
-            :placeholder="$t('page.ai.pipeline.editor.stage.inputWidth')"
-            class="w-full"
-          />
-        </div>
-        <div v-if="stage.type === 'inference'">
-          <div class="mb-1">{{ $t('page.ai.pipeline.editor.stage.inputHeight') }}</div>
-          <InputNumber
-            v-model:value="stage.inputHeight"
-            :min="1"
-            :placeholder="$t('page.ai.pipeline.editor.stage.inputHeight')"
-            class="w-full"
-          />
-        </div>
-
-        <div
-          v-if="stage.type === 'inference'"
-          class="col-span-2 flex items-center justify-between rounded border px-2 py-1"
-        >
-          <span>{{ $t('page.ai.pipeline.editor.stage.enablePreprocess') }}</span>
-          <Switch v-model:checked="stage.preprocessEnabled" />
-        </div>
-        <template v-if="stage.type === 'inference' && stage.preprocessEnabled">
-          <Select
-            v-model:value="stage.preprocess.resizeMode"
-            :allow-clear="true"
-            :options="[
-              { label: 'letterbox', value: 'letterbox' },
-              { label: 'center_crop', value: 'center_crop' },
-              { label: 'direct_resize', value: 'direct_resize' },
-            ]"
-          />
-          <Select
-            v-model:value="stage.preprocess.channelOrder"
-            :allow-clear="true"
-            :options="[
-              { label: 'rgb', value: 'rgb' },
-              { label: 'bgr', value: 'bgr' },
-            ]"
-          />
-          <InputNumber v-model:value="stage.preprocess.padValue" :min="0" :max="255" />
-          <Select
-            v-model:value="stage.preprocess.normalizationPreset"
-            :allow-clear="true"
-            :options="[
-              { label: 'yolo', value: 'yolo' },
-              { label: 'imagenet', value: 'imagenet' },
-              { label: 'symmetric', value: 'symmetric' },
-              { label: 'custom', value: 'custom' },
-            ]"
-          />
-        </template>
-        <template
-          v-if="
-            stage.type === 'inference' &&
-            stage.preprocessEnabled &&
-            stage.preprocess.normalizationPreset === 'custom'
-          "
-        >
-          <InputNumber v-model:value="stage.preprocess.meanR" :step="0.01" />
-          <InputNumber v-model:value="stage.preprocess.meanG" :step="0.01" />
-          <InputNumber v-model:value="stage.preprocess.meanB" :step="0.01" />
-          <InputNumber v-model:value="stage.preprocess.stdR" :step="0.01" />
-          <InputNumber v-model:value="stage.preprocess.stdG" :step="0.01" />
-          <InputNumber v-model:value="stage.preprocess.stdB" :step="0.01" />
-        </template>
-
-        <div
-          v-if="stage.type === 'inference'"
-          class="col-span-2 flex items-center justify-between rounded border px-2 py-1"
-        >
-          <span>{{ $t('page.ai.pipeline.editor.stage.enablePostprocess') }}</span>
-          <Switch v-model:checked="stage.postprocessEnabled" />
-        </div>
-        <template v-if="stage.type === 'inference' && stage.postprocessEnabled">
-          <Select
-            v-model:value="stage.postprocess.type"
-            :allow-clear="true"
-            :options="[
-              { label: 'yolov8_detection', value: 'yolov8_detection' },
-              { label: 'yolov5_detection', value: 'yolov5_detection' },
-              { label: 'classification', value: 'classification' },
-              { label: 'segmentation', value: 'segmentation' },
-              { label: 'yolov8_pose', value: 'yolov8_pose' },
-              { label: 'anomaly_detection', value: 'anomaly_detection' },
-              { label: 'passthrough', value: 'passthrough' },
-            ]"
-          />
-          <Select
-            v-model:value="stage.postprocess.nmsVariant"
-            :allow-clear="true"
-            :options="[
-              { label: 'classic', value: 'classic' },
-              { label: 'soft', value: 'soft' },
-              { label: 'diou', value: 'diou' },
-            ]"
-          />
-          <InputNumber v-model:value="stage.postprocess.topK" :min="1" />
-          <InputNumber v-model:value="stage.postprocess.maxDetections" :min="1" />
-          <InputNumber v-model:value="stage.postprocess.numKeypoints" :min="1" />
-          <InputNumber
-            v-model:value="stage.postprocess.anomalyThreshold"
-            :min="0"
-            :max="1"
-            :step="0.01"
-          />
-          <div class="col-span-2 flex items-center justify-between rounded border px-2 py-1">
-            <span>{{ $t('page.ai.pipeline.editor.stage.applySoftmax') }}</span>
-            <Switch v-model:checked="stage.postprocess.applySoftmax" />
-          </div>
-          <InputNumber
-            v-if="stage.postprocess.nmsVariant === 'soft'"
-            v-model:value="stage.postprocess.softNmsSigma"
-            :min="0"
-            :step="0.01"
-          />
-          <InputNumber
-            v-model:value="stage.postprocess.detectionParallelThreshold"
-            :min="1"
-            :placeholder="'detectionParallelThreshold'"
-          />
-          <InputNumber
-            v-model:value="stage.postprocess.nmsPrescreenMultiplier"
-            :min="1"
-            :placeholder="'nmsPrescreenMultiplier'"
-          />
-          <InputNumber
-            v-model:value="stage.postprocess.classificationSmallClassFastPath"
-            :min="1"
-            :placeholder="'classificationSmallClassFastPath'"
-          />
-          <InputNumber
-            v-model:value="stage.postprocess.segmentationParallelMinPixels"
-            :min="1"
-            :placeholder="'segmentationParallelMinPixels'"
-          />
-        </template>
-
-        <template v-if="stage.type === 'tracker'">
-          <div>
-            <div class="mb-1">{{ $t('page.ai.pipeline.editor.stage.algorithm') }}</div>
-            <Select
-              v-model:value="stage.algorithm"
-              :options="[
-                { label: 'sort', value: 'sort' },
-                { label: 'deep_sort', value: 'deep_sort' },
-              ]"
-            />
-          </div>
-          <div v-if="stage.algorithm === 'deep_sort'">
-            <div class="mb-1">{{ $t('page.ai.pipeline.editor.stage.reidModelId') }}</div>
-            <Select
-              v-model:value="stage.reidModelId"
-              :options="modelOptions"
-              show-search
-              :placeholder="$t('page.ai.pipeline.editor.stage.reidModelId')"
-            />
-          </div>
-        </template>
-
-        <div
-          v-if="stage.type === 'frame_transform' || stage.type === 'result_processor'"
-          class="col-span-2 space-y-2"
-        >
-          <div class="flex items-center justify-between">
-            <span>{{ $t('page.ai.pipeline.editor.stage.configEntries') }}</span>
-            <Button size="small" type="dashed" @click="emit('addConfigEntry')">
-              {{ $t('page.ai.pipeline.editor.actions.addConfigEntry') }}
-            </Button>
-          </div>
-          <div
-            v-for="(entry, ei) in stage.configEntries"
-            :key="ei"
-            class="grid grid-cols-4 gap-2"
-          >
-            <Input v-model:value="entry.key" :placeholder="$t('page.ai.pipeline.editor.config.key')" />
-            <Input v-model:value="entry.value" :placeholder="$t('page.ai.pipeline.editor.config.value')" />
-            <Select
-              v-model:value="entry.valueType"
-              :options="[
-                { label: 'string', value: 'string' },
-                { label: 'number', value: 'number' },
-                { label: 'boolean', value: 'boolean' },
-              ]"
-            />
-            <Button danger type="link" @click="emit('removeConfigEntry', ei)">
-              {{ $t('common.delete') }}
-            </Button>
-          </div>
-        </div>
+    </template>
+    <template #extra>
+      <div class="flex items-center gap-1">
+        <Tooltip title="Move up" v-if="index > 0">
+          <Button size="small" type="text" @click="emit('moveUp')">↑</Button>
+        </Tooltip>
+        <Tooltip title="Move down" v-if="index < total - 1">
+          <Button size="small" type="text" @click="emit('moveDown')">↓</Button>
+        </Tooltip>
+        <Tooltip :title="$t('common.delete')">
+          <Button size="small" type="text" danger @click="emit('remove')">×</Button>
+        </Tooltip>
       </div>
-    </div>
+    </template>
+
+    <Form layout="vertical" :colon="false" size="small">
+      <FormItem :label="$t('page.ai.pipeline.editor.stage.type')">
+        <Select
+          :value="stage.type"
+          :options="stageTypeOptions.map((o) => ({ label: typeof o.label === 'function' ? o.label() : o.label, value: o.value }))"
+          @change="(v: any) => update('type', v)"
+          class="w-full"
+        />
+      </FormItem>
+
+      <!-- Inference stage fields -->
+      <template v-if="stage.type === 'inference'">
+        <FormItem :label="$t('page.ai.pipeline.editor.stage.modelId')" required>
+          <Select
+            :value="stage.modelId"
+            :options="models"
+            show-search
+            allow-clear
+            @change="(v: any) => update('modelId', v)"
+            class="w-full"
+          />
+        </FormItem>
+        <div class="grid grid-cols-2 gap-3">
+          <FormItem :label="$t('page.ai.pipeline.editor.stage.confidenceThreshold')">
+            <InputNumber
+              :value="stage.confidenceThreshold ?? 0.5"
+              :min="0" :max="1" :step="0.05"
+              @change="(v: any) => update('confidenceThreshold', v)"
+              class="w-full"
+            />
+          </FormItem>
+          <FormItem :label="$t('page.ai.pipeline.editor.stage.nmsIouThreshold')">
+            <InputNumber
+              :value="stage.nmsIouThreshold"
+              :min="0" :max="1" :step="0.05"
+              @change="(v: any) => update('nmsIouThreshold', v)"
+              class="w-full"
+            />
+          </FormItem>
+          <FormItem :label="$t('page.ai.pipeline.editor.stage.inputWidth')">
+            <InputNumber
+              :value="stage.inputWidth"
+              :min="1"
+              @change="(v: any) => update('inputWidth', v)"
+              class="w-full"
+            />
+          </FormItem>
+          <FormItem :label="$t('page.ai.pipeline.editor.stage.inputHeight')">
+            <InputNumber
+              :value="stage.inputHeight"
+              :min="1"
+              @change="(v: any) => update('inputHeight', v)"
+              class="w-full"
+            />
+          </FormItem>
+        </div>
+        <Collapse ghost>
+          <CollapsePanel key="preprocess" :header="$t('page.ai.pipeline.editor.stage.enablePreprocess')">
+            <Switch :checked="!!stage.enablePreprocess" @change="(v: any) => update('enablePreprocess', v)" />
+            <template v-if="stage.enablePreprocess">
+              <FormItem :label="$t('page.ai.pipeline.editor.stage.resizeMode')" class="mt-2">
+                <Select
+                  :value="stage.preprocessOverride?.resizeMode ?? 'letterbox'"
+                  :options="[{ label: 'Letterbox', value: 'letterbox' }, { label: 'Stretch', value: 'stretch' }, { label: 'Crop Center', value: 'crop_center' }]"
+                  @change="(v: any) => update('preprocessOverride', { ...stage.preprocessOverride, resizeMode: v })"
+                  class="w-full"
+                />
+              </FormItem>
+              <FormItem :label="$t('page.ai.pipeline.editor.stage.channelOrder')">
+                <Select
+                  :value="stage.preprocessOverride?.channelOrder ?? 'rgb'"
+                  :options="[{ label: 'RGB', value: 'rgb' }, { label: 'BGR', value: 'bgr' }]"
+                  @change="(v: any) => update('preprocessOverride', { ...stage.preprocessOverride, channelOrder: v })"
+                  class="w-full"
+                />
+              </FormItem>
+            </template>
+          </CollapsePanel>
+        </Collapse>
+      </template>
+
+      <!-- Tracker stage fields -->
+      <template v-if="stage.type === 'tracker'">
+        <FormItem :label="$t('page.ai.pipeline.editor.stage.algorithm')">
+          <Select
+            :value="stage.algorithm ?? 'sort'"
+            :options="trackerAlgorithmOptions.map((o) => ({ label: typeof o.label === 'function' ? o.label() : o.label, value: o.value }))"
+            @change="(v: any) => update('algorithm', v)"
+            class="w-full"
+          />
+        </FormItem>
+        <FormItem :label="$t('page.ai.pipeline.editor.stage.maxAge')">
+          <InputNumber
+            :value="stage.maxAge ?? 30"
+            :min="1"
+            @change="(v: any) => update('maxAge', v)"
+            class="w-full"
+          />
+        </FormItem>
+        <FormItem v-if="stage.algorithm === 'deep_sort'" :label="$t('page.ai.pipeline.editor.stage.reidModelId')">
+          <Select
+            :value="stage.reidModelId"
+            :options="models"
+            show-search
+            allow-clear
+            @change="(v: any) => update('reidModelId', v)"
+            class="w-full"
+          />
+        </FormItem>
+      </template>
+
+      <!-- FrameTransform stage fields -->
+      <template v-if="stage.type === 'frame_transform'">
+        <FormItem :label="$t('page.ai.pipeline.editor.stage.moduleId')" required>
+          <Select
+            :value="stage.moduleId"
+            :options="algorithms.filter((a) => a.value)"
+            show-search
+            allow-clear
+            @change="(v: any) => update('moduleId', v)"
+            class="w-full"
+          />
+        </FormItem>
+        <FormItem :label="$t('page.ai.pipeline.editor.stage.configJson')">
+          <Input.TextArea
+            :value="typeof stage.config === 'string' ? stage.config : JSON.stringify(stage.config ?? {}, null, 2)"
+            :rows="3"
+            @change="(e: any) => { try { update('config', JSON.parse(e.target.value)); } catch {} }"
+          />
+        </FormItem>
+      </template>
+
+      <!-- ResultProcessor stage fields -->
+      <template v-if="stage.type === 'result_processor'">
+        <FormItem :label="$t('page.ai.pipeline.editor.stage.moduleId')" required>
+          <Select
+            :value="stage.moduleId"
+            :options="algorithms.filter((a) => a.value)"
+            show-search
+            allow-clear
+            @change="(v: any) => update('moduleId', v)"
+            class="w-full"
+          />
+        </FormItem>
+        <FormItem :label="$t('page.ai.pipeline.editor.stage.configJson')">
+          <Input.TextArea
+            :value="typeof stage.config === 'string' ? stage.config : JSON.stringify(stage.config ?? {}, null, 2)"
+            :rows="3"
+            @change="(e: any) => { try { update('config', JSON.parse(e.target.value)); } catch {} }"
+          />
+        </FormItem>
+      </template>
+    </Form>
   </Card>
 </template>
+
+<style scoped>
+.stage-card :deep(.ant-card-head) {
+  min-height: 40px;
+  padding: 0 12px;
+}
+.stage-card :deep(.ant-card-body) {
+  padding: 12px;
+}
+.stage-ghost {
+  opacity: 0.4;
+  background: #e6f4ff;
+  border: 2px dashed #1890ff;
+}
+</style>

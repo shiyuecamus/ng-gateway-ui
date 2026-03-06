@@ -5,10 +5,13 @@ import type { CustomRenderType } from '@vben-core/shadcn-ui';
 
 import type { UiText } from './types';
 
+import { h } from 'vue';
+
 import { get, isEqual } from '@vben/utils';
 
 import { isNullOrUndefined } from '@vben-core/shared/utils';
 
+import { requestClient } from '#/api/request';
 import { z } from '#/adapter/form';
 
 import { resolveUiText } from './types';
@@ -76,6 +79,24 @@ export interface EnumItem {
   label: UiText;
 }
 
+/** Remote data source for dynamically populated select fields. */
+export interface ApiDatasource {
+  /** API endpoint to fetch options (relative to the API base URL). */
+  endpoint: string;
+  /** JSON path to the value field in each response item. */
+  value_field: string;
+  /** JSON path to the label field in each response item. */
+  label_field: string;
+  /** Optional query parameters appended as `?key=value&...`. */
+  params?: Nullable<Record<string, any>>;
+  /** Whether to allow creating new items inline (shows a quick-add button). */
+  allow_create?: boolean;
+  /** Route path to navigate when the user clicks the quick-add button. */
+  create_route?: Nullable<string>;
+  /** Display label for the quick-add button. */
+  create_label?: Nullable<UiText>;
+}
+
 export interface UiProps {
   placeholder?: Nullable<UiText>;
   help?: Nullable<UiText>;
@@ -84,6 +105,8 @@ export interface UiProps {
   col_span?: Nullable<number>;
   read_only?: Nullable<boolean>;
   disabled?: Nullable<boolean>;
+  /** Remote data source for dynamically populated select fields. */
+  datasource?: Nullable<ApiDatasource>;
 }
 
 export type RuleValue<T> = T | { message?: UiText; value: T };
@@ -102,31 +125,31 @@ export interface Rules {
 export interface When {
   target: string;
   operator:
-    | 'Between'
-    | 'Contains'
-    | 'Eq'
-    | 'Gt'
-    | 'Gte'
-    | 'In'
-    | 'Lt'
-    | 'Lte'
-    | 'Neq'
-    | 'NotBetween'
-    | 'NotIn'
-    | 'NotNull'
-    | 'Prefix'
-    | 'Regex'
-    | 'Suffix';
+  | 'Between'
+  | 'Contains'
+  | 'Eq'
+  | 'Gt'
+  | 'Gte'
+  | 'In'
+  | 'Lt'
+  | 'Lte'
+  | 'Neq'
+  | 'NotBetween'
+  | 'NotIn'
+  | 'NotNull'
+  | 'Prefix'
+  | 'Regex'
+  | 'Suffix';
   value?: Nullable<any>;
   effect:
-    | 'Disable'
-    | 'Enable'
-    | 'If'
-    | 'IfNot'
-    | 'Invisible'
-    | 'Optional'
-    | 'Require'
-    | 'Visible';
+  | 'Disable'
+  | 'Enable'
+  | 'If'
+  | 'IfNot'
+  | 'Invisible'
+  | 'Optional'
+  | 'Require'
+  | 'Visible';
 }
 
 function getNodeOrder(node: Node): number {
@@ -284,10 +307,10 @@ function buildDependencies(
 ):
   | undefined
   | {
-      if?: (values: Record<string, any>) => boolean;
-      show?: (values: Record<string, any>) => boolean;
-      triggerFields: string[];
-    } {
+    if?: (values: Record<string, any>) => boolean;
+    show?: (values: Record<string, any>) => boolean;
+    triggerFields: string[];
+  } {
   if ((!when || when.length === 0) && !discriminator) return undefined;
 
   const targets = new Set<string>();
@@ -390,7 +413,53 @@ function mapField(
     base.componentProps = cp;
   }
 
-  if (node.data_type.kind === 'Enum') {
+  if (node.ui?.datasource) {
+    const ds = node.ui.datasource;
+    const prev = (base.componentProps ?? {}) as Record<string, any>;
+    const apiSelectProps: Record<string, any> = {
+      ...prev,
+      api: async () => {
+        const params = ds.params
+          ? `?${new URLSearchParams(ds.params as any).toString()}`
+          : '';
+        const resp = await requestClient.get(`${ds.endpoint}${params}`);
+        return resp?.data ?? resp ?? [];
+      },
+      labelField: ds.label_field,
+      valueField: ds.value_field,
+      resultField: '',
+      immediate: true,
+      showSearch: true,
+      allowClear: true,
+      filterOption: (input: string, option: Record<string, any>) => {
+        const label = String(option[ds.label_field] ?? '');
+        return label.toLowerCase().includes(input.toLowerCase());
+      },
+    };
+
+    if (ds.allow_create && ds.create_route) {
+      const createRoute = ds.create_route;
+      const createLabel = ds.create_label
+        ? String(resolveUiText(ds.create_label))
+        : '+ Create';
+      apiSelectProps.dropdownRender = ({ menuNode }: { menuNode: any }) => {
+        return h('div', [
+          menuNode,
+          h(
+            'a',
+            {
+              style:
+                'display: block; border-top: 1px solid #f0f0f0; padding: 6px 12px; color: #1890ff; font-size: 13px; cursor: pointer; text-decoration: none;',
+              href: `#${createRoute}`,
+            },
+            createLabel,
+          ),
+        ]);
+      };
+    }
+
+    base.componentProps = apiSelectProps as any;
+  } else if (node.data_type.kind === 'Enum') {
     const prev = (base.componentProps ?? {}) as Record<string, any>;
     base.componentProps = {
       ...prev,
@@ -491,6 +560,7 @@ const COMPONENT_BY_KIND: Record<UiDataType['kind'], any> = {
 };
 
 function resolveComponent(node: FieldNode): any {
+  if (node.ui?.datasource) return 'ApiSelect';
   return COMPONENT_BY_KIND[node.data_type.kind] ?? 'Input';
 }
 
@@ -653,7 +723,7 @@ const ZOD_BUILDERS: Partial<Record<UiDataType['kind'], ZodBuilder>> = {
         s = (s as any).regex(new RegExp(String(rvPattern.value)), {
           message: rvPattern.message,
         } as any);
-      } catch {}
+      } catch { }
     }
     return s;
   },

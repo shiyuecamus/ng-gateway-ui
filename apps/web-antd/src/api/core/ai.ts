@@ -1,4 +1,5 @@
 import type {
+  AiAlarmEventInfo,
   AiAlgorithmInfo,
   AiAlgorithmTestInput,
   AiAlgorithmTestResult,
@@ -10,6 +11,7 @@ import type {
   AiPipelineSummary,
   AiPipelineUpsertRequest,
   AiPipelineValidationReport,
+  CommonPageResponse,
 } from '@vben/types';
 
 import { requestClient } from '#/api/request';
@@ -121,6 +123,31 @@ export async function updateAiPipeline(payload: AiPipelineUpsertRequest) {
 
 export async function deleteAiPipeline(channelId: number) {
   return requestClient.delete<boolean>(AiApi.pipelineByChannel(channelId));
+}
+
+// Alarm event APIs
+export namespace AlarmApi {
+  export const base = '/ai/alarms';
+  export const page = `${base}/page`;
+  export const detail = (id: number) => `${base}/detail/${id}`;
+  export const changeStatus = `${base}/status`;
+}
+
+export async function fetchAlarmEventPage(params: any) {
+  return requestClient.get<CommonPageResponse<AiAlarmEventInfo>>(AlarmApi.page, {
+    params,
+  });
+}
+
+export async function fetchAlarmEventDetail(id: number) {
+  return requestClient.get<AiAlarmEventInfo>(AlarmApi.detail(id));
+}
+
+export async function changeAlarmEventStatus(data: {
+  id: number;
+  status: string;
+}) {
+  return requestClient.put<AiAlarmEventInfo>(AlarmApi.changeStatus, data);
 }
 
 export async function makeDefaultAiPipelineConfig(id: string, name: string): Promise<AiPipelineConfig> {

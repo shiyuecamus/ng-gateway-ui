@@ -537,7 +537,18 @@
       "title": "AI概览",
       "engineStatus": "引擎状态",
       "registeredModels": "已注册模型",
+      "loadedModels": "已加载模型",
+      "totalMemory": "总内存占用",
       "activePipelines": "活跃Pipeline",
+      "registeredPipelines": "已注册Pipeline",
+      "inference": "推理",
+      "inferenceActive": "活跃数",
+      "inferenceMaxConcurrent": "最大并发",
+      "inferenceTotal": "累计",
+      "inferenceAvgLatency": "平均延迟",
+      "algorithms": "算法",
+      "algorithmsRegistered": "已注册",
+      "wasmModules": "WASM模块",
       "status": {
         "running": "运行中",
         "disabled": "未启用"
@@ -572,6 +583,23 @@
         "fileRequired": "请先选择模型文件",
         "basicRequired": "请填写模型基础信息",
         "uploadSuccess": "模型「{name}」上传成功"
+      }
+    },
+    "alarm": {
+      "title": "告警记录",
+      "id": "ID",
+      "channelId": "通道ID",
+      "alarmType": "类型",
+      "severity": "严重级别",
+      "description": "描述",
+      "status": "状态",
+      "actions": {
+        "ack": "确认",
+        "close": "关闭"
+      },
+      "messages": {
+        "ackSuccess": "告警已确认",
+        "closeSuccess": "告警已关闭"
       }
     },
     "algorithm": {
@@ -783,7 +811,20 @@
         }
       },
       "messages": {
-        "deleteConfirm": "确认删除通道 {channelId} 的 Pipeline「{name}」？"
+        "deleteConfirm": "确认删除通道 {channelId} 的 Pipeline「{name}」？",
+        "deleteSuccess": "Pipeline「{name}」已删除"
+      }
+    },
+    "live": {
+      "title": "实时预览",
+      "status": {
+        "disconnected": "未连接",
+        "connected": "实时预览已连接",
+        "error": "连接错误"
+      },
+      "actions": {
+        "startPreview": "开始预览",
+        "stop": "停止"
       }
     }
   },

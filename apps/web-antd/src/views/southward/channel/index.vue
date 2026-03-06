@@ -132,6 +132,10 @@ function onActionClick({ code, row }: OnActionClickParams<ChannelInfo>) {
         .open();
       break;
     }
+    case 'livePreview': {
+      router.push(`/ai/live/${row.id}`);
+      break;
+    }
     case 'observability': {
       router.push(`/southward/channel/${row.id}/observability`);
       break;

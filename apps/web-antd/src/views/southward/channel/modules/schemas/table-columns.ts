@@ -103,6 +103,11 @@ export function useChannelColumns(
             tooltip: $t('page.southward.channel.observability.title'),
           },
           {
+            code: 'livePreview',
+            icon: 'mdi:monitor-play',
+            tooltip: $t('page.ai.live.title'),
+          },
+          {
             code: 'edit',
             icon: 'lucide:edit',
             tooltip: $t('common.edit'),

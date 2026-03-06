@@ -66,6 +66,11 @@ export interface AiEngineStatus {
     registered: number;
     activeChannels: number;
   };
+  /** Algorithm subsystem status (WASM modules). */
+  algorithms?: {
+    registered: number;
+    wasmModules: number;
+  };
 }
 
 export interface AiPipelineConfig {
@@ -112,4 +117,33 @@ export interface AiModelUpdateRequest {
 export interface AiPipelineUpsertRequest {
   channelId: number;
   config: AiPipelineConfig;
+}
+
+/** Alarm event info from backend API */
+export interface AiAlarmEventInfo {
+  id: number;
+  channelId: number;
+  pipelineId: number | null;
+  alarmType: string;
+  severity: string;
+  description: string;
+  payload: any | null;
+  status: string;
+  ackedAt: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Alarm event page query params */
+export interface AiAlarmEventPageParams {
+  channelId?: number;
+  pipelineId?: number;
+  alarmType?: string;
+  severity?: string;
+  status?: string;
+  page: number;
+  pageSize: number;
+  startTime?: string;
+  endTime?: string;
 }

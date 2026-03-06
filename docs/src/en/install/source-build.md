@@ -57,6 +57,59 @@ sudo apt-get install -y \
 
 :::
 
+### AI Vision Engine Dependencies (GStreamer)
+
+If you need the `engine` feature (AI vision analysis engine with hardware-accelerated
+decoding and inference), you must also install GStreamer development libraries.
+Skipping this step only affects AI-related features; all other gateway features
+remain unaffected.
+
+::: warning Version Requirement
+GStreamer >= 1.20. The version in Debian 12 / Ubuntu 22.04+ repositories meets
+this requirement.
+:::
+
+**macOS (Homebrew)**:
+
+```bash
+brew install gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-libav
+```
+
+**Debian/Ubuntu**:
+
+```bash
+sudo apt-get install -y \
+  libgstreamer1.0-dev \
+  libgstreamer-plugins-base1.0-dev \
+  gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good \
+  gstreamer1.0-plugins-bad \
+  gstreamer1.0-libav
+```
+
+**Optional — VA-API Hardware Acceleration (Intel/AMD x86)**:
+
+```bash
+sudo apt-get install -y \
+  gstreamer1.0-vaapi \
+  intel-media-va-driver-non-free
+```
+
+**Optional — RK3588 / Rockchip Platforms**:
+
+Requires the GStreamer MPP plugin (`rockchip-mpp`) and RGA userspace library
+provided by the Rockchip BSP. These are typically pre-installed in the official
+SDK or Armbian repositories.
+
+**Verify Installation**:
+
+```bash
+gst-inspect-1.0 --version
+gst-inspect-1.0 videoconvert
+# VA-API (if installed):
+gst-inspect-1.0 vaapidecodebin
+```
+
 ## 1. Get Source Code
 
 ```bash

@@ -537,7 +537,18 @@
       "title": "AI Overview",
       "engineStatus": "Engine Status",
       "registeredModels": "Registered Models",
+      "loadedModels": "Loaded Models",
+      "totalMemory": "Total Memory",
       "activePipelines": "Active Pipelines",
+      "registeredPipelines": "Registered Pipelines",
+      "inference": "Inference",
+      "inferenceActive": "Active",
+      "inferenceMaxConcurrent": "Max Concurrent",
+      "inferenceTotal": "Total",
+      "inferenceAvgLatency": "Avg Latency",
+      "algorithms": "Algorithms",
+      "algorithmsRegistered": "Registered",
+      "wasmModules": "WASM Modules",
       "status": {
         "running": "Running",
         "disabled": "Disabled"
@@ -572,6 +583,23 @@
         "fileRequired": "Please select model file",
         "basicRequired": "Please fill model basic information",
         "uploadSuccess": "Model \"{name}\" uploaded"
+      }
+    },
+    "alarm": {
+      "title": "Alarm Events",
+      "id": "ID",
+      "channelId": "Channel ID",
+      "alarmType": "Type",
+      "severity": "Severity",
+      "description": "Description",
+      "status": "Status",
+      "actions": {
+        "ack": "Ack",
+        "close": "Close"
+      },
+      "messages": {
+        "ackSuccess": "Alarm acknowledged",
+        "closeSuccess": "Alarm closed"
       }
     },
     "algorithm": {
@@ -780,7 +808,20 @@
         }
       },
       "messages": {
-        "deleteConfirm": "Delete pipeline \"{name}\" on channel {channelId}?"
+        "deleteConfirm": "Delete pipeline \"{name}\" on channel {channelId}?",
+        "deleteSuccess": "Pipeline \"{name}\" deleted"
+      }
+    },
+    "live": {
+      "title": "Live Preview",
+      "status": {
+        "disconnected": "Not connected",
+        "connected": "Live preview active",
+        "error": "Connection error"
+      },
+      "actions": {
+        "startPreview": "Start Preview",
+        "stop": "Stop"
       }
     }
   },

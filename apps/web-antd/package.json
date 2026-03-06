@@ -53,6 +53,7 @@
     "vanilla-jsoneditor": "catalog:",
     "vue": "catalog:",
     "vue-router": "catalog:",
-    "vue-tel-input": "catalog:"
+    "vue-tel-input": "catalog:",
+    "vuedraggable": "^4.1.0"
   }
 }

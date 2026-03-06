@@ -57,6 +57,55 @@ sudo apt-get install -y \
 
 :::
 
+### AI 视觉引擎依赖（GStreamer）
+
+如果需要启用 `engine` feature（AI 视觉分析引擎，含硬件加速解码和推理），
+还需安装 GStreamer 开发库。跳过此步仅影响 AI 相关功能，其他网关功能不受影响。
+
+::: warning 版本要求
+GStreamer >= 1.20。Debian 12 / Ubuntu 22.04+ 软件源自带的版本满足要求。
+:::
+
+**macOS（Homebrew）**：
+
+```bash
+brew install gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-libav
+```
+
+**Debian/Ubuntu**：
+
+```bash
+sudo apt-get install -y \
+  libgstreamer1.0-dev \
+  libgstreamer-plugins-base1.0-dev \
+  gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good \
+  gstreamer1.0-plugins-bad \
+  gstreamer1.0-libav
+```
+
+**可选 — VA-API 硬件加速（Intel/AMD x86）**：
+
+```bash
+sudo apt-get install -y \
+  gstreamer1.0-vaapi \
+  intel-media-va-driver-non-free
+```
+
+**可选 — RK3588 / Rockchip 平台**：
+
+需要 Rockchip BSP 提供的 GStreamer MPP 插件（`rockchip-mpp`）和 RGA
+用户态库。通常在官方 SDK 或 Armbian 仓库中已预装。
+
+**验证安装**：
+
+```bash
+gst-inspect-1.0 --version
+gst-inspect-1.0 videoconvert
+# VA-API (如已安装):
+gst-inspect-1.0 vaapidecodebin
+```
+
 ## 1. 获取源码
 
 ```bash
