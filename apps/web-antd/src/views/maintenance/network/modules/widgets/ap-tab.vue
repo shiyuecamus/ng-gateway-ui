@@ -20,7 +20,7 @@ import {
   Spin,
 } from 'ant-design-vue';
 
-import { configureAp, fetchApStatus } from '#/api/core';
+import { configureAp, fetchApStatus, startAp, stopAp } from '#/api/core';
 
 const props = defineProps<{
   capabilities: NetworkCapabilities | null;
@@ -31,6 +31,8 @@ const { handleRequest } = useRequestHandler();
 
 const loading = ref(false);
 const applying = ref(false);
+const starting = ref(false);
+const stopping = ref(false);
 const status = ref<ApStatus | null>(null);
 
 const form = ref({
@@ -43,13 +45,33 @@ const canManageAp = computed(
   () => props.capabilities?.canManageAp === true,
 );
 
+const apMode = computed(
+  () => props.capabilities?.apMode ?? 'unavailable',
+);
+
+const isExclusive = computed(
+  () => apMode.value === 'exclusive',
+);
+
+const isActive = computed(
+  () => status.value?.active === true,
+);
+
 const staApLabel = computed(() => {
-  const cap = props.capabilities?.staApCapability;
-  if (cap === 'single_card_concurrent')
-    return $t('page.maintenance.network.apConfig.staApSingle');
-  if (cap === 'dual_card')
-    return $t('page.maintenance.network.apConfig.staApDual');
-  return $t('page.maintenance.network.apConfig.staApNone');
+  switch (apMode.value) {
+    case 'concurrent': {
+      return $t('page.maintenance.network.apConfig.staApSingle');
+    }
+    case 'dedicated_card': {
+      return $t('page.maintenance.network.apConfig.staApDual');
+    }
+    case 'exclusive': {
+      return $t('page.maintenance.network.apConfig.staApExclusive');
+    }
+    default: {
+      return $t('page.maintenance.network.apConfig.staApNone');
+    }
+  }
 });
 
 async function loadStatus() {
@@ -65,11 +87,77 @@ async function loadStatus() {
   loading.value = false;
 }
 
-const confirmOpen = ref(false);
+// ─── Start / Stop ───
+
+const confirmStartOpen = ref(false);
+const confirmStopOpen = ref(false);
+
+function requestStart() {
+  if (isExclusive.value) {
+    if (props.isMobile) {
+      confirmStartOpen.value = true;
+    } else {
+      Modal.confirm({
+        title: $t('page.maintenance.network.apConfig.start'),
+        content: $t('page.maintenance.network.apConfig.startConfirmExclusive'),
+        okText: $t('page.maintenance.network.confirmAction'),
+        cancelText: $t('page.maintenance.network.confirmCancel'),
+        okType: 'danger',
+        onOk: () => doStart(),
+      });
+    }
+  } else {
+    doStart();
+  }
+}
+
+async function doStart() {
+  confirmStartOpen.value = false;
+  starting.value = true;
+  await handleRequest(
+    () => startAp(),
+    (data: ApStatus) => {
+      status.value = data;
+      message.success($t('page.maintenance.network.apConfig.startSuccess'));
+    },
+  );
+  starting.value = false;
+}
+
+function requestStop() {
+  if (props.isMobile) {
+    confirmStopOpen.value = true;
+  } else {
+    Modal.confirm({
+      title: $t('page.maintenance.network.apConfig.stop'),
+      content: $t('page.maintenance.network.apConfig.stopConfirm'),
+      okText: $t('page.maintenance.network.confirmAction'),
+      cancelText: $t('page.maintenance.network.confirmCancel'),
+      onOk: () => doStop(),
+    });
+  }
+}
+
+async function doStop() {
+  confirmStopOpen.value = false;
+  stopping.value = true;
+  await handleRequest(
+    () => stopAp(),
+    (data: ApStatus) => {
+      status.value = data;
+      message.success($t('page.maintenance.network.apConfig.stopSuccess'));
+    },
+  );
+  stopping.value = false;
+}
+
+// ─── Configure ───
+
+const confirmApplyOpen = ref(false);
 
 function requestApply() {
   if (props.isMobile) {
-    confirmOpen.value = true;
+    confirmApplyOpen.value = true;
   } else {
     Modal.confirm({
       title: $t('page.maintenance.network.apConfig.confirmApply'),
@@ -82,7 +170,7 @@ function requestApply() {
 }
 
 async function applyConfig() {
-  confirmOpen.value = false;
+  confirmApplyOpen.value = false;
   applying.value = true;
   const payload: ConfigureApRequest = {
     ssid: form.value.ssid || undefined,
@@ -109,6 +197,7 @@ onMounted(() => {
 
 <template>
   <div>
+    <!-- Hardware not supported warning -->
     <Alert
       v-if="!canManageAp"
       type="warning"
@@ -117,13 +206,50 @@ onMounted(() => {
       class="mb-4"
     />
 
+    <!-- Exclusive mode warning -->
+    <Alert
+      v-if="canManageAp && isExclusive"
+      type="warning"
+      show-icon
+      :message="$t('page.maintenance.network.apConfig.exclusiveWarning')"
+      class="mb-4"
+    />
+
     <Spin :spinning="loading">
+      <!-- Status display + Start/Stop controls -->
       <div v-if="status" class="mb-4">
+        <div v-if="canManageAp" class="mb-3 flex items-center gap-3">
+          <Badge
+            :status="isActive ? 'success' : 'default'"
+            :text="isActive
+              ? $t('page.maintenance.network.apConfig.active')
+              : $t('page.maintenance.network.apConfig.inactive')"
+          />
+          <Button
+            v-if="!isActive"
+            type="primary"
+            size="small"
+            :loading="starting"
+            @click="requestStart"
+          >
+            {{ $t('page.maintenance.network.apConfig.start') }}
+          </Button>
+          <Button
+            v-if="isActive"
+            danger
+            size="small"
+            :loading="stopping"
+            @click="requestStop"
+          >
+            {{ $t('page.maintenance.network.apConfig.stop') }}
+          </Button>
+        </div>
+
         <Descriptions size="small" :column="isMobile ? 1 : 2" bordered>
           <Descriptions.Item :label="$t('page.maintenance.network.apConfig.status')">
             <Badge
-              :status="status.active ? 'success' : 'default'"
-              :text="status.active
+              :status="isActive ? 'success' : 'default'"
+              :text="isActive
                 ? $t('page.maintenance.network.apConfig.active')
                 : $t('page.maintenance.network.apConfig.inactive')"
             />
@@ -146,6 +272,7 @@ onMounted(() => {
         </Descriptions>
       </div>
 
+      <!-- Configuration form -->
       <Form
         v-if="canManageAp"
         layout="vertical"
@@ -202,22 +329,70 @@ onMounted(() => {
       </Form>
     </Spin>
 
-    <!-- Mobile confirmation bottom sheet -->
+    <!-- Mobile confirmation sheets -->
     <Drawer
       v-if="isMobile"
-      :open="confirmOpen"
+      :open="confirmStartOpen"
+      placement="bottom"
+      height="auto"
+      :closable="true"
+      :title="$t('page.maintenance.network.apConfig.start')"
+      class="confirm-sheet"
+      @close="confirmStartOpen = false"
+    >
+      <p class="mb-4 text-sm text-gray-600">
+        {{ isExclusive
+          ? $t('page.maintenance.network.apConfig.startConfirmExclusive')
+          : $t('page.maintenance.network.apConfig.startConfirmNormal') }}
+      </p>
+      <div class="flex gap-3">
+        <Button block @click="confirmStartOpen = false">
+          {{ $t('page.maintenance.network.confirmCancel') }}
+        </Button>
+        <Button type="primary" :danger="isExclusive" block :loading="starting" @click="doStart">
+          {{ $t('page.maintenance.network.confirmAction') }}
+        </Button>
+      </div>
+    </Drawer>
+
+    <Drawer
+      v-if="isMobile"
+      :open="confirmStopOpen"
+      placement="bottom"
+      height="auto"
+      :closable="true"
+      :title="$t('page.maintenance.network.apConfig.stop')"
+      class="confirm-sheet"
+      @close="confirmStopOpen = false"
+    >
+      <p class="mb-4 text-sm text-gray-600">
+        {{ $t('page.maintenance.network.apConfig.stopConfirm') }}
+      </p>
+      <div class="flex gap-3">
+        <Button block @click="confirmStopOpen = false">
+          {{ $t('page.maintenance.network.confirmCancel') }}
+        </Button>
+        <Button type="primary" danger block :loading="stopping" @click="doStop">
+          {{ $t('page.maintenance.network.confirmAction') }}
+        </Button>
+      </div>
+    </Drawer>
+
+    <Drawer
+      v-if="isMobile"
+      :open="confirmApplyOpen"
       placement="bottom"
       height="auto"
       :closable="true"
       :title="$t('page.maintenance.network.apConfig.confirmApply')"
       class="confirm-sheet"
-      @close="confirmOpen = false"
+      @close="confirmApplyOpen = false"
     >
       <p class="mb-4 text-sm text-gray-600">
         {{ $t('page.maintenance.network.apConfig.confirmApplyDesc') }}
       </p>
       <div class="flex gap-3">
-        <Button block @click="confirmOpen = false">
+        <Button block @click="confirmApplyOpen = false">
           {{ $t('page.maintenance.network.confirmCancel') }}
         </Button>
         <Button type="primary" block :loading="applying" @click="applyConfig">

@@ -33,6 +33,8 @@ export type StaApCapability =
   | 'single_card_concurrent'
   | 'unknown';
 
+export type ApMode = 'concurrent' | 'dedicated_card' | 'exclusive' | 'unavailable';
+
 export type PlatformSupport = 'full' | 'read_only' | 'unavailable';
 
 // ─────────────────── Responses ───────────────────
@@ -132,6 +134,8 @@ export interface ApStatus {
   connectedClients?: null | number;
   ipAddress?: null | string;
   prefixLength?: null | number;
+  apMode: ApMode;
+  staWillDisconnect: boolean;
 }
 
 export interface DnsConfig {
@@ -159,6 +163,7 @@ export interface NetworkCapabilities {
   canScanWifi: boolean;
   canConnectWifi: boolean;
   canManageAp: boolean;
+  apMode: ApMode;
   staApCapability: StaApCapability;
   wirelessInterfaces: WirelessInterfaceCapability[];
 }

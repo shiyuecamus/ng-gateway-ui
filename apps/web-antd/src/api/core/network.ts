@@ -101,3 +101,11 @@ export async function fetchApStatus() {
 export async function configureAp(data: ConfigureApRequest) {
   return requestClient.put<ApStatus>(NetworkApi.ap, data);
 }
+
+export async function startAp() {
+  return requestClient.post<ApStatus>(`${NetworkApi.ap}/start`);
+}
+
+export async function stopAp() {
+  return requestClient.post<ApStatus>(`${NetworkApi.ap}/stop`);
+}
