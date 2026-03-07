@@ -702,6 +702,7 @@
         "pullToRefresh": "下拉刷新",
         "releaseToRefresh": "释放刷新",
         "advancedSettings": "高级设置（IP 配置）",
+        "ipConfigTitle": "IP 配置",
         "savedNetworksTitle": "已保存的网络",
         "savedNetworksCount": "{count} 个已保存的网络",
         "forget": "忘记",

@@ -40,6 +40,7 @@ import {
 
 import { prefixToSubnetMask, securityShortLabel, signalQualityLevel } from '../schemas';
 import WifiConnectModal from './wifi-connect-modal.vue';
+import WifiIpConfig from './wifi-ip-config.vue';
 import WifiSavedNetworks from './wifi-saved-networks.vue';
 
 const props = defineProps<{
@@ -407,6 +408,19 @@ onMounted(async () => {
         </Descriptions.Item>
       </Descriptions>
     </Card>
+
+    <!-- WiFi IP Configuration (when connected, writable platform) -->
+    <WifiIpConfig
+      v-if="wifiStatus?.connected && !readOnly && bestWifiIface"
+      :interface-name="bestWifiIface.name"
+      :current-method="bestWifiIface.ipv4?.method"
+      :current-ip="bestWifiIface.ipv4?.addresses?.[0]?.address"
+      :current-prefix="bestWifiIface.ipv4?.addresses?.[0]?.prefixLength"
+      :current-gateway="bestWifiIface.ipv4?.gateway ?? undefined"
+      :current-dns="bestWifiIface.ipv4?.dns"
+      :is-mobile="isMobile"
+      @applied="() => { loadWifiInterface(); loadStatus(); }"
+    />
 
     <!-- Scan section -->
     <Divider orientation="left" class="!my-3 !text-xs">

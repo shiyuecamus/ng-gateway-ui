@@ -702,6 +702,7 @@
         "pullToRefresh": "Pull down to refresh",
         "releaseToRefresh": "Release to refresh",
         "advancedSettings": "Advanced Settings (IP Configuration)",
+        "ipConfigTitle": "IP Configuration",
         "savedNetworksTitle": "Saved Networks",
         "savedNetworksCount": "{count} saved network(s)",
         "forget": "Forget",
