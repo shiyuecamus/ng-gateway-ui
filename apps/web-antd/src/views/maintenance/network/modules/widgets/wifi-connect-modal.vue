@@ -12,6 +12,7 @@ import {
   Form,
   Input,
   InputNumber,
+  message,
   Modal,
   Result,
   Select,
@@ -100,7 +101,6 @@ const securityLabel = computed(() => {
 
 function buildIpConfig(): IpConfig | undefined {
   if (ipMethod.value !== 'static') return undefined;
-  if (!staticIp.value) return undefined;
   const dnsServers = staticDns.value
     .split('\n')
     .map((s) => s.trim())
@@ -117,6 +117,11 @@ function buildIpConfig(): IpConfig | undefined {
 function handleOk() {
   const ssid = isHidden.value ? hiddenSsid.value.trim() : props.ap?.ssid;
   if (!ssid) return;
+
+  if (isStaticIp.value && !staticIp.value) {
+    message.warning($t('page.maintenance.network.wiredConfig.staticRequired'));
+    return;
+  }
 
   const ipConfig = buildIpConfig();
 
