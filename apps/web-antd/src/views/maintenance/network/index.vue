@@ -165,7 +165,7 @@ onMounted(() => {
             key="wifi"
             :tab="$t('page.maintenance.network.wifi')"
           >
-            <WifiTab :read-only="isReadOnly" :is-mobile="isMobile" />
+            <WifiTab :read-only="isReadOnly" :is-mobile="isMobile" :capabilities="capabilities" />
           </Tabs.TabPane>
 
           <Tabs.TabPane

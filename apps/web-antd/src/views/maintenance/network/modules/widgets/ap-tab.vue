@@ -146,6 +146,12 @@ async function doStop() {
     (data: ApStatus) => {
       status.value = data;
       message.success($t('page.maintenance.network.apConfig.stopSuccess'));
+      if (data.staRestoreFailed) {
+        Modal.warning({
+          title: $t('page.maintenance.network.apConfig.staRestoreFailedTitle'),
+          content: $t('page.maintenance.network.apConfig.staRestoreFailedDesc'),
+        });
+      }
     },
   );
   stopping.value = false;

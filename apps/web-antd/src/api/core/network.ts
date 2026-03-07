@@ -8,6 +8,7 @@ import type {
   NetworkInterfaceDetail,
   NetworkInterfaceSummary,
   WifiAccessPoint,
+  WifiConnectPreflight,
   WifiConnectRequest,
   WifiStaStatus,
   WiredStatus,
@@ -23,6 +24,7 @@ export namespace NetworkApi {
   export const wiredStatus = `${base}/wired/status`;
   export const dns = `${base}/dns`;
   export const wifiScan = `${base}/wifi/scan`;
+  export const wifiPreflight = `${base}/wifi/preflight`;
   export const wifiConnect = `${base}/wifi/connect`;
   export const wifiDisconnect = `${base}/wifi/disconnect`;
   export const wifiStatus = `${base}/wifi/status`;
@@ -74,6 +76,13 @@ export async function scanWifi(interfaceName?: string) {
   return requestClient.get<WifiAccessPoint[]>(NetworkApi.wifiScan, {
     params: interfaceName ? { interface: interfaceName } : undefined,
   });
+}
+
+export async function wifiConnectPreflight(data: WifiConnectRequest) {
+  return requestClient.post<WifiConnectPreflight>(
+    NetworkApi.wifiPreflight,
+    data,
+  );
 }
 
 export async function connectWifi(data: WifiConnectRequest) {

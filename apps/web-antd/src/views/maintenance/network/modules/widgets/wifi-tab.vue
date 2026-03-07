@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import type {
+  NetworkCapabilities,
   NetworkInterfaceSummary,
   WifiAccessPoint,
+  WifiConnectPreflight,
   WifiConnectRequest,
   WifiStaStatus,
 } from '@vben/types';
@@ -13,6 +15,7 @@ import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import {
+  Alert,
   Button,
   Card,
   Descriptions,
@@ -21,6 +24,7 @@ import {
   Empty,
   List,
   message,
+  Modal,
   Skeleton,
   Tag,
 } from 'ant-design-vue';
@@ -31,6 +35,7 @@ import {
   fetchNetworkInterfaces,
   fetchWifiStatus,
   scanWifi,
+  wifiConnectPreflight,
 } from '#/api/core';
 
 import { prefixToSubnetMask, signalQualityLevel } from '../schemas';
@@ -39,6 +44,7 @@ import WifiConnectModal from './wifi-connect-modal.vue';
 const props = defineProps<{
   readOnly: boolean;
   isMobile: boolean;
+  capabilities: NetworkCapabilities | null;
 }>();
 
 const { handleRequest } = useRequestHandler();
@@ -104,35 +110,110 @@ function openConnectHidden() {
   connectResult.value = 'idle';
 }
 
+const pendingPreflight = ref<WifiConnectPreflight | null>(null);
+const pendingRequest = ref<WifiConnectRequest | null>(null);
+const preflightConfirmOpen = ref(false);
+const disconnectConfirmOpen = ref(false);
+
 async function doConnect(request: WifiConnectRequest) {
   connecting.value = true;
   connectResult.value = 'idle';
   clearTimeout(connectResultTimer);
+
+  // Run preflight check to detect AP side-effects.
+  let preflight: WifiConnectPreflight | null = null;
+  await handleRequest(
+    () => wifiConnectPreflight(request),
+    (data) => { preflight = data; },
+  );
+
+  if (preflight && (preflight as WifiConnectPreflight).apWillStop) {
+    pendingPreflight.value = preflight;
+    pendingRequest.value = request;
+    connecting.value = false;
+
+    if (props.isMobile) {
+      preflightConfirmOpen.value = true;
+    } else {
+      const pf = preflight as WifiConnectPreflight;
+      Modal.confirm({
+        title: $t('page.maintenance.network.wifiConfig.connectConfirmTitle'),
+        content: pf.warnings.join('\n\n'),
+        okText: $t('page.maintenance.network.confirmAction'),
+        cancelText: $t('page.maintenance.network.confirmCancel'),
+        okType: 'danger',
+        onOk: () => executeConnect(request),
+        onCancel: () => {
+          pendingPreflight.value = null;
+          pendingRequest.value = null;
+        },
+      });
+    }
+    return;
+  }
+
+  await executeConnect(request);
+}
+
+async function executeConnect(request: WifiConnectRequest) {
+  preflightConfirmOpen.value = false;
+  const willLoseConnection = pendingPreflight.value?.connectionWillBeLost === true;
+  connecting.value = true;
+  connectResult.value = 'idle';
+  clearTimeout(connectResultTimer);
+
+  if (willLoseConnection) {
+    message.info($t('page.maintenance.network.wifiConfig.connectSubmitted'));
+    connectModalOpen.value = false;
+  }
 
   await handleRequest(
     () => connectWifi(request),
     (data) => {
       wifiStatus.value = data;
       connectResult.value = 'success';
-      message.success($t('page.maintenance.network.wifiConfig.connectSuccess'));
-      connectResultTimer = setTimeout(() => {
-        connectModalOpen.value = false;
-        connectResult.value = 'idle';
-      }, 1500);
+      if (!willLoseConnection) {
+        message.success($t('page.maintenance.network.wifiConfig.connectSuccess'));
+        connectResultTimer = setTimeout(() => {
+          connectModalOpen.value = false;
+          connectResult.value = 'idle';
+        }, 1500);
+      }
     },
     () => {
-      connectResult.value = 'failed';
-      message.error($t('page.maintenance.network.wifiConfig.connectFailed'));
-      connectResultTimer = setTimeout(() => {
-        connectResult.value = 'idle';
-      }, 3000);
+      if (!willLoseConnection) {
+        connectResult.value = 'failed';
+        message.error($t('page.maintenance.network.wifiConfig.connectFailed'));
+        connectResultTimer = setTimeout(() => {
+          connectResult.value = 'idle';
+        }, 3000);
+      }
     },
   );
   connecting.value = false;
-  await doScan();
+  pendingPreflight.value = null;
+  pendingRequest.value = null;
+  if (!willLoseConnection) {
+    await doScan();
+  }
+}
+
+function requestDisconnect() {
+  if (props.isMobile) {
+    disconnectConfirmOpen.value = true;
+  } else {
+    Modal.confirm({
+      title: $t('page.maintenance.network.wifiConfig.disconnect'),
+      content: $t('page.maintenance.network.confirmDisconnectWifi'),
+      okText: $t('page.maintenance.network.confirmAction'),
+      cancelText: $t('page.maintenance.network.confirmCancel'),
+      onOk: () => doDisconnect(),
+    });
+  }
 }
 
 async function doDisconnect() {
+  disconnectConfirmOpen.value = false;
   disconnecting.value = true;
   await handleRequest(
     () => disconnectWifi(),
@@ -241,7 +322,7 @@ onMounted(async () => {
             danger
             size="small"
             :loading="disconnecting"
-            @click="doDisconnect"
+            @click="requestDisconnect"
           >
             {{ $t('page.maintenance.network.wifiConfig.disconnect') }}
           </Button>
@@ -476,6 +557,69 @@ onMounted(async () => {
         @connect="doConnect"
       />
     </template>
+
+    <!-- Mobile: Preflight confirmation drawer -->
+    <Drawer
+      v-if="isMobile"
+      :open="preflightConfirmOpen"
+      placement="bottom"
+      height="auto"
+      :closable="true"
+      :title="$t('page.maintenance.network.wifiConfig.connectConfirmTitle')"
+      class="wifi-confirm-sheet"
+      @close="preflightConfirmOpen = false; pendingPreflight = null; pendingRequest = null;"
+    >
+      <Alert
+        v-if="pendingPreflight"
+        type="warning"
+        show-icon
+        class="!mb-4"
+      >
+        <template #message>
+          <div v-for="(w, idx) in pendingPreflight.warnings" :key="idx" class="text-sm">
+            {{ w }}
+          </div>
+        </template>
+      </Alert>
+      <div class="flex gap-3">
+        <Button block @click="preflightConfirmOpen = false; pendingPreflight = null; pendingRequest = null;">
+          {{ $t('page.maintenance.network.confirmCancel') }}
+        </Button>
+        <Button
+          type="primary"
+          danger
+          block
+          :loading="connecting"
+          @click="pendingRequest && executeConnect(pendingRequest)"
+        >
+          {{ $t('page.maintenance.network.confirmAction') }}
+        </Button>
+      </div>
+    </Drawer>
+
+    <!-- Mobile: Disconnect confirmation drawer -->
+    <Drawer
+      v-if="isMobile"
+      :open="disconnectConfirmOpen"
+      placement="bottom"
+      height="auto"
+      :closable="true"
+      :title="$t('page.maintenance.network.wifiConfig.disconnect')"
+      class="wifi-confirm-sheet"
+      @close="disconnectConfirmOpen = false"
+    >
+      <p class="mb-4 text-sm text-gray-600">
+        {{ $t('page.maintenance.network.confirmDisconnectWifi') }}
+      </p>
+      <div class="flex gap-3">
+        <Button block @click="disconnectConfirmOpen = false">
+          {{ $t('page.maintenance.network.confirmCancel') }}
+        </Button>
+        <Button type="primary" danger block :loading="disconnecting" @click="doDisconnect">
+          {{ $t('page.maintenance.network.confirmAction') }}
+        </Button>
+      </div>
+    </Drawer>
   </div>
 </template>
 
@@ -489,12 +633,14 @@ onMounted(async () => {
   background-color: rgba(0, 0, 0, 0.04);
 }
 
-.wifi-connect-sheet :deep(.ant-drawer-content-wrapper) {
+.wifi-connect-sheet :deep(.ant-drawer-content-wrapper),
+.wifi-confirm-sheet :deep(.ant-drawer-content-wrapper) {
   border-radius: 12px 12px 0 0;
   max-height: 80vh;
 }
 
-.wifi-connect-sheet :deep(.ant-drawer-body) {
+.wifi-connect-sheet :deep(.ant-drawer-body),
+.wifi-confirm-sheet :deep(.ant-drawer-body) {
   padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
 </style>

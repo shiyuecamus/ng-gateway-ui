@@ -123,6 +123,14 @@ export interface WifiStaStatus {
   connectedSecs?: null | number;
 }
 
+export interface WifiConnectPreflight {
+  ssid: string;
+  apWillStop: boolean;
+  connectionWillBeLost: boolean;
+  apCanRestore: boolean;
+  warnings: string[];
+}
+
 export interface ApStatus {
   active: boolean;
   interfaceName?: null | string;
@@ -136,6 +144,7 @@ export interface ApStatus {
   prefixLength?: null | number;
   apMode: ApMode;
   staWillDisconnect: boolean;
+  staRestoreFailed?: boolean;
 }
 
 export interface DnsConfig {
