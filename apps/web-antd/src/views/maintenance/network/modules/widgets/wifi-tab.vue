@@ -38,8 +38,9 @@ import {
   wifiConnectPreflight,
 } from '#/api/core';
 
-import { prefixToSubnetMask, signalQualityLevel } from '../schemas';
+import { prefixToSubnetMask, securityShortLabel, signalQualityLevel } from '../schemas';
 import WifiConnectModal from './wifi-connect-modal.vue';
+import WifiSavedNetworks from './wifi-saved-networks.vue';
 
 const props = defineProps<{
   readOnly: boolean;
@@ -212,11 +213,13 @@ function requestDisconnect() {
   }
 }
 
+const savedNetworksRef = ref<InstanceType<typeof WifiSavedNetworks> | null>(null);
+
 async function doDisconnect() {
   disconnectConfirmOpen.value = false;
   disconnecting.value = true;
   await handleRequest(
-    () => disconnectWifi(),
+    () => disconnectWifi({ disableAutoconnect: true }),
     () => {
       wifiStatus.value = null;
       message.success($t('page.maintenance.network.wifiConfig.disconnectSuccess'));
@@ -224,6 +227,12 @@ async function doDisconnect() {
   );
   disconnecting.value = false;
   await doScan();
+  savedNetworksRef.value?.refresh();
+}
+
+function onSavedNetworkForgotten() {
+  loadStatus();
+  doScan();
 }
 
 function signalIcon(quality: number): string {
@@ -235,19 +244,6 @@ function signalIcon(quality: number): string {
     case 'weak': return 'mdi:wifi-strength-1';
     default: return 'mdi:wifi-strength-outline';
   }
-}
-
-function securityShortLabel(sec: string): string {
-  const map: Record<string, string> = {
-    OPEN: '',
-    WPA_PSK: 'WPA',
-    WPA2_PSK: 'WPA2',
-    WPA3_SAE: 'WPA3',
-    WEP: 'WEP',
-    WPA_ENTERPRISE: 'WPA-E',
-    WPA2_ENTERPRISE: 'WPA2-E',
-  };
-  return map[sec] ?? sec;
 }
 
 // Pull-to-refresh handlers (mobile only)
@@ -520,6 +516,14 @@ onMounted(async () => {
       </template>
     </div>
 
+    <!-- Saved Wi-Fi Networks -->
+    <WifiSavedNetworks
+      v-if="!readOnly"
+      ref="savedNetworksRef"
+      :is-mobile="isMobile"
+      @forgotten="onSavedNetworkForgotten"
+    />
+
     <!-- Desktop: Modal / Mobile: Bottom-sheet Drawer -->
     <template v-if="isMobile">
       <Drawer
@@ -615,7 +619,7 @@ onMounted(async () => {
         <Button block @click="disconnectConfirmOpen = false">
           {{ $t('page.maintenance.network.confirmCancel') }}
         </Button>
-        <Button type="primary" danger block :loading="disconnecting" @click="doDisconnect">
+        <Button type="primary" danger block :loading="disconnecting" @click="() => doDisconnect()">
           {{ $t('page.maintenance.network.confirmAction') }}
         </Button>
       </div>

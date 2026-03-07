@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type {
   ConfigureInterfaceRequest,
+  IpConfig,
   IpMethod,
   WiredStatus,
 } from '@vben/types';
@@ -128,13 +129,16 @@ async function applyConfig() {
 
   applying.value = true;
   const dnsServers = form.value.dns.split('\n').map((s) => s.trim()).filter(Boolean);
-  const payload: ConfigureInterfaceRequest = {
-    method: form.value.method,
-    ipAddress: isStatic.value ? form.value.ipAddress : undefined,
-    prefixLength: isStatic.value ? form.value.prefixLength : undefined,
-    gateway: isStatic.value && form.value.gateway ? form.value.gateway : undefined,
-    dns: dnsServers.length > 0 ? dnsServers : undefined,
-  };
+  const ipConfig: IpConfig = isStatic.value
+    ? {
+        method: 'static' as const,
+        ipAddress: form.value.ipAddress,
+        prefixLength: form.value.prefixLength,
+        gateway: form.value.gateway || null,
+        dns: dnsServers.length > 0 ? dnsServers : null,
+      }
+    : { method: form.value.method as 'dhcp' | 'disabled' };
+  const payload: ConfigureInterfaceRequest = { ipConfig };
 
   await handleRequest(
     () => configureNetworkInterface(selectedName.value, payload),

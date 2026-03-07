@@ -1,4 +1,4 @@
-import type { InterfaceKind, LinkState } from '@vben/types';
+import type { InterfaceKind, LinkState, WifiSecurity } from '@vben/types';
 
 export type NetworkTabKey = 'ap' | 'dns' | 'overview' | 'wifi' | 'wired';
 
@@ -66,4 +66,18 @@ export function signalQualityLevel(
   if (quality >= 50) return 'good';
   if (quality >= 25) return 'fair';
   return 'weak';
+}
+
+const SECURITY_SHORT_LABELS: Record<string, string> = {
+  OPEN: '',
+  WPA_PSK: 'WPA',
+  WPA2_PSK: 'WPA2',
+  WPA3_SAE: 'WPA3',
+  WEP: 'WEP',
+  WPA_ENTERPRISE: 'WPA-E',
+  WPA2_ENTERPRISE: 'WPA2-E',
+};
+
+export function securityShortLabel(sec: WifiSecurity | string): string {
+  return SECURITY_SHORT_LABELS[sec] ?? sec;
 }

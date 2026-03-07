@@ -7,9 +7,11 @@ import type {
   NetworkCapabilities,
   NetworkInterfaceDetail,
   NetworkInterfaceSummary,
+  SavedWifiConnection,
   WifiAccessPoint,
   WifiConnectPreflight,
   WifiConnectRequest,
+  WifiDisconnectRequest,
   WifiStaStatus,
   WiredStatus,
 } from '@vben/types';
@@ -28,6 +30,9 @@ export namespace NetworkApi {
   export const wifiConnect = `${base}/wifi/connect`;
   export const wifiDisconnect = `${base}/wifi/disconnect`;
   export const wifiStatus = `${base}/wifi/status`;
+  export const wifiSaved = `${base}/wifi/saved`;
+  export const wifiSavedDetail = (uuid: string) =>
+    `${base}/wifi/saved/${uuid}`;
   export const ap = `${base}/ap`;
 }
 
@@ -89,16 +94,24 @@ export async function connectWifi(data: WifiConnectRequest) {
   return requestClient.post<WifiStaStatus>(NetworkApi.wifiConnect, data);
 }
 
-export async function disconnectWifi(interfaceName?: string) {
-  return requestClient.post<boolean>(NetworkApi.wifiDisconnect, undefined, {
-    params: interfaceName ? { interface: interfaceName } : undefined,
-  });
+export async function disconnectWifi(data?: WifiDisconnectRequest) {
+  return requestClient.post<boolean>(NetworkApi.wifiDisconnect, data ?? {});
 }
 
 export async function fetchWifiStatus(interfaceName?: string) {
   return requestClient.get<WifiStaStatus>(NetworkApi.wifiStatus, {
     params: interfaceName ? { interface: interfaceName } : undefined,
   });
+}
+
+// ─── Phase 3.5: Saved Wi-Fi Networks ───
+
+export async function fetchSavedWifiConnections() {
+  return requestClient.get<SavedWifiConnection[]>(NetworkApi.wifiSaved);
+}
+
+export async function forgetWifi(uuid: string) {
+  return requestClient.delete<boolean>(NetworkApi.wifiSavedDetail(uuid));
 }
 
 // ─── Phase 4: AP Hotspot ───

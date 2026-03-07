@@ -700,7 +700,14 @@
         "securityOpen": "Open",
         "statusTitle": "Current Wi-Fi Connection",
         "pullToRefresh": "Pull down to refresh",
-        "releaseToRefresh": "Release to refresh"
+        "releaseToRefresh": "Release to refresh",
+        "advancedSettings": "Advanced Settings (IP Configuration)",
+        "savedNetworksTitle": "Saved Networks",
+        "savedNetworksCount": "{count} saved network(s)",
+        "forget": "Forget",
+        "forgetConfirm": "Forget network \"{ssid}\"? This will remove the saved profile and password.",
+        "forgetSuccess": "Network forgotten",
+        "autoconnectOff": "No auto-connect"
       },
       "apConfig": {
         "title": "AP Hotspot Config",

@@ -123,6 +123,16 @@ export interface WifiStaStatus {
   connectedSecs?: null | number;
 }
 
+export interface SavedWifiConnection {
+  uuid: string;
+  ssid: string;
+  isActive: boolean;
+  autoconnect: boolean;
+  security: WifiSecurity;
+  ipConfig: IpConfig;
+  lastConnected?: number | null;
+}
+
 export interface WifiConnectPreflight {
   ssid: string;
   apWillStop: boolean;
@@ -185,14 +195,23 @@ export interface WiredStatus {
   allInterfaces: NetworkInterfaceSummary[];
 }
 
+// ─────────────────── IP Config (tagged union) ───────────────────
+
+export type IpConfig =
+  | { method: 'dhcp' }
+  | { method: 'disabled' }
+  | {
+      method: 'static';
+      ipAddress: string;
+      prefixLength: number;
+      gateway?: string | null;
+      dns?: string[] | null;
+    };
+
 // ─────────────────── Requests ───────────────────
 
 export interface ConfigureInterfaceRequest {
-  method: IpMethod;
-  ipAddress?: null | string;
-  prefixLength?: null | number;
-  gateway?: null | string;
-  dns?: null | string[];
+  ipConfig: IpConfig;
 }
 
 export interface WifiConnectRequest {
@@ -201,6 +220,16 @@ export interface WifiConnectRequest {
   bssid?: null | string;
   hidden?: boolean;
   interfaceName?: null | string;
+  ipConfig?: IpConfig;
+}
+
+export interface WifiDisconnectRequest {
+  interfaceName?: null | string;
+  disableAutoconnect?: boolean;
+}
+
+export interface ForgetWifiRequest {
+  uuid: string;
 }
 
 export interface ConfigureApRequest {

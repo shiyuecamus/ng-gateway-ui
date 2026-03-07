@@ -1,11 +1,23 @@
 <script lang="ts" setup>
-import type { WifiAccessPoint, WifiConnectRequest } from '@vben/types';
+import type { IpConfig, IpMethod, WifiAccessPoint, WifiConnectRequest } from '@vben/types';
 
 import { computed, ref, watch } from 'vue';
 
 import { $t } from '@vben/locales';
 
-import { Button, Checkbox, Form, Input, Modal, Result, Spin, Tag } from 'ant-design-vue';
+import {
+  Button,
+  Checkbox,
+  Collapse,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Result,
+  Select,
+  Spin,
+  Tag,
+} from 'ant-design-vue';
 
 const props = withDefaults(
   defineProps<{
@@ -33,6 +45,12 @@ const password = ref('');
 const isHidden = ref(false);
 const hiddenSsid = ref('');
 
+const ipMethod = ref<IpMethod>('dhcp');
+const staticIp = ref('');
+const staticPrefix = ref(24);
+const staticGateway = ref('');
+const staticDns = ref('');
+
 watch(
   () => props.open,
   (val) => {
@@ -40,9 +58,21 @@ watch(
       password.value = '';
       isHidden.value = false;
       hiddenSsid.value = '';
+      ipMethod.value = 'dhcp';
+      staticIp.value = '';
+      staticPrefix.value = 24;
+      staticGateway.value = '';
+      staticDns.value = '';
     }
   },
 );
+
+const isStaticIp = computed(() => ipMethod.value === 'static');
+
+const ipModeOptions = computed(() => [
+  { label: $t('page.maintenance.network.dhcp'), value: 'dhcp' },
+  { label: $t('page.maintenance.network.static'), value: 'static' },
+]);
 
 const needsPassword = computed(
   () => props.ap && props.ap.security !== 'OPEN',
@@ -68,14 +98,33 @@ const securityLabel = computed(() => {
   return map[props.ap.security] ?? props.ap.security;
 });
 
+function buildIpConfig(): IpConfig | undefined {
+  if (ipMethod.value !== 'static') return undefined;
+  if (!staticIp.value) return undefined;
+  const dnsServers = staticDns.value
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return {
+    method: 'static' as const,
+    ipAddress: staticIp.value,
+    prefixLength: staticPrefix.value,
+    gateway: staticGateway.value || null,
+    dns: dnsServers.length > 0 ? dnsServers : null,
+  };
+}
+
 function handleOk() {
   const ssid = isHidden.value ? hiddenSsid.value.trim() : props.ap?.ssid;
   if (!ssid) return;
+
+  const ipConfig = buildIpConfig();
 
   emit('connect', {
     ssid,
     password: password.value || undefined,
     hidden: isHidden.value || undefined,
+    ...(ipConfig ? { ipConfig } : {}),
   });
 }
 </script>
@@ -136,6 +185,28 @@ function handleOk() {
             {{ $t('page.maintenance.network.wifiConfig.hiddenNetwork') }}
           </Checkbox>
         </Form.Item>
+
+        <Collapse ghost class="!-mx-4 !mb-2">
+          <Collapse.Panel key="ip" :header="$t('page.maintenance.network.wifiConfig.advancedSettings')">
+            <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipMode')">
+              <Select v-model:value="ipMethod" :options="ipModeOptions" class="!text-base" />
+            </Form.Item>
+            <template v-if="isStaticIp">
+              <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipAddress')" required>
+                <Input v-model:value="staticIp" placeholder="192.168.1.100" inputmode="decimal" class="!text-base" />
+              </Form.Item>
+              <Form.Item :label="$t('page.maintenance.network.wiredConfig.prefixLength')" required>
+                <InputNumber v-model:value="staticPrefix" :min="1" :max="32" class="!w-full" inputmode="numeric" />
+              </Form.Item>
+              <Form.Item :label="$t('page.maintenance.network.wiredConfig.gateway')">
+                <Input v-model:value="staticGateway" placeholder="192.168.1.1" inputmode="decimal" class="!text-base" />
+              </Form.Item>
+              <Form.Item :label="$t('page.maintenance.network.wiredConfig.dnsServers')">
+                <Input.TextArea v-model:value="staticDns" :rows="2" :placeholder="$t('page.maintenance.network.wiredConfig.dnsHint')" class="!text-base" />
+              </Form.Item>
+            </template>
+          </Collapse.Panel>
+        </Collapse>
 
         <Form.Item class="!mb-0">
           <div class="flex gap-3">
@@ -207,6 +278,28 @@ function handleOk() {
             {{ $t('page.maintenance.network.wifiConfig.hiddenNetwork') }}
           </Checkbox>
         </Form.Item>
+
+        <Collapse ghost class="!mb-2">
+          <Collapse.Panel key="ip" :header="$t('page.maintenance.network.wifiConfig.advancedSettings')">
+            <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipMode')">
+              <Select v-model:value="ipMethod" :options="ipModeOptions" />
+            </Form.Item>
+            <template v-if="isStaticIp">
+              <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipAddress')" required>
+                <Input v-model:value="staticIp" placeholder="192.168.1.100" />
+              </Form.Item>
+              <Form.Item :label="$t('page.maintenance.network.wiredConfig.prefixLength')" required>
+                <InputNumber v-model:value="staticPrefix" :min="1" :max="32" class="!w-full" />
+              </Form.Item>
+              <Form.Item :label="$t('page.maintenance.network.wiredConfig.gateway')">
+                <Input v-model:value="staticGateway" placeholder="192.168.1.1" />
+              </Form.Item>
+              <Form.Item :label="$t('page.maintenance.network.wiredConfig.dnsServers')">
+                <Input.TextArea v-model:value="staticDns" :rows="2" :placeholder="$t('page.maintenance.network.wiredConfig.dnsHint')" />
+              </Form.Item>
+            </template>
+          </Collapse.Panel>
+        </Collapse>
       </Form>
     </Spin>
   </Modal>
