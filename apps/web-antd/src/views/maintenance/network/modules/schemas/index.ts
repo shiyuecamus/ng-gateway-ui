@@ -1,6 +1,6 @@
 import type { InterfaceKind, LinkState, WifiSecurity } from '@vben/types';
 
-export type NetworkTabKey = 'ap' | 'dns' | 'overview' | 'wifi' | 'wired';
+export type NetworkTabKey = 'ap' | 'overview' | 'wifi' | 'wired';
 
 export function linkStateColor(state: LinkState): string {
   switch (state) {

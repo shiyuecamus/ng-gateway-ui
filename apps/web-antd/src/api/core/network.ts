@@ -1,17 +1,15 @@
 import type {
   ApStatus,
   ConfigureApRequest,
-  ConfigureDnsRequest,
   ConfigureInterfaceRequest,
-  DnsConfig,
   NetworkCapabilities,
   NetworkInterfaceDetail,
   NetworkInterfaceSummary,
   SavedWifiConnection,
-  WifiAccessPoint,
   WifiConnectPreflight,
   WifiConnectRequest,
   WifiDisconnectRequest,
+  WifiScanResult,
   WifiStaStatus,
   WiredStatus,
 } from '@vben/types';
@@ -24,7 +22,6 @@ export namespace NetworkApi {
   export const interfaceDetail = (name: string) => `${base}/interfaces/${name}`;
   export const capabilities = `${base}/capabilities`;
   export const wiredStatus = `${base}/wired/status`;
-  export const dns = `${base}/dns`;
   export const wifiScan = `${base}/wifi/scan`;
   export const wifiPreflight = `${base}/wifi/preflight`;
   export const wifiConnect = `${base}/wifi/connect`;
@@ -58,7 +55,7 @@ export async function fetchWiredStatus() {
   return requestClient.get<WiredStatus>(NetworkApi.wiredStatus);
 }
 
-// ─── Phase 2: Interface Configuration & DNS ───
+// ─── Phase 2: Interface Configuration ───
 
 export async function configureNetworkInterface(
   name: string,
@@ -67,18 +64,10 @@ export async function configureNetworkInterface(
   return requestClient.put<boolean>(NetworkApi.interfaceDetail(name), data);
 }
 
-export async function fetchDnsConfig() {
-  return requestClient.get<DnsConfig>(NetworkApi.dns);
-}
-
-export async function configureDns(data: ConfigureDnsRequest) {
-  return requestClient.put<boolean>(NetworkApi.dns, data);
-}
-
 // ─── Phase 3: Wi-Fi ───
 
 export async function scanWifi(interfaceName?: string) {
-  return requestClient.get<WifiAccessPoint[]>(NetworkApi.wifiScan, {
+  return requestClient.get<WifiScanResult>(NetworkApi.wifiScan, {
     params: interfaceName ? { interface: interfaceName } : undefined,
   });
 }

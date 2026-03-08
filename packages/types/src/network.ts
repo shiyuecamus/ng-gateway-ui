@@ -27,6 +27,13 @@ export type WifiBand = '2.4ghz' | '5ghz' | '6ghz' | 'unknown';
 
 export type WifiMode = 'ad_hoc' | 'ap' | 'station' | 'unknown';
 
+export type WifiScanStatus =
+  | 'failed'
+  | 'permission_required'
+  | 'platform_restricted'
+  | 'ready'
+  | 'unsupported_context';
+
 export type StaApCapability =
   | 'dual_card'
   | 'not_supported'
@@ -35,7 +42,7 @@ export type StaApCapability =
 
 export type ApMode = 'concurrent' | 'dedicated_card' | 'exclusive' | 'unavailable';
 
-export type PlatformSupport = 'full' | 'read_only' | 'unavailable';
+export type PlatformSupport = 'full' | 'partial' | 'read_only' | 'unavailable';
 
 // ─────────────────── Responses ───────────────────
 
@@ -47,6 +54,7 @@ export interface Ipv4AddressInfo {
 export interface Ipv4Config {
   addresses: Ipv4AddressInfo[];
   dns: string[];
+  searchDomains: string[];
   gateway?: null | string;
   method: IpMethod;
 }
@@ -105,6 +113,12 @@ export interface WifiAccessPoint {
   isConnected: boolean;
 }
 
+export interface WifiScanResult {
+  accessPoints: WifiAccessPoint[];
+  status: WifiScanStatus;
+  message?: null | string;
+}
+
 export interface WifiStaStatus {
   connected: boolean;
   interfaceName?: null | string;
@@ -157,12 +171,6 @@ export interface ApStatus {
   staRestoreFailed?: boolean;
 }
 
-export interface DnsConfig {
-  servers: string[];
-  searchDomains: string[];
-  mode: IpMethod;
-}
-
 export interface WirelessInterfaceCapability {
   name: string;
   phy: string;
@@ -198,15 +206,16 @@ export interface WiredStatus {
 // ─────────────────── IP Config (tagged union) ───────────────────
 
 export type IpConfig =
-  | { method: 'dhcp' }
+  | { method: 'dhcp'; dns?: string[] | null; searchDomains?: string[] | null }
   | { method: 'disabled' }
   | {
-      method: 'static';
-      ipAddress: string;
-      prefixLength: number;
-      gateway?: string | null;
-      dns?: string[] | null;
-    };
+    method: 'static';
+    ipAddress: string;
+    prefixLength: number;
+    gateway?: string | null;
+    dns?: string[] | null;
+    searchDomains?: string[] | null;
+  };
 
 // ─────────────────── Requests ───────────────────
 
@@ -239,7 +248,3 @@ export interface ConfigureApRequest {
   restart?: boolean;
 }
 
-export interface ConfigureDnsRequest {
-  servers: string[];
-  searchDomains?: null | string[];
-}

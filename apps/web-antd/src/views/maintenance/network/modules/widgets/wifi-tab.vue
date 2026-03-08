@@ -5,6 +5,8 @@ import type {
   WifiAccessPoint,
   WifiConnectPreflight,
   WifiConnectRequest,
+  WifiScanResult,
+  WifiScanStatus,
   WifiStaStatus,
 } from '@vben/types';
 
@@ -54,6 +56,8 @@ const { handleRequest } = useRequestHandler();
 const scanning = ref(false);
 const initialLoading = ref(true);
 const accessPoints = ref<WifiAccessPoint[]>([]);
+const scanErrorMessage = ref('');
+const scanStatus = ref<WifiScanStatus>('ready');
 const wifiStatus = ref<WifiStaStatus | null>(null);
 const bestWifiIface = ref<NetworkInterfaceSummary | null>(null);
 
@@ -72,6 +76,39 @@ const isPulling = ref(false);
 const pullThreshold = 60;
 
 const descColumn = computed(() => (props.isMobile ? 1 : { xs: 1, sm: 2 }));
+const canEditWifiIp = computed(
+  () =>
+    !props.readOnly
+    && props.capabilities?.canConfigureInterfaces === true
+    && bestWifiIface.value != null,
+);
+const showScanHint = computed(
+  () =>
+    !initialLoading.value
+    && !scanning.value
+    && accessPoints.value.length === 0
+    && scanStatus.value !== 'ready'
+    && Boolean(scanHintMessage.value),
+);
+const scanHintMessage = computed(() => {
+  switch (props.capabilities?.os) {
+    case 'macos':
+      return $t('page.maintenance.network.wifiConfig.scanPermissionHintMacos');
+    case 'windows':
+      return $t('page.maintenance.network.wifiConfig.scanPermissionHintWindows');
+    default:
+      return '';
+  }
+});
+
+function formatRequestError(error: any): string {
+  return (
+    error?.response?.data?.message
+    || error?.response?.data?.msg
+    || error?.message
+    || String(error)
+  );
+}
 
 async function loadWifiInterface() {
   await handleRequest(
@@ -86,9 +123,20 @@ async function loadWifiInterface() {
 
 async function doScan() {
   scanning.value = true;
+  scanErrorMessage.value = '';
+  scanStatus.value = 'ready';
   await handleRequest(
     () => scanWifi(),
-    (data) => { accessPoints.value = data; },
+    (data: WifiScanResult) => {
+      accessPoints.value = data.accessPoints;
+      scanStatus.value = data.status;
+      scanErrorMessage.value = data.status === 'ready' ? '' : (data.message ?? '');
+    },
+    (error) => {
+      accessPoints.value = [];
+      scanStatus.value = 'failed';
+      scanErrorMessage.value = formatRequestError(error);
+    },
   );
   scanning.value = false;
 }
@@ -409,15 +457,11 @@ onMounted(async () => {
       </Descriptions>
     </Card>
 
-    <!-- WiFi IP Configuration (when connected, writable platform) -->
+    <!-- WiFi IP Configuration -->
     <WifiIpConfig
-      v-if="wifiStatus?.connected && !readOnly && bestWifiIface"
+      v-if="canEditWifiIp && bestWifiIface"
       :interface-name="bestWifiIface.name"
-      :current-method="bestWifiIface.ipv4?.method"
-      :current-ip="bestWifiIface.ipv4?.addresses?.[0]?.address"
-      :current-prefix="bestWifiIface.ipv4?.addresses?.[0]?.prefixLength"
-      :current-gateway="bestWifiIface.ipv4?.gateway ?? undefined"
-      :current-dns="bestWifiIface.ipv4?.dns"
+      :current-ipv4="bestWifiIface.ipv4"
       :is-mobile="isMobile"
       @applied="() => { loadWifiInterface(); loadStatus(); }"
     />
@@ -475,6 +519,15 @@ onMounted(async () => {
       </div>
 
       <template v-else>
+
+        <Alert
+          v-if="showScanHint"
+          type="info"
+          show-icon
+          class="!mb-3"
+          :message="scanHintMessage"
+        />
+
         <Empty
           v-if="accessPoints.length === 0 && !scanning"
           :description="$t('page.maintenance.network.wifiConfig.noNetworks')"

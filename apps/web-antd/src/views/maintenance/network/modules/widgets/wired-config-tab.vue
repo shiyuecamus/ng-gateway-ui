@@ -1,37 +1,26 @@
 <script lang="ts" setup>
-import type {
-  ConfigureInterfaceRequest,
-  IpConfig,
-  IpMethod,
-  WiredStatus,
-} from '@vben/types';
+import type { WiredStatus } from '@vben/types';
 
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { useRequestHandler } from '@vben/hooks';
 import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import {
-  Button,
   Card,
   Descriptions,
   Divider,
-  Drawer,
   Empty,
-  Form,
-  Input,
-  InputNumber,
-  message,
-  Modal,
   Select,
   Spin,
   Tag,
 } from 'ant-design-vue';
 
-import { configureNetworkInterface, fetchWiredStatus } from '#/api/core';
+import { fetchWiredStatus } from '#/api/core';
 
 import { prefixToSubnetMask } from '../schemas';
+import IpConfigForm from './ip-config-form.vue';
 
 const props = defineProps<{
   readOnly: boolean;
@@ -41,24 +30,9 @@ const props = defineProps<{
 const { handleRequest } = useRequestHandler();
 
 const loading = ref(false);
-const applying = ref(false);
 const status = ref<WiredStatus | null>(null);
 
 const selectedName = ref<string>('');
-
-const form = ref<{
-  method: IpMethod;
-  ipAddress: string;
-  prefixLength: number;
-  gateway: string;
-  dns: string;
-}>({
-  method: 'dhcp',
-  ipAddress: '',
-  prefixLength: 24,
-  gateway: '',
-  dns: '',
-});
 
 const bestIface = computed(() => {
   if (!status.value) return null;
@@ -81,79 +55,6 @@ async function loadStatus() {
   );
   loading.value = false;
 }
-
-watch(selectedName, (name) => {
-  const iface = status.value?.allInterfaces.find((i) => i.name === name);
-  if (!iface) return;
-  const ipv4 = iface.ipv4;
-  if (ipv4) {
-    form.value.method = ipv4.method;
-    form.value.ipAddress = ipv4.addresses?.[0]?.address ?? '';
-    form.value.prefixLength = ipv4.addresses?.[0]?.prefixLength ?? 24;
-    form.value.gateway = (ipv4.gateway as string) ?? '';
-    form.value.dns = ipv4.dns?.join('\n') ?? '';
-  } else {
-    form.value.method = 'dhcp';
-    form.value.ipAddress = '';
-    form.value.prefixLength = 24;
-    form.value.gateway = '';
-    form.value.dns = '';
-  }
-});
-
-const isStatic = computed(() => form.value.method === 'static');
-
-const confirmOpen = ref(false);
-
-function requestApply() {
-  if (props.isMobile) {
-    confirmOpen.value = true;
-  } else {
-    Modal.confirm({
-      title: $t('page.maintenance.network.wiredConfig.apply'),
-      content: $t('page.maintenance.network.confirmSwitchIpMode'),
-      okText: $t('page.maintenance.network.confirmAction'),
-      cancelText: $t('page.maintenance.network.confirmCancel'),
-      onOk: () => applyConfig(),
-    });
-  }
-}
-
-async function applyConfig() {
-  confirmOpen.value = false;
-  if (!selectedName.value) return;
-  if (isStatic.value && (!form.value.ipAddress || !form.value.prefixLength)) {
-    message.warning($t('page.maintenance.network.wiredConfig.staticRequired'));
-    return;
-  }
-
-  applying.value = true;
-  const dnsServers = form.value.dns.split('\n').map((s) => s.trim()).filter(Boolean);
-  const ipConfig: IpConfig = isStatic.value
-    ? {
-        method: 'static' as const,
-        ipAddress: form.value.ipAddress,
-        prefixLength: form.value.prefixLength,
-        gateway: form.value.gateway || null,
-        dns: dnsServers.length > 0 ? dnsServers : null,
-      }
-    : { method: form.value.method as 'dhcp' | 'disabled' };
-  const payload: ConfigureInterfaceRequest = { ipConfig };
-
-  await handleRequest(
-    () => configureNetworkInterface(selectedName.value, payload),
-    () => {
-      message.success($t('page.maintenance.network.wiredConfig.applySuccess'));
-      loadStatus();
-    },
-  );
-  applying.value = false;
-}
-
-const ipModeOptions = computed(() => [
-  { label: $t('page.maintenance.network.dhcp'), value: 'dhcp' },
-  { label: $t('page.maintenance.network.static'), value: 'static' },
-]);
 
 const interfaceOptions = computed(() =>
   (status.value?.allInterfaces ?? []).map((i) => ({
@@ -244,96 +145,13 @@ onMounted(() => { loadStatus(); });
           {{ $t('page.maintenance.network.wiredConfig.title') }}
         </Divider>
 
-        <Form layout="vertical" :class="isMobile ? 'w-full' : 'max-w-lg'">
-          <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipMode')">
-            <Select v-model:value="form.method" :options="ipModeOptions" />
-          </Form.Item>
-
-          <template v-if="isStatic">
-            <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipAddress')" required>
-              <Input
-                v-model:value="form.ipAddress"
-                placeholder="192.168.1.100"
-                inputmode="decimal"
-                class="!text-base"
-              />
-            </Form.Item>
-            <Form.Item :label="$t('page.maintenance.network.wiredConfig.prefixLength')" required>
-              <InputNumber
-                v-model:value="form.prefixLength"
-                :min="1"
-                :max="32"
-                class="!w-full"
-                inputmode="numeric"
-              />
-            </Form.Item>
-            <Form.Item :label="$t('page.maintenance.network.wiredConfig.gateway')">
-              <Input
-                v-model:value="form.gateway"
-                placeholder="192.168.1.1"
-                inputmode="decimal"
-                class="!text-base"
-              />
-            </Form.Item>
-          </template>
-
-          <Form.Item :label="$t('page.maintenance.network.wiredConfig.dnsServers')">
-            <Input.TextArea
-              v-model:value="form.dns"
-              :rows="3"
-              :placeholder="$t('page.maintenance.network.wiredConfig.dnsHint')"
-              class="!text-base"
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Button
-              type="primary"
-              :loading="applying"
-              :block="isMobile"
-              @click="requestApply"
-            >
-              {{ applying
-                ? $t('page.maintenance.network.wiredConfig.applying')
-                : $t('page.maintenance.network.wiredConfig.apply') }}
-            </Button>
-          </Form.Item>
-        </Form>
+        <IpConfigForm
+          :interface-name="selectedName"
+          :current-ipv4="bestIface?.ipv4"
+          :is-mobile="isMobile"
+          @applied="loadStatus"
+        />
       </template>
-
-      <!-- Mobile confirmation bottom sheet -->
-      <Drawer
-        v-if="isMobile"
-        :open="confirmOpen"
-        placement="bottom"
-        height="auto"
-        :closable="true"
-        :title="$t('page.maintenance.network.wiredConfig.apply')"
-        class="confirm-sheet"
-        @close="confirmOpen = false"
-      >
-        <p class="mb-4 text-sm text-gray-600">
-          {{ $t('page.maintenance.network.confirmSwitchIpMode') }}
-        </p>
-        <div class="flex gap-3">
-          <Button block @click="confirmOpen = false">
-            {{ $t('page.maintenance.network.confirmCancel') }}
-          </Button>
-          <Button type="primary" block :loading="applying" @click="applyConfig">
-            {{ $t('page.maintenance.network.confirmAction') }}
-          </Button>
-        </div>
-      </Drawer>
     </div>
   </Spin>
 </template>
-
-<style scoped>
-.confirm-sheet :deep(.ant-drawer-content-wrapper) {
-  border-radius: 12px 12px 0 0;
-}
-
-.confirm-sheet :deep(.ant-drawer-body) {
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
-}
-</style>

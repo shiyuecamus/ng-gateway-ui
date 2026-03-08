@@ -23,7 +23,6 @@ import {
 } from '#/api/core';
 
 import ApTab from './modules/widgets/ap-tab.vue';
-import DnsTab from './modules/widgets/dns-tab.vue';
 import InterfaceDetailDrawer from './modules/widgets/interface-detail.vue';
 import OverviewCards from './modules/widgets/overview-cards.vue';
 import WifiTab from './modules/widgets/wifi-tab.vue';
@@ -176,9 +175,6 @@ onMounted(() => {
             <ApTab :capabilities="capabilities" :is-mobile="isMobile" />
           </Tabs.TabPane>
 
-          <Tabs.TabPane key="dns" :tab="$t('page.maintenance.network.dns')">
-            <DnsTab :read-only="isReadOnly" :is-mobile="isMobile" />
-          </Tabs.TabPane>
         </Tabs>
       </Card>
     </div>
