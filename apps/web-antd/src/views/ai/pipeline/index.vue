@@ -1,79 +1,101 @@
 <script lang="ts" setup>
-import type { AiPipelineSummary } from '@vben/types';
-import type { VxeGridProps } from '#/adapter/vxe-table';
+import type { VbenFormProps } from '@vben/common-ui';
+import type { AiPipelineInfo } from '@vben/types';
 
-import { onMounted, ref } from 'vue';
+import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
 import { confirm, Page, useVbenDrawer } from '@vben/common-ui';
 import { FormOpenType } from '@vben/constants';
+import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 
-import { Button, message, Tag } from 'ant-design-vue';
+import { Button, message } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { deleteAiPipeline, fetchAiPipelines, validateAiPipeline } from '#/api';
+import {
+  deleteAiPipeline,
+  fetchAiPipelinePage,
+  validateAiPipeline,
+} from '#/api';
 
+import { searchFormSchema, useColumns } from './modules/schemas';
 import PipelineEditorForm from './modules/widgets/form.vue';
 
 defineOptions({ name: 'AiPipelinePage' });
 
-type PipelineRow = AiPipelineSummary & {
-  id: string;
-  name: string;
-  stageCount: number;
-  ruleCount: number;
+const { handleRequest } = useRequestHandler();
+
+const formOptions: VbenFormProps = {
+  collapsed: true,
+  schema: searchFormSchema,
+  showCollapseButton: true,
+  submitOnEnter: false,
 };
 
-const pipelines = ref<PipelineRow[]>([]);
-
-const gridOptions: VxeGridProps<PipelineRow> = {
-  columns: [
-    { title: $t('page.ai.pipeline.id'), field: 'id', width: 140 },
-    { title: $t('page.ai.pipeline.name'), field: 'name', minWidth: 160 },
-    { title: $t('page.ai.pipeline.channelId'), field: 'channelId', width: 100 },
-    {
-      title: $t('page.ai.pipeline.stageCount'),
-      field: 'stageCount',
-      width: 100,
-      slots: { default: 'stageCount' },
-    },
-    {
-      title: $t('page.ai.pipeline.ruleCount'),
-      field: 'ruleCount',
-      width: 100,
-      slots: { default: 'ruleCount' },
-    },
-    {
-      title: $t('page.ai.common.action'),
-      width: 240,
-      slots: { default: 'actions' },
-    },
-  ],
+const gridOptions: VxeGridProps<AiPipelineInfo> = {
+  columns: useColumns(onActionClick),
   height: 'auto',
-  data: pipelines,
+  keepSource: true,
+  proxyConfig: {
+    autoLoad: true,
+    response: {
+      result: 'records',
+      total: 'total',
+      list: 'records',
+    },
+    ajax: {
+      query: async ({ page }, formValues) => {
+        return await fetchAiPipelinePage({
+          page: page.currentPage,
+          pageSize: page.pageSize,
+          ...formValues,
+        });
+      },
+    },
+  },
   toolbarConfig: {
     custom: true,
-    refresh: false,
+    export: false,
+    import: false,
+    refresh: true,
+    zoom: true,
   },
 };
 
-const [Grid] = useVbenVxeGrid({ gridOptions });
+type PipelineGridApi = {
+  query: () => Promise<unknown>;
+  reload: () => Promise<unknown>;
+};
+
+const [Grid, gridApi] = (
+  useVbenVxeGrid as unknown as (options: any) => readonly [any, PipelineGridApi]
+)({
+  formOptions,
+  gridOptions,
+});
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: PipelineEditorForm,
 });
 
-async function loadData() {
-  const raw = await fetchAiPipelines();
-  pipelines.value = (raw ?? []).map(
-    (p): PipelineRow => ({
-      ...p,
-      id: p.config.id,
-      name: p.config.name,
-      stageCount: p.config.stages?.length ?? 0,
-      ruleCount: p.config.alarmRules?.length ?? 0,
-    }),
-  );
+function onActionClick({ code, row }: OnActionClickParams<AiPipelineInfo>) {
+  switch (code) {
+    case 'delete': {
+      handleDelete(row);
+      break;
+    }
+    case 'edit': {
+      handleEdit(row);
+      break;
+    }
+    case 'validate': {
+      handleValidate(row);
+      break;
+    }
+    default: {
+      break;
+    }
+  }
 }
 
 function handleCreate() {
@@ -85,79 +107,68 @@ function handleCreate() {
     .open();
 }
 
-function handleEdit(row: PipelineRow) {
+function handleEdit(row: AiPipelineInfo) {
   formDrawerApi
-    .setData({ type: FormOpenType.EDIT, channelId: row.channelId })
+    .setData({ type: FormOpenType.EDIT, id: row.id })
     .setState({
-      title: `${$t('page.ai.pipeline.editor.updateTitle')} — ${row.name}`,
+      title: `${$t('common.edit')} — ${row.name}`,
     })
     .open();
 }
 
-async function handleValidate(row: PipelineRow) {
-  try {
-    const report = await validateAiPipeline(row.channelId);
-    if (report.valid) {
-      message.success($t('page.ai.pipeline.validation.pass'));
-    } else {
-      message.error(
-        report.errors.length > 0
-          ? report.errors.join('; ')
-          : $t('page.ai.pipeline.validation.fail'),
-      );
-    }
-  } catch {
-    message.error($t('page.ai.pipeline.validation.fail'));
-  }
+async function handleValidate(row: AiPipelineInfo) {
+  await handleRequest(
+    () => validateAiPipeline(row.id),
+    (report) => {
+      if (report.valid) {
+        message.success($t('page.ai.pipeline.validation.pass'));
+      } else {
+        message.error(
+          report.errors.length > 0
+            ? report.errors.join('; ')
+            : $t('page.ai.pipeline.validation.fail'),
+        );
+      }
+    },
+  );
 }
 
-async function handleDelete(row: PipelineRow) {
-  await confirm({
+function handleDelete(row: AiPipelineInfo) {
+  confirm({
     content: $t('page.ai.pipeline.messages.deleteConfirm', {
       name: row.name,
-      channelId: row.channelId,
+      channelId: row.id,
     }),
-  });
-  await deleteAiPipeline(row.channelId);
-  message.success(
-    $t('page.ai.pipeline.messages.deleteSuccess', { name: row.name }),
-  );
-  await loadData();
+    icon: 'warning',
+    title: $t('common.tips'),
+  })
+    .then(async () => {
+      await handleRequest(
+        () => deleteAiPipeline(row.id),
+        async () => {
+          message.success(
+            $t('page.ai.pipeline.messages.deleteSuccess', {
+              name: row.name,
+            }),
+          );
+          await gridApi.query();
+        },
+      );
+    })
+    .catch(() => {});
 }
 
 async function onFormSaved() {
-  await loadData();
+  await gridApi.query();
 }
-
-onMounted(loadData);
 </script>
 
 <template>
   <Page auto-content-height>
-    <Grid :table-title="$t('page.ai.pipeline.title')">
+    <Grid>
       <template #toolbar-actions>
         <Button class="mr-2" type="primary" @click="handleCreate">
-          {{ $t('page.ai.pipeline.actions.create') }}
-        </Button>
-        <Button @click="loadData">
-          {{ $t('common.refresh') }}
-        </Button>
-      </template>
-      <template #stageCount="{ row }">
-        <Tag color="blue">{{ row.stageCount }}</Tag>
-      </template>
-      <template #ruleCount="{ row }">
-        <Tag :color="row.ruleCount > 0 ? 'orange' : 'default'">{{ row.ruleCount }}</Tag>
-      </template>
-      <template #actions="{ row }">
-        <Button type="link" size="small" @click="handleEdit(row)">
-          {{ $t('common.edit') }}
-        </Button>
-        <Button type="link" size="small" @click="handleValidate(row)">
-          {{ $t('page.ai.pipeline.actions.validate') }}
-        </Button>
-        <Button type="link" size="small" danger @click="handleDelete(row)">
-          {{ $t('common.delete') }}
+          <span>{{ $t('page.ai.pipeline.actions.create') }}</span>
         </Button>
       </template>
     </Grid>

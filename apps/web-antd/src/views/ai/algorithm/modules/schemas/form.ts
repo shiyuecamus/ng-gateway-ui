@@ -1,73 +1,42 @@
-import type { VbenFormSchema } from '#/adapter/form';
+import type { VbenFormSchema as FormSchema } from '@vben/common-ui';
 
-import { $t } from '@vben/locales';
+import { h } from 'vue';
 
-export function useAlgorithmUploadFormSchema(): VbenFormSchema[] {
+import { z } from '@vben/common-ui';
+import { Inbox } from '@vben/icons';
+
+import { probeAiAlgorithm } from '#/api';
+import { $t } from '#/locales';
+
+export function useFormSchema(customRequest?: any): FormSchema[] {
   return [
     {
-      component: 'Input',
-      fieldName: 'name',
-      label: $t('page.ai.algorithm.upload.name'),
-      rules: 'required',
-    },
-    {
-      component: 'Input',
-      fieldName: 'description',
-      label: $t('page.ai.algorithm.upload.description'),
-    },
-    {
-      component: 'Input',
-      fieldName: 'version',
-      label: $t('page.ai.algorithm.upload.version'),
-      rules: 'required',
-      defaultValue: '1.0.0',
-    },
-    {
-      component: 'Select',
-      fieldName: 'moduleType',
-      label: $t('page.ai.algorithm.upload.moduleType'),
-      rules: 'required',
-      defaultValue: 'result_processor',
+      component: 'UploadDragger',
       componentProps: {
-        options: [
-          { label: 'result_processor', value: 'result_processor' },
-          { label: 'frame_transform', value: 'frame_transform' },
-        ],
+        accept: '.wasm',
+        customRequest: customRequest ?? probeAiAlgorithm,
+        disabled: false,
+        maxCount: 1,
+        multiple: false,
+        showUploadList: true,
       },
-      controlClass: 'w-full',
-    },
-    {
-      component: 'Input',
-      fieldName: 'file',
-      label: $t('page.ai.algorithm.upload.file'),
-      rules: 'required',
-    },
-  ];
-}
-
-export function useAlgorithmTestFormSchema(): VbenFormSchema[] {
-  return [
-    {
-      component: 'InputNumber',
-      fieldName: 'frameWidth',
-      label: $t('page.ai.algorithm.test.frameWidth'),
-      rules: 'required',
-      defaultValue: 1920,
-      componentProps: {
-        min: 1,
+      controlClass: 'grid-cols-1 w-full',
+      fieldName: 'files',
+      hideLabel: true,
+      renderComponentContent: () => {
+        return {
+          default: () => [
+            h('p', { class: 'ant-upload-drag-icon flex justify-center' }, [
+              h(Inbox, { class: 'size-10 text-primary' }),
+            ]),
+            h('p', { class: 'ant-upload-text' }, $t('common.uploadText')),
+            h('p', { class: 'ant-upload-hint' }, $t('common.uploadHint')),
+          ],
+        };
       },
-      controlClass: 'w-full',
-    },
-    {
-      component: 'InputNumber',
-      fieldName: 'frameHeight',
-      label: $t('page.ai.algorithm.test.frameHeight'),
-      rules: 'required',
-      defaultValue: 1080,
-      componentProps: {
-        min: 1,
-      },
-      controlClass: 'w-full',
+      rules: z
+        .array(z.any())
+        .min(1, { message: $t('page.ai.algorithm.messages.uploadRequired') }),
     },
   ];
 }

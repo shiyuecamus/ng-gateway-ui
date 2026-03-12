@@ -1,73 +1,154 @@
 <script lang="ts" setup>
+import type { VbenFormProps } from '@vben/common-ui';
 import type { AiModelInfo } from '@vben/types';
-import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { onMounted, ref } from 'vue';
+import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
-import { confirm, Page } from '@vben/common-ui';
+import { confirm, Page, useVbenModal } from '@vben/common-ui';
+import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 
-import { Button, message, Tag } from 'ant-design-vue';
+import { Button, message } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { deleteAiModel, fetchAiModels, loadAiModel, unloadAiModel } from '#/api';
+import {
+  deleteAiModel,
+  fetchAiModelPage,
+  loadAiModel,
+  unloadAiModel,
+} from '#/api';
 
-const models = ref<AiModelInfo[]>([]);
+import { searchFormSchema, useColumns } from './modules/schemas';
+import InstallAiModel from './modules/widgets/install.vue';
 
-const gridOptions: VxeGridProps<AiModelInfo> = {
-  columns: [
-    { title: $t('page.ai.model.name'), field: 'name', minWidth: 140 },
-    { title: $t('page.ai.model.version'), field: 'version', width: 100 },
-    { title: $t('page.ai.model.task'), field: 'task', width: 120 },
-    { title: $t('page.ai.model.fileSize'), field: 'fileSize', width: 120, formatter: ({ cellValue }) => cellValue ? `${(cellValue / 1024 / 1024).toFixed(1)} MB` : '-' },
-    { title: $t('page.ai.model.loaded'), field: 'loaded', width: 80, slots: { default: 'loaded' } },
-    { title: $t('page.ai.common.action'), width: 200, slots: { default: 'actions' } },
-  ],
-  height: 'auto',
-  data: models,
+defineOptions({ name: 'AiModelPage' });
+
+const { handleRequest } = useRequestHandler();
+
+const formOptions: VbenFormProps = {
+  collapsed: true,
+  schema: searchFormSchema,
+  showCollapseButton: true,
+  submitOnEnter: false,
 };
 
-const [Grid] = useVbenVxeGrid({ gridOptions });
+const gridOptions: VxeGridProps<AiModelInfo> = {
+  columns: useColumns(onActionClick),
+  height: 'auto',
+  keepSource: true,
+  proxyConfig: {
+    autoLoad: true,
+    response: {
+      result: 'records',
+      total: 'total',
+      list: 'records',
+    },
+    ajax: {
+      query: async ({ page }, formValues) => {
+        return await fetchAiModelPage({
+          page: page.currentPage,
+          pageSize: page.pageSize,
+          ...formValues,
+        });
+      },
+    },
+  },
+  toolbarConfig: {
+    custom: true,
+    export: false,
+    import: false,
+    refresh: true,
+    zoom: true,
+  },
+};
 
-async function loadData() {
-  models.value = await fetchAiModels();
+const [Grid, gridApi] = useVbenVxeGrid({
+  formOptions,
+  gridOptions,
+});
+
+const [InstallModelModal, installModelModalApi] = useVbenModal({
+  connectedComponent: InstallAiModel,
+});
+
+function onActionClick({ code, row }: OnActionClickParams<AiModelInfo>) {
+  switch (code) {
+    case 'delete': {
+      handleDelete(row);
+      break;
+    }
+    case 'load': {
+      handleLoad(row);
+      break;
+    }
+    case 'unload': {
+      handleUnload(row);
+      break;
+    }
+    default: {
+      break;
+    }
+  }
 }
 
-async function handleLoad(model: AiModelInfo) {
-  await loadAiModel(model.id);
-  message.success($t('page.ai.model.messages.loadSuccess', { name: model.name }));
-  await loadData();
+function handleInstall() {
+  installModelModalApi.open();
 }
 
-async function handleUnload(model: AiModelInfo) {
-  await unloadAiModel(model.id);
-  message.success($t('page.ai.model.messages.unloadSuccess', { name: model.name }));
-  await loadData();
+async function handleLoad(row: AiModelInfo) {
+  await handleRequest(
+    () => loadAiModel(row.id),
+    async () => {
+      message.success(
+        $t('page.ai.model.messages.loadSuccess', { name: row.name }),
+      );
+      await gridApi.query();
+    },
+  );
 }
 
-async function handleDelete(model: AiModelInfo) {
-  await confirm({
-    content: $t('page.ai.model.messages.deleteConfirm', { name: model.name }),
-  });
-  await deleteAiModel(model.id);
-  message.success($t('page.ai.model.messages.deleteSuccess', { name: model.name }));
-  await loadData();
+async function handleUnload(row: AiModelInfo) {
+  await handleRequest(
+    () => unloadAiModel(row.id),
+    async () => {
+      message.success(
+        $t('page.ai.model.messages.unloadSuccess', { name: row.name }),
+      );
+      await gridApi.query();
+    },
+  );
 }
 
-onMounted(loadData);
+function handleDelete(row: AiModelInfo) {
+  confirm({
+    content: $t('page.ai.model.messages.deleteConfirm', { name: row.name }),
+    icon: 'warning',
+    title: $t('common.tips'),
+  })
+    .then(async () => {
+      await handleRequest(
+        () => deleteAiModel(row.id),
+        async () => {
+          message.success(
+            $t('page.ai.model.messages.deleteSuccess', { name: row.name }),
+          );
+          await gridApi.query();
+        },
+      );
+    })
+    .catch(() => {});
+}
 </script>
 
 <template>
   <Page auto-content-height>
-    <Grid :table-title="$t('page.ai.model.title')">
-      <template #loaded="{ row }">
-        <Tag :color="row.loaded ? 'green' : 'default'">{{ row.loaded ? $t('page.ai.common.yes') : $t('page.ai.common.no') }}</Tag>
-      </template>
-      <template #actions="{ row }">
-        <Button v-if="!row.loaded" type="link" size="small" @click="handleLoad(row)">{{ $t('page.ai.model.actions.load') }}</Button>
-        <Button v-if="row.loaded" type="link" size="small" @click="handleUnload(row)">{{ $t('page.ai.model.actions.unload') }}</Button>
-        <Button type="link" size="small" danger @click="handleDelete(row)">{{ $t('common.delete') }}</Button>
+    <Grid>
+      <template #toolbar-actions>
+        <Button class="mr-2" type="primary" @click="handleInstall">
+          <span>{{ $t('page.ai.model.actions.upload') }}</span>
+        </Button>
       </template>
     </Grid>
+    <InstallModelModal @success="gridApi.reload()" />
   </Page>
 </template>

@@ -1,81 +1,35 @@
 <script lang="ts" setup>
-import type { AiAlarmEventInfo } from '@vben/types';
 import type { VbenFormProps } from '@vben/common-ui';
-import type { VxeGridProps } from '#/adapter/vxe-table';
+import type { AiAlarmEventInfo } from '@vben/types';
+
+import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
 import { ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
+import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 
 import {
-  Button,
   Descriptions,
   DescriptionsItem,
   Drawer,
   Image,
   message,
-  Space,
-  Tag,
 } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { changeAlarmEventStatus, fetchAlarmEventDetail, fetchAlarmEventPage } from '#/api';
+import {
+  changeAlarmEventStatus,
+  fetchAlarmEventDetail,
+  fetchAlarmEventPage,
+} from '#/api';
+
+import { searchFormSchema, useColumns } from './modules/schemas';
 
 defineOptions({ name: 'AiAlarmPage' });
 
-const severityColor: Record<string, string> = {
-  critical: 'red',
-  warning: 'orange',
-  info: 'blue',
-};
-
-const statusColor: Record<string, string> = {
-  open: 'red',
-  acked: 'blue',
-  closed: 'default',
-};
-
-const searchFormSchema: VbenFormProps['schema'] = [
-  {
-    component: 'InputNumber',
-    fieldName: 'channelId',
-    label: $t('page.ai.alarm.channelId'),
-    componentProps: {
-      min: 1,
-      placeholder: $t('ui.placeholder.input'),
-      style: { width: '100%' },
-    },
-  },
-  {
-    component: 'Select',
-    fieldName: 'severity',
-    label: $t('page.ai.alarm.severity'),
-    componentProps: {
-      clearable: true,
-      options: [
-        { label: 'Critical', value: 'critical' },
-        { label: 'Warning', value: 'warning' },
-        { label: 'Info', value: 'info' },
-      ],
-      placeholder: $t('ui.placeholder.select'),
-    },
-  },
-  {
-    component: 'Select',
-    fieldName: 'status',
-    label: $t('page.ai.alarm.status'),
-    componentProps: {
-      clearable: true,
-      options: [
-        { label: 'Open', value: 'open' },
-        { label: 'Acked', value: 'acked' },
-        { label: 'Closed', value: 'closed' },
-      ],
-      placeholder: $t('ui.placeholder.select'),
-    },
-  },
-];
+const { handleRequest } = useRequestHandler();
 
 const formOptions: VbenFormProps = {
   collapsed: true,
@@ -85,39 +39,7 @@ const formOptions: VbenFormProps = {
 };
 
 const gridOptions: VxeGridProps<AiAlarmEventInfo> = {
-  columns: [
-    { title: $t('page.ai.alarm.id'), field: 'id', width: 70 },
-    { title: $t('page.ai.alarm.channelId'), field: 'channelId', width: 90 },
-    { title: $t('page.ai.alarm.alarmType'), field: 'alarmType', width: 130 },
-    {
-      title: $t('page.ai.alarm.severity'),
-      field: 'severity',
-      width: 100,
-      slots: { default: 'severity' },
-    },
-    {
-      title: $t('page.ai.alarm.description'),
-      field: 'description',
-      minWidth: 200,
-    },
-    {
-      title: $t('page.ai.alarm.status'),
-      field: 'status',
-      width: 100,
-      slots: { default: 'status' },
-    },
-    {
-      title: $t('common.baseInfo.createdAt'),
-      field: 'createdAt',
-      width: 170,
-      formatter: 'formatDateTime',
-    },
-    {
-      title: $t('common.actions'),
-      width: 200,
-      slots: { default: 'actions' },
-    },
-  ],
+  columns: useColumns(onActionClick),
   height: 'auto',
   proxyConfig: {
     autoLoad: true,
@@ -143,53 +65,64 @@ const gridOptions: VxeGridProps<AiAlarmEventInfo> = {
   },
 };
 
-type AlarmGridApi = {
-  reload: () => Promise<unknown>;
-};
-
-const [Grid, gridApi] = (
-  useVbenVxeGrid as unknown as (options: any) => readonly [any, AlarmGridApi]
-)({
+const [Grid, gridApi] = useVbenVxeGrid({
   formOptions,
   gridOptions,
 });
 
-// Detail drawer
 const detailVisible = ref(false);
-const detailLoading = ref(false);
 const detailRecord = ref<AiAlarmEventInfo | null>(null);
+
+function onActionClick({ code, row }: OnActionClickParams<AiAlarmEventInfo>) {
+  switch (code) {
+    case 'ack': {
+      handleAck(row);
+      break;
+    }
+    case 'close': {
+      handleClose(row);
+      break;
+    }
+    case 'detail': {
+      handleDetail(row);
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+}
 
 async function handleDetail(row: AiAlarmEventInfo) {
   detailVisible.value = true;
-  detailLoading.value = true;
   try {
     detailRecord.value = await fetchAlarmEventDetail(row.id);
   } catch {
     detailRecord.value = row;
-  } finally {
-    detailLoading.value = false;
   }
 }
 
 async function handleAck(row: AiAlarmEventInfo) {
-  await changeAlarmEventStatus({ id: row.id, status: 'acked' });
-  message.success($t('page.ai.alarm.messages.ackSuccess'));
-  gridApi.reload();
-  if (detailRecord.value?.id === row.id) {
-    detailRecord.value = { ...detailRecord.value, status: 'acked' };
-  }
+  await handleRequest(
+    () => changeAlarmEventStatus({ id: row.id, status: 'acked' }),
+    async () => {
+      message.success($t('page.ai.alarm.messages.ackSuccess'));
+      await gridApi.query();
+    },
+  );
 }
 
 async function handleClose(row: AiAlarmEventInfo) {
-  await changeAlarmEventStatus({ id: row.id, status: 'closed' });
-  message.success($t('page.ai.alarm.messages.closeSuccess'));
-  gridApi.reload();
-  if (detailRecord.value?.id === row.id) {
-    detailRecord.value = { ...detailRecord.value, status: 'closed' };
-  }
+  await handleRequest(
+    () => changeAlarmEventStatus({ id: row.id, status: 'closed' }),
+    async () => {
+      message.success($t('page.ai.alarm.messages.closeSuccess'));
+      await gridApi.query();
+    },
+  );
 }
 
-function getSnapshotUrl(row: AiAlarmEventInfo): string | null {
+function getSnapshotUrl(row: AiAlarmEventInfo): null | string {
   const payload = row.payload;
   if (typeof payload === 'object' && payload?.snapshot_url) {
     return payload.snapshot_url as string;
@@ -200,47 +133,12 @@ function getSnapshotUrl(row: AiAlarmEventInfo): string | null {
 
 <template>
   <Page auto-content-height>
-    <Grid :table-title="$t('page.ai.alarm.title')">
-      <template #severity="{ row }">
-        <Tag :color="severityColor[row.severity] ?? 'default'">
-          {{ row.severity }}
-        </Tag>
-      </template>
-      <template #status="{ row }">
-        <Tag :color="statusColor[row.status] ?? 'default'">
-          {{ row.status }}
-        </Tag>
-      </template>
-      <template #actions="{ row }">
-        <Space>
-          <Button type="link" size="small" @click="handleDetail(row)">
-            Detail
-          </Button>
-          <Button
-            v-if="row.status === 'open'"
-            type="link"
-            size="small"
-            @click="handleAck(row)"
-          >
-            {{ $t('page.ai.alarm.actions.ack') }}
-          </Button>
-          <Button
-            v-if="row.status !== 'closed'"
-            type="link"
-            size="small"
-            danger
-            @click="handleClose(row)"
-          >
-            {{ $t('page.ai.alarm.actions.close') }}
-          </Button>
-        </Space>
-      </template>
-    </Grid>
+    <Grid />
 
     <!-- Detail drawer -->
     <Drawer
       v-model:open="detailVisible"
-      :title="`Alarm #${detailRecord?.id ?? ''}`"
+      :title="`${$t('page.ai.alarm.title')} #${detailRecord?.id ?? ''}`"
       :width="560"
       placement="right"
       :destroy-on-close="true"
@@ -257,14 +155,10 @@ function getSnapshotUrl(row: AiAlarmEventInfo): string | null {
             {{ detailRecord.alarmType }}
           </DescriptionsItem>
           <DescriptionsItem :label="$t('page.ai.alarm.severity')">
-            <Tag :color="severityColor[detailRecord.severity] ?? 'default'">
-              {{ detailRecord.severity }}
-            </Tag>
+            {{ detailRecord.severity }}
           </DescriptionsItem>
           <DescriptionsItem :label="$t('page.ai.alarm.status')" :span="2">
-            <Tag :color="statusColor[detailRecord.status] ?? 'default'">
-              {{ detailRecord.status }}
-            </Tag>
+            {{ detailRecord.status }}
           </DescriptionsItem>
           <DescriptionsItem :label="$t('page.ai.alarm.description')" :span="2">
             {{ detailRecord.description }}
@@ -272,17 +166,13 @@ function getSnapshotUrl(row: AiAlarmEventInfo): string | null {
           <DescriptionsItem :label="$t('common.baseInfo.createdAt')">
             {{ detailRecord.createdAt }}
           </DescriptionsItem>
-          <DescriptionsItem label="Acked At">
-            {{ detailRecord.ackedAt ?? '—' }}
-          </DescriptionsItem>
-          <DescriptionsItem label="Closed At" :span="2">
-            {{ detailRecord.closedAt ?? '—' }}
+          <DescriptionsItem :label="$t('common.baseInfo.updatedAt')">
+            {{ detailRecord.updatedAt }}
           </DescriptionsItem>
         </Descriptions>
 
         <!-- Snapshot -->
         <div v-if="getSnapshotUrl(detailRecord)" class="mt-4">
-          <div class="mb-2 text-sm font-medium text-gray-600">Snapshot</div>
           <Image
             :src="getSnapshotUrl(detailRecord)!"
             :preview="true"
@@ -292,26 +182,9 @@ function getSnapshotUrl(row: AiAlarmEventInfo): string | null {
 
         <!-- Payload (raw JSON) -->
         <div v-if="detailRecord.payload" class="mt-4">
-          <div class="mb-2 text-sm font-medium text-gray-600">Payload</div>
-          <pre class="max-h-64 overflow-auto rounded bg-gray-50 p-3 text-xs">{{ JSON.stringify(detailRecord.payload, null, 2) }}</pre>
-        </div>
-
-        <!-- Actions -->
-        <div class="mt-4 flex gap-2">
-          <Button
-            v-if="detailRecord.status === 'open'"
-            type="primary"
-            @click="handleAck(detailRecord)"
-          >
-            {{ $t('page.ai.alarm.actions.ack') }}
-          </Button>
-          <Button
-            v-if="detailRecord.status !== 'closed'"
-            danger
-            @click="handleClose(detailRecord)"
-          >
-            {{ $t('page.ai.alarm.actions.close') }}
-          </Button>
+          <pre class="max-h-64 overflow-auto rounded bg-gray-50 p-3 text-xs">{{
+            JSON.stringify(detailRecord.payload, null, 2)
+          }}</pre>
         </div>
       </template>
     </Drawer>

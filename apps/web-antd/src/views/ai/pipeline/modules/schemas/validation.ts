@@ -15,7 +15,9 @@ export interface StageValidationResult {
  * - ResultProcessor stages must follow at least one Inference stage.
  * - At least one Inference stage is required.
  */
-export function validateStageOrder(stages: Recordable<any>[]): StageValidationResult {
+export function validateStageOrder(
+  stages: Recordable<any>[],
+): StageValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -28,7 +30,9 @@ export function validateStageOrder(stages: Recordable<any>[]): StageValidationRe
     switch (stage.type) {
       case 'frame_transform': {
         if (hasInference) {
-          errors.push(`Stage ${i + 1}: frame_transform must precede all inference stages`);
+          errors.push(
+            `Stage ${i + 1}: frame_transform must precede all inference stages`,
+          );
         }
         break;
       }
@@ -44,7 +48,9 @@ export function validateStageOrder(stages: Recordable<any>[]): StageValidationRe
       }
       case 'result_processor': {
         if (!hasInference) {
-          errors.push(`Stage ${i + 1}: result_processor must follow an inference stage`);
+          errors.push(
+            `Stage ${i + 1}: result_processor must follow an inference stage`,
+          );
         }
         break;
       }

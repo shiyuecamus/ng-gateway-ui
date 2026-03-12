@@ -1,73 +1,42 @@
-import type { VbenFormSchema } from '#/adapter/form';
+import type { VbenFormSchema as FormSchema } from '@vben/common-ui';
 
-import { $t } from '@vben/locales';
+import { h } from 'vue';
 
-export function useModelBasicFormSchema(): VbenFormSchema[] {
+import { z } from '@vben/common-ui';
+import { Inbox } from '@vben/icons';
+
+import { probeAiModel } from '#/api';
+import { $t } from '#/locales';
+
+export function useFormSchema(customRequest?: any): FormSchema[] {
   return [
     {
-      component: 'Input',
-      fieldName: 'id',
-      label: $t('page.ai.model.upload.id'),
-      rules: 'required',
+      component: 'UploadDragger',
       componentProps: {
-        clearable: true,
+        accept: '.onnx,.rknn,.engine,.xml',
+        customRequest: customRequest ?? probeAiModel,
+        disabled: false,
+        maxCount: 1,
+        multiple: false,
+        showUploadList: true,
       },
-    },
-    {
-      component: 'Input',
-      fieldName: 'name',
-      label: $t('page.ai.model.upload.name'),
-      rules: 'required',
-      componentProps: {
-        clearable: true,
+      controlClass: 'grid-cols-1 w-full',
+      fieldName: 'files',
+      hideLabel: true,
+      renderComponentContent: () => {
+        return {
+          default: () => [
+            h('p', { class: 'ant-upload-drag-icon flex justify-center' }, [
+              h(Inbox, { class: 'size-10 text-primary' }),
+            ]),
+            h('p', { class: 'ant-upload-text' }, $t('common.uploadText')),
+            h('p', { class: 'ant-upload-hint' }, $t('common.uploadHint')),
+          ],
+        };
       },
-    },
-    {
-      component: 'Input',
-      fieldName: 'version',
-      label: $t('page.ai.model.upload.version'),
-      rules: 'required',
-      defaultValue: '1.0.0',
-      componentProps: {
-        clearable: true,
-      },
-    },
-    {
-      component: 'Select',
-      fieldName: 'task',
-      label: $t('page.ai.model.upload.task'),
-      rules: 'required',
-      defaultValue: 'object_detection',
-      componentProps: {
-        options: [
-          { label: 'object_detection', value: 'object_detection' },
-          { label: 'classification', value: 'classification' },
-          { label: 'segmentation', value: 'segmentation' },
-          { label: 'ocr', value: 'ocr' },
-          { label: 'anomaly_detection', value: 'anomaly_detection' },
-          { label: 'custom', value: 'custom' },
-        ],
-      },
-      controlClass: 'w-full',
-    },
-    {
-      component: 'Input',
-      fieldName: 'labelsText',
-      label: 'Labels',
-      componentProps: {
-        placeholder: 'person,car,bike',
-      },
-    },
-  ];
-}
-
-export function useModelUploadFormSchema(): VbenFormSchema[] {
-  return [
-    {
-      component: 'Input',
-      fieldName: 'file',
-      label: $t('page.ai.model.upload.file'),
-      rules: 'required',
+      rules: z
+        .array(z.any())
+        .min(1, { message: $t('page.ai.model.messages.fileRequired') }),
     },
   ];
 }

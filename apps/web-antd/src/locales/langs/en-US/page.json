@@ -531,7 +531,10 @@
       "enabled": "Enabled",
       "disabled": "Disabled",
       "yes": "Yes",
-      "no": "No"
+      "no": "No",
+      "format": "Format",
+      "checksum": "Checksum",
+      "preview": "Preview"
     },
     "overview": {
       "title": "AI Overview",
@@ -559,6 +562,7 @@
       "name": "Name",
       "version": "Version",
       "task": "Task",
+      "format": "Format",
       "fileSize": "File Size (Byte)",
       "loaded": "Loaded",
       "actions": {
@@ -572,6 +576,8 @@
         "name": "Model Name",
         "version": "Version",
         "task": "Task",
+        "labels": "Labels",
+        "labelsPlaceholder": "Use commas to separate labels, e.g. person,car,bike",
         "file": "Model File",
         "pickFile": "Select Model File"
       },
@@ -607,6 +613,7 @@
       "name": "Name",
       "version": "Version",
       "moduleType": "Module Type",
+      "checksum": "Checksum",
       "fileSize": "File Size (Byte)",
       "actions": {
         "upload": "Upload Algorithm",
@@ -614,10 +621,12 @@
       },
       "upload": {
         "title": "Upload Algorithm",
+        "algorithmKey": "Algorithm Key",
         "name": "Algorithm Name",
         "description": "Description",
         "version": "Version",
         "moduleType": "Module Type",
+        "sdkApiVersion": "SDK API Version",
         "file": "WASM File",
         "pickFile": "Select WASM File"
       },
@@ -625,19 +634,24 @@
         "title": "Algorithm Test",
         "frameWidth": "Frame Width",
         "frameHeight": "Frame Height",
+        "configJson": "Config JSON",
         "result": "Result"
       },
       "messages": {
         "uploadRequired": "Please input name and select wasm file",
         "uploadSuccess": "Algorithm \"{name}\" uploaded",
         "deleteConfirm": "Delete algorithm \"{name}\"?",
-        "deleteSuccess": "Algorithm \"{name}\" deleted"
+        "deleteSuccess": "Algorithm \"{name}\" deleted",
+        "testFailed": "Algorithm test failed",
+        "invalidJson": "Invalid config JSON, please verify and retry",
+        "metadataHint": "The current backend installs algorithms using the embedded artifact manifest. Edited metadata is still sent with the request for forward compatibility with upcoming backend override support."
       }
     },
     "pipeline": {
       "title": "Pipeline Management",
       "id": "Pipeline ID",
       "name": "Pipeline Name",
+      "revision": "Revision",
       "channelId": "Channel ID",
       "stageCount": "Stages",
       "ruleCount": "Rules",
@@ -734,6 +748,8 @@
           "lineEndY": "End Y",
           "direction": "Direction",
           "minScore": "Min Score",
+          "dwellTimeoutMs": "Dwell Timeout (ms)",
+          "cooldownMs": "Cooldown (ms)",
           "moduleId": "Module ID",
           "configJson": "Config (JSON)",
           "configEntries": "Config Entries"
@@ -804,12 +820,17 @@
           "zoneIntrusion": "Zone Intrusion",
           "lineCrossing": "Line Crossing",
           "anomalyDetected": "Anomaly Detected",
+          "zoneDwell": "Zone Dwell",
           "customWasm": "Custom WASM"
         }
       },
       "messages": {
         "deleteConfirm": "Delete pipeline \"{name}\" on channel {channelId}?",
-        "deleteSuccess": "Pipeline \"{name}\" deleted"
+        "deleteSuccess": "Pipeline \"{name}\" deleted",
+        "saveBeforeValidate": "Please save the pipeline before validation",
+        "keyRequired": "Pipeline key is required",
+        "nameRequired": "Pipeline name is required",
+        "saveFailed": "Failed to save pipeline"
       }
     },
     "live": {
@@ -817,11 +838,51 @@
       "status": {
         "disconnected": "Not connected",
         "connected": "Live preview active",
-        "error": "Connection error"
+        "error": "Connection error",
+        "connecting": "Connecting...",
+        "reconnecting": "Reconnecting..."
       },
       "actions": {
         "startPreview": "Start Preview",
-        "stop": "Stop"
+        "stop": "Stop",
+        "pause": "Pause",
+        "resume": "Resume",
+        "snapshot": "Snapshot",
+        "fullscreen": "Fullscreen",
+        "layers": "Layers",
+        "drawRoi": "Draw ROI",
+        "exitRoiEdit": "Exit ROI Edit",
+        "manageRois": "Manage ROIs",
+        "clearAll": "Clear All",
+        "set": "Set"
+      },
+      "messages": {
+        "noVideoData": "No video data available for snapshot",
+        "snapshotSaved": "Snapshot saved",
+        "bitrateUpdated": "Bitrate set to {value} kbps",
+        "resolutionUpdated": "Resolution set to {value}"
+      },
+      "panels": {
+        "layers": "Overlay Layers",
+        "settings": "Stream Settings",
+        "stats": "Stream Statistics"
+      },
+      "labels": {
+        "bboxLabels": "BBox / Labels",
+        "roiRegions": "ROI Regions",
+        "trajectories": "Trajectories",
+        "heatmap": "Heatmap",
+        "roiCount": "ROI {count}",
+        "bitrateKbps": "Bitrate (kbps)",
+        "resolution": "Resolution",
+        "videoFps": "Video FPS",
+        "bitrate": "Bitrate",
+        "rtt": "RTT",
+        "packetLoss": "Packet Loss",
+        "aiFps": "AI FPS",
+        "aiLatency": "AI Latency",
+        "detections": "Detections",
+        "queueDepth": "Queue Depth"
       }
     }
   },

@@ -1,52 +1,52 @@
 import type { VxeTableGridOptions } from '@vben/plugins/vxe-table';
-import type { AiPipelineSummary } from '@vben/types';
+import type { AiPipelineInfo } from '@vben/types';
 
 import type { OnActionClickFn } from '#/adapter/vxe-table';
 
 import { $t } from '@vben/locales';
 
 export function useColumns(
-  onActionClick: OnActionClickFn<AiPipelineSummary>,
-): VxeTableGridOptions<AiPipelineSummary>['columns'] {
+  onActionClick: OnActionClickFn<AiPipelineInfo>,
+): VxeTableGridOptions<AiPipelineInfo>['columns'] {
   return [
-    { field: 'channelId', title: $t('page.ai.pipeline.channelId'), width: 120 },
-    { field: 'config.id', title: $t('page.ai.pipeline.id'), minWidth: 180 },
-    { field: 'config.name', title: $t('page.ai.pipeline.name'), minWidth: 180 },
+    { field: 'key', title: $t('page.ai.pipeline.id'), minWidth: 180 },
+    { field: 'name', title: $t('page.ai.pipeline.name'), minWidth: 160 },
     {
-      field: 'config.stages',
+      field: 'stages',
       title: $t('page.ai.pipeline.stageCount'),
-      width: 130,
-      slots: { default: 'stageCount' },
+      width: 100,
+      formatter: ({ cellValue }) => (cellValue as any[])?.length ?? 0,
     },
     {
-      field: 'config.alarmRules',
+      field: 'alarmRules',
       title: $t('page.ai.pipeline.ruleCount'),
-      width: 130,
-      slots: { default: 'ruleCount' },
+      width: 100,
+      formatter: ({ cellValue }) => (cellValue as any[])?.length ?? 0,
     },
+    { field: 'revision', title: $t('page.ai.pipeline.revision'), width: 90 },
     {
-      field: 'config.annotation',
-      title: $t('page.ai.pipeline.annotation'),
-      width: 120,
-      slots: { default: 'annotation' },
+      field: 'createdAt',
+      formatter: 'formatDateTime',
+      title: $t('common.baseInfo.createdAt'),
+      width: 170,
     },
     {
       align: 'right',
       cellRender: {
         attrs: {
-          nameField: 'config.name',
+          nameField: 'name',
           onClick: onActionClick,
         },
         name: 'CellOperation',
         options: [
           {
             code: 'edit',
-            icon: 'lucide:edit',
+            icon: 'lucide:pencil',
             tooltip: $t('common.edit'),
           },
           {
             code: 'validate',
-            icon: 'mdi:check-decagram-outline',
+            icon: 'lucide:check-circle',
             tooltip: $t('page.ai.pipeline.actions.validate'),
           },
           {

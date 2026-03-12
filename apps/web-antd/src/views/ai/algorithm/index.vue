@@ -1,61 +1,140 @@
 <script lang="ts" setup>
+import type { VbenFormProps } from '@vben/common-ui';
 import type { AiAlgorithmInfo } from '@vben/types';
-import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { onMounted, ref } from 'vue';
+import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
-import { confirm, Page } from '@vben/common-ui';
+import { confirm, Page, useVbenModal } from '@vben/common-ui';
+import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 
 import { Button, message } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { deleteAiAlgorithm, fetchAiAlgorithms } from '#/api';
+import { deleteAiAlgorithm, fetchAiAlgorithmPage } from '#/api';
 
-const algorithms = ref<AiAlgorithmInfo[]>([]);
+import { searchFormSchema, useColumns } from './modules/schemas';
+import InstallAiAlgorithm from './modules/widgets/install.vue';
+import TestAiAlgorithm from './modules/widgets/test.vue';
 
-const gridOptions: VxeGridProps<AiAlgorithmInfo> = {
-  columns: [
-    { title: $t('page.ai.algorithm.name'), field: 'name', minWidth: 160 },
-    { title: $t('page.ai.algorithm.version'), field: 'version', width: 100 },
-    { title: $t('page.ai.algorithm.moduleType'), field: 'moduleType', width: 120 },
-    {
-      title: $t('page.ai.algorithm.fileSize'),
-      field: 'fileSize',
-      width: 120,
-      formatter: ({ cellValue }) =>
-        cellValue ? `${(cellValue / 1024).toFixed(1)} KB` : '-',
-    },
-    { title: $t('page.ai.common.action'), width: 160, slots: { default: 'actions' } },
-  ],
-  height: 'auto',
-  data: algorithms,
+defineOptions({ name: 'AiAlgorithmPage' });
+
+const { handleRequest } = useRequestHandler();
+
+const formOptions: VbenFormProps = {
+  collapsed: true,
+  schema: searchFormSchema,
+  showCollapseButton: true,
+  submitOnEnter: false,
 };
 
-const [Grid] = useVbenVxeGrid({ gridOptions });
+const gridOptions: VxeGridProps<AiAlgorithmInfo> = {
+  columns: useColumns(onActionClick),
+  height: 'auto',
+  keepSource: true,
+  proxyConfig: {
+    autoLoad: true,
+    response: {
+      result: 'records',
+      total: 'total',
+      list: 'records',
+    },
+    ajax: {
+      query: async ({ page }, formValues) => {
+        return await fetchAiAlgorithmPage({
+          page: page.currentPage,
+          pageSize: page.pageSize,
+          ...formValues,
+        });
+      },
+    },
+  },
+  toolbarConfig: {
+    custom: true,
+    export: false,
+    import: false,
+    refresh: true,
+    zoom: true,
+  },
+};
 
-async function loadData() {
-  algorithms.value = await fetchAiAlgorithms();
+const [Grid, gridApi] = useVbenVxeGrid({
+  formOptions,
+  gridOptions,
+});
+
+const [InstallAlgorithmModal, installAlgorithmModalApi] = useVbenModal({
+  connectedComponent: InstallAiAlgorithm,
+});
+
+const [TestAlgorithmModal, testAlgorithmModalApi] = useVbenModal({
+  connectedComponent: TestAiAlgorithm,
+});
+
+function onActionClick({ code, row }: OnActionClickParams<AiAlgorithmInfo>) {
+  switch (code) {
+    case 'delete': {
+      handleDelete(row);
+      break;
+    }
+    case 'test': {
+      handleTest(row);
+      break;
+    }
+    default: {
+      break;
+    }
+  }
 }
 
-async function handleDelete(row: AiAlgorithmInfo) {
-  await confirm({ content: $t('page.ai.algorithm.messages.deleteConfirm', { name: row.name }) });
-  await deleteAiAlgorithm(row.id);
-  message.success($t('page.ai.algorithm.messages.deleteSuccess', { name: row.name }));
-  await loadData();
+function handleInstall() {
+  installAlgorithmModalApi.open();
 }
 
-onMounted(loadData);
+async function handleTest(row: AiAlgorithmInfo) {
+  testAlgorithmModalApi
+    .setData({ algorithm: row })
+    .setState({
+      title: `${$t('page.ai.algorithm.test.title')} - ${row.name}`,
+    })
+    .open();
+}
+
+function handleDelete(row: AiAlgorithmInfo) {
+  confirm({
+    content: $t('page.ai.algorithm.messages.deleteConfirm', {
+      name: row.name,
+    }),
+    icon: 'warning',
+    title: $t('common.tips'),
+  })
+    .then(async () => {
+      await handleRequest(
+        () => deleteAiAlgorithm(row.id),
+        async () => {
+          message.success(
+            $t('page.ai.algorithm.messages.deleteSuccess', {
+              name: row.name,
+            }),
+          );
+          await gridApi.query();
+        },
+      );
+    })
+    .catch(() => {});
+}
 </script>
 
 <template>
   <Page auto-content-height>
-    <Grid :table-title="$t('page.ai.algorithm.title')">
-      <template #actions="{ row }">
-        <Button type="link" size="small" danger @click="handleDelete(row)">
-          {{ $t('common.delete') }}
+    <Grid>
+      <template #toolbar-actions>
+        <Button class="mr-2" type="primary" @click="handleInstall">
+          <span>{{ $t('page.ai.algorithm.actions.upload') }}</span>
         </Button>
       </template>
     </Grid>
+    <InstallAlgorithmModal @success="gridApi.reload()" />
+    <TestAlgorithmModal />
   </Page>
 </template>

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { AiEngineStatus, AiPipelineSummary } from '@vben/types';
+import type { AiEngineStatus, AiPipelineInfo } from '@vben/types';
 
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -18,28 +18,22 @@ import {
   Row,
   Spin,
   Statistic,
-  Table,
   Tag,
 } from 'ant-design-vue';
 
 import { fetchAiEngineStatus, fetchAiPipelines } from '#/api';
 
+defineOptions({ name: 'AiOverviewPage' });
+
 const router = useRouter();
 const status = ref<AiEngineStatus | null>(null);
-const pipelines = ref<AiPipelineSummary[]>([]);
+const pipelines = ref<AiPipelineInfo[]>([]);
 const loading = ref(true);
+const error = ref(false);
 
-const channelColumns = [
-  { title: 'Channel ID', dataIndex: 'channelId', key: 'channelId', width: 100 },
-  { title: 'Pipeline', dataIndex: 'pipelineName', key: 'pipelineName' },
-  { title: 'Stages', dataIndex: 'stageCount', key: 'stageCount', width: 80 },
-  { title: 'Rules', dataIndex: 'ruleCount', key: 'ruleCount', width: 80 },
-  { title: '', dataIndex: 'actions', key: 'actions', width: 120 },
-];
-
-const channelData = ref<any[]>([]);
-
-onMounted(async () => {
+async function loadData() {
+  loading.value = true;
+  error.value = false;
   try {
     const [s, p] = await Promise.all([
       fetchAiEngineStatus(),
@@ -47,33 +41,31 @@ onMounted(async () => {
     ]);
     status.value = s;
     pipelines.value = p ?? [];
-    channelData.value = (p ?? []).map((pl: AiPipelineSummary) => ({
-      key: pl.channelId,
-      channelId: pl.channelId,
-      pipelineName: pl.config.name || pl.config.id,
-      stageCount: pl.config.stages?.length ?? 0,
-      ruleCount: pl.config.alarmRules?.length ?? 0,
-    }));
   } catch {
+    error.value = true;
     status.value = null;
   } finally {
     loading.value = false;
   }
-});
-
-function goToLive(channelId: number) {
-  router.push(`/ai/live/${channelId}`);
 }
+
+function navigateTo(path: string) {
+  router.push(path);
+}
+
+onMounted(loadData);
 </script>
 
 <template>
   <Page :title="$t('page.ai.overview.title')">
     <Spin :spinning="loading" style="min-height: 120px">
-      <template v-if="!loading && !status">
+      <template v-if="!loading && (error || !status)">
         <Card>
-          <div class="py-8 text-center text-muted-foreground">
-            {{ $t('common.noData') }}
-          </div>
+          <Empty :description="$t('common.noData')">
+            <Button type="primary" @click="loadData">
+              {{ $t('common.refresh') }}
+            </Button>
+          </Empty>
         </Card>
       </template>
       <template v-else-if="status">
@@ -162,52 +154,81 @@ function goToLive(channelId: number) {
             <DescriptionsItem :label="$t('page.ai.overview.inferenceActive')">
               {{ status.inference?.activeCount ?? 0 }}
             </DescriptionsItem>
-            <DescriptionsItem :label="$t('page.ai.overview.inferenceMaxConcurrent')">
+            <DescriptionsItem
+              :label="$t('page.ai.overview.inferenceMaxConcurrent')"
+            >
               {{ status.inference?.maxConcurrent ?? 0 }}
             </DescriptionsItem>
             <DescriptionsItem :label="$t('page.ai.overview.inferenceTotal')">
               {{ status.inference?.totalInferences ?? 0 }}
             </DescriptionsItem>
-            <DescriptionsItem :label="$t('page.ai.overview.inferenceAvgLatency')">
-              <Tag :color="(status.inference?.avgLatencyMs ?? 0) > 100 ? 'orange' : 'green'">
+            <DescriptionsItem
+              :label="$t('page.ai.overview.inferenceAvgLatency')"
+            >
+              <Tag
+                :color="
+                  (status.inference?.avgLatencyMs ?? 0) > 100
+                    ? 'orange'
+                    : 'green'
+                "
+              >
                 {{ (status.inference?.avgLatencyMs ?? 0).toFixed(1) }} ms
               </Tag>
             </DescriptionsItem>
           </Descriptions>
         </Card>
 
-        <!-- Active channels table -->
-        <Card class="mt-4" title="Active Channels">
-          <Table
-            v-if="channelData.length > 0"
-            :columns="channelColumns"
-            :data-source="channelData"
-            :pagination="false"
-            size="small"
-            bordered
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'stageCount'">
-                <Tag color="blue">{{ record.stageCount }}</Tag>
-              </template>
-              <template v-else-if="column.key === 'ruleCount'">
-                <Tag :color="record.ruleCount > 0 ? 'orange' : 'default'">
-                  {{ record.ruleCount }}
-                </Tag>
-              </template>
-              <template v-else-if="column.key === 'actions'">
-                <Button type="link" size="small" @click="goToLive(record.channelId)">
-                  {{ $t('page.ai.live.title') }}
-                </Button>
-              </template>
-            </template>
-          </Table>
-          <Empty
-            v-else
-            :image="Empty.PRESENTED_IMAGE_SIMPLE"
-            description="No active channels"
-          />
-        </Card>
+        <!-- Quick navigation -->
+        <Row :gutter="[16, 16]" class="mt-4">
+          <Col :xs="12" :sm="6">
+            <Card hoverable @click="navigateTo('/ai/model')">
+              <div class="text-center">
+                <div class="text-lg font-medium">
+                  {{ $t('page.ai.model.title') }}
+                </div>
+                <div class="mt-1 text-sm text-gray-500">
+                  {{ status.models?.registered ?? 0 }}
+                  {{ $t('page.ai.overview.registeredModels') }}
+                </div>
+              </div>
+            </Card>
+          </Col>
+          <Col :xs="12" :sm="6">
+            <Card hoverable @click="navigateTo('/ai/algorithm')">
+              <div class="text-center">
+                <div class="text-lg font-medium">
+                  {{ $t('page.ai.algorithm.title') }}
+                </div>
+                <div class="mt-1 text-sm text-gray-500">
+                  {{ status.algorithms?.registered ?? 0 }}
+                  {{ $t('page.ai.overview.algorithmsRegistered') }}
+                </div>
+              </div>
+            </Card>
+          </Col>
+          <Col :xs="12" :sm="6">
+            <Card hoverable @click="navigateTo('/ai/pipeline')">
+              <div class="text-center">
+                <div class="text-lg font-medium">
+                  {{ $t('page.ai.pipeline.title') }}
+                </div>
+                <div class="mt-1 text-sm text-gray-500">
+                  {{ status.pipelines?.registered ?? 0 }}
+                  {{ $t('page.ai.overview.registeredPipelines') }}
+                </div>
+              </div>
+            </Card>
+          </Col>
+          <Col :xs="12" :sm="6">
+            <Card hoverable @click="navigateTo('/ai/alarm')">
+              <div class="text-center">
+                <div class="text-lg font-medium">
+                  {{ $t('page.ai.alarm.title') }}
+                </div>
+              </div>
+            </Card>
+          </Col>
+        </Row>
       </template>
     </Spin>
   </Page>

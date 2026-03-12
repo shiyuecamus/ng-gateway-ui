@@ -531,7 +531,10 @@
       "enabled": "启用",
       "disabled": "禁用",
       "yes": "是",
-      "no": "否"
+      "no": "否",
+      "format": "格式",
+      "checksum": "校验和",
+      "preview": "预览"
     },
     "overview": {
       "title": "AI概览",
@@ -559,6 +562,7 @@
       "name": "名称",
       "version": "版本",
       "task": "任务类型",
+      "format": "格式",
       "fileSize": "文件大小(Byte)",
       "loaded": "已加载",
       "actions": {
@@ -572,6 +576,8 @@
         "name": "模型名称",
         "version": "版本",
         "task": "任务类型",
+        "labels": "标签",
+        "labelsPlaceholder": "使用逗号分隔多个标签，例如 person,car,bike",
         "file": "模型文件",
         "pickFile": "选择模型文件"
       },
@@ -607,6 +613,7 @@
       "name": "名称",
       "version": "版本",
       "moduleType": "模块类型",
+      "checksum": "校验和",
       "fileSize": "文件大小(Byte)",
       "actions": {
         "upload": "上传算法",
@@ -614,10 +621,12 @@
       },
       "upload": {
         "title": "上传算法",
+        "algorithmKey": "算法 Key",
         "name": "算法名称",
         "description": "描述",
         "version": "版本",
         "moduleType": "模块类型",
+        "sdkApiVersion": "SDK API 版本",
         "file": "WASM 文件",
         "pickFile": "选择 WASM 文件"
       },
@@ -625,19 +634,24 @@
         "title": "算法测试",
         "frameWidth": "帧宽度",
         "frameHeight": "帧高度",
+        "configJson": "配置 JSON",
         "result": "测试结果"
       },
       "messages": {
         "uploadRequired": "请填写算法名称并选择 WASM 文件",
         "uploadSuccess": "算法「{name}」上传成功",
         "deleteConfirm": "确认删除算法「{name}」？",
-        "deleteSuccess": "算法「{name}」删除成功"
+        "deleteSuccess": "算法「{name}」删除成功",
+        "testFailed": "算法测试失败",
+        "invalidJson": "配置 JSON 非法，请检查后重试",
+        "metadataHint": "当前后端安装以算法 Artifact 内嵌 manifest 为准，编辑后的元数据会随请求一并发送，用于后续后端能力对齐。"
       }
     },
     "pipeline": {
       "title": "Pipeline管理",
       "id": "Pipeline ID",
       "name": "Pipeline 名称",
+      "revision": "版本修订",
       "channelId": "通道ID",
       "stageCount": "Stage数量",
       "ruleCount": "规则数量",
@@ -734,6 +748,8 @@
           "lineEndY": "终点 Y",
           "direction": "方向",
           "minScore": "最小分数",
+          "dwellTimeoutMs": "驻留超时(毫秒)",
+          "cooldownMs": "冷却时间(毫秒)",
           "moduleId": "模块ID",
           "configJson": "配置(JSON)",
           "configEntries": "配置项"
@@ -807,12 +823,17 @@
           "zoneIntrusion": "区域入侵",
           "lineCrossing": "越线",
           "anomalyDetected": "异常检测",
+          "zoneDwell": "区域驻留",
           "customWasm": "自定义 WASM"
         }
       },
       "messages": {
         "deleteConfirm": "确认删除通道 {channelId} 的 Pipeline「{name}」？",
-        "deleteSuccess": "Pipeline「{name}」已删除"
+        "deleteSuccess": "Pipeline「{name}」已删除",
+        "saveBeforeValidate": "请先保存 Pipeline 再执行校验",
+        "keyRequired": "请输入 Pipeline Key",
+        "nameRequired": "请输入 Pipeline 名称",
+        "saveFailed": "Pipeline 保存失败"
       }
     },
     "live": {
@@ -820,11 +841,51 @@
       "status": {
         "disconnected": "未连接",
         "connected": "实时预览已连接",
-        "error": "连接错误"
+        "error": "连接错误",
+        "connecting": "连接中...",
+        "reconnecting": "重连中..."
       },
       "actions": {
         "startPreview": "开始预览",
-        "stop": "停止"
+        "stop": "停止",
+        "pause": "暂停",
+        "resume": "恢复",
+        "snapshot": "抓拍",
+        "fullscreen": "全屏",
+        "layers": "图层",
+        "drawRoi": "绘制 ROI",
+        "exitRoiEdit": "退出 ROI 编辑",
+        "manageRois": "管理 ROI",
+        "clearAll": "清空全部",
+        "set": "设置"
+      },
+      "messages": {
+        "noVideoData": "当前没有可抓拍的视频数据",
+        "snapshotSaved": "抓拍已保存",
+        "bitrateUpdated": "码率已设置为 {value} kbps",
+        "resolutionUpdated": "分辨率已设置为 {value}"
+      },
+      "panels": {
+        "layers": "叠加图层",
+        "settings": "流设置",
+        "stats": "流统计"
+      },
+      "labels": {
+        "bboxLabels": "框 / 标签",
+        "roiRegions": "ROI 区域",
+        "trajectories": "轨迹",
+        "heatmap": "热力图",
+        "roiCount": "ROI {count}",
+        "bitrateKbps": "码率 (kbps)",
+        "resolution": "分辨率",
+        "videoFps": "视频 FPS",
+        "bitrate": "码率",
+        "rtt": "往返时延",
+        "packetLoss": "丢包",
+        "aiFps": "AI FPS",
+        "aiLatency": "AI 延迟",
+        "detections": "检测数",
+        "queueDepth": "队列深度"
       }
     }
   },

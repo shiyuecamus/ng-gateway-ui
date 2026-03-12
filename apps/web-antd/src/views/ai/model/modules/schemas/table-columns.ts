@@ -4,21 +4,27 @@ import type { AiModelInfo } from '@vben/types';
 import type { OnActionClickFn } from '#/adapter/vxe-table';
 
 import { $t } from '@vben/locales';
+import { formatBytes } from '@vben/utils';
 
 export function useColumns(
   onActionClick: OnActionClickFn<AiModelInfo>,
 ): VxeTableGridOptions<AiModelInfo>['columns'] {
   return [
-    { field: 'id', title: 'ID', minWidth: 180 },
     { field: 'name', title: $t('page.ai.model.name'), minWidth: 160 },
-    { field: 'version', title: $t('page.ai.model.version'), width: 120 },
-    { field: 'task', title: $t('page.ai.model.task'), minWidth: 160 },
-    { field: 'fileSize', title: $t('page.ai.model.fileSize'), width: 150 },
+    { field: 'version', title: $t('page.ai.model.version'), width: 100 },
+    { field: 'task', title: $t('page.ai.model.task'), width: 140 },
+    { field: 'format', title: $t('page.ai.model.format'), width: 100 },
     {
-      field: 'loaded',
-      title: $t('page.ai.model.loaded'),
+      field: 'size',
+      title: $t('page.ai.model.fileSize'),
       width: 120,
-      slots: { default: 'loaded' },
+      formatter: ({ row }) => formatBytes(row.size as number),
+    },
+    {
+      field: 'createdAt',
+      formatter: 'formatDateTime',
+      title: $t('common.baseInfo.createdAt'),
+      width: 170,
     },
     {
       align: 'right',

@@ -1,5 +1,14 @@
 <script lang="ts" setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import type { RoiRect } from '#/shared/composables/use-ai-webrtc';
+
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 import { useRoute } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
@@ -21,11 +30,18 @@ import {
   Tooltip,
 } from 'ant-design-vue';
 
+import {
+  fetchAiPipeline,
+  updateAiPipeline,
+} from '#/api/core/ai';
 import { useAiWebRtc } from '#/shared/composables/use-ai-webrtc';
-import type { RoiRect } from '#/shared/composables/use-ai-webrtc';
 
 const route = useRoute();
 const channelId = computed(() => Number(route.params.channelId));
+const pipelineId = computed(() => {
+  const q = route.query.pipelineId;
+  return q ? Number(q) : null;
+});
 
 const videoRef = ref<HTMLVideoElement | null>(null);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -52,7 +68,7 @@ const {
 // ── ROI interactive editing state ─────────────────────────────────
 const roiEditMode = ref(false);
 const roiDrawing = ref(false);
-const roiStartPos = ref<{ x: number; y: number } | null>(null);
+const roiStartPos = ref<null | { x: number; y: number }>(null);
 
 function toggleRoiEditMode() {
   roiEditMode.value = !roiEditMode.value;
@@ -62,7 +78,7 @@ function toggleRoiEditMode() {
   }
 }
 
-function normalizeMousePos(e: MouseEvent): { nx: number; ny: number } | null {
+function normalizeMousePos(e: MouseEvent): null | { nx: number; ny: number } {
   if (!canvasRef.value) return null;
   const rect = canvasRef.value.getBoundingClientRect();
   return {
@@ -113,6 +129,63 @@ function clearAllRois() {
   roiRects.value = [];
 }
 
+// ── ROI persistence (sync to Pipeline roi_regions) ────────────────
+const roiSaving = ref(false);
+const roiDirty = ref(false);
+
+watch(roiRects, () => { roiDirty.value = true; }, { deep: true });
+
+async function loadRoiFromPipeline() {
+  if (!pipelineId.value) return;
+  try {
+    const pipeline = await fetchAiPipeline(pipelineId.value);
+    const regions = pipeline?.roiRegions ?? [];
+    roiRects.value = regions.map((r: any, i: number) => ({
+      id: r.id ?? `roi-loaded-${i}`,
+      xMin: r.x_min ?? r.xMin ?? 0,
+      yMin: r.y_min ?? r.yMin ?? 0,
+      xMax: r.x_max ?? r.xMax ?? 1,
+      yMax: r.y_max ?? r.yMax ?? 1,
+      label: r.label ?? `ROI ${i + 1}`,
+    }));
+    roiDirty.value = false;
+  } catch (e) {
+    console.warn('Failed to load ROI from pipeline:', e);
+  }
+}
+
+async function saveRoiToPipeline() {
+  if (!pipelineId.value) {
+    message.warning($t('page.ai.live.messages.noPipelineBound'));
+    return;
+  }
+  roiSaving.value = true;
+  try {
+    const pipeline = await fetchAiPipeline(pipelineId.value);
+    if (!pipeline) throw new Error('Pipeline not found');
+    await updateAiPipeline({
+      ...pipeline,
+      roiRegions: roiRects.value.map((r) => ({
+        id: r.id,
+        x_min: r.xMin,
+        y_min: r.yMin,
+        x_max: r.xMax,
+        y_max: r.yMax,
+        label: r.label,
+      })),
+    });
+    roiDirty.value = false;
+    message.success($t('page.ai.live.messages.roiSaved'));
+  } catch (e) {
+    message.error($t('page.ai.live.messages.roiSaveFailed'));
+    console.error('Failed to save ROI:', e);
+  } finally {
+    roiSaving.value = false;
+  }
+}
+
+onMounted(() => { loadRoiFromPipeline(); });
+
 const showStats = ref(true);
 const bitrateInput = ref(2000);
 const resolutionPreset = ref('720p');
@@ -132,7 +205,7 @@ async function startPreview() {
 async function handleSnapshot() {
   const blob = await captureSnapshot();
   if (!blob) {
-    message.warning('No video data to capture');
+    message.warning($t('page.ai.live.messages.noVideoData'));
     return;
   }
   const url = URL.createObjectURL(blob);
@@ -141,25 +214,31 @@ async function handleSnapshot() {
   a.download = `ai-live-ch${channelId.value}-${Date.now()}.jpg`;
   a.click();
   URL.revokeObjectURL(url);
-  message.success('Snapshot saved');
+  message.success($t('page.ai.live.messages.snapshotSaved'));
 }
 
 function handleSetBitrate() {
   setBitrate(bitrateInput.value);
-  message.success(`Bitrate set to ${bitrateInput.value} kbps`);
+  message.success(
+    $t('page.ai.live.messages.bitrateUpdated', { value: bitrateInput.value }),
+  );
 }
 
 function handleSetResolution() {
   const preset = resolutionPresets[resolutionPreset.value];
   if (preset) {
     setResolution(preset[0], preset[1]);
-    message.success(`Resolution set to ${resolutionPreset.value}`);
+    message.success(
+      $t('page.ai.live.messages.resolutionUpdated', {
+        value: resolutionPreset.value,
+      }),
+    );
   }
 }
 
 function formatBitrate(bps: number): string {
   if (bps >= 1_000_000) return `${(bps / 1_000_000).toFixed(1)} Mbps`;
-  if (bps >= 1_000) return `${(bps / 1_000).toFixed(0)} kbps`;
+  if (bps >= 1000) return `${(bps / 1000).toFixed(0)} kbps`;
   return `${bps.toFixed(0)} bps`;
 }
 
@@ -176,10 +255,11 @@ function syncCanvasSize() {
   canvasRef.value.style.height = `${rect.height}px`;
 }
 
+let resizeObserver: null | ResizeObserver = null;
+
 onMounted(() => {
-  const observer = new ResizeObserver(syncCanvasSize);
-  if (videoRef.value) observer.observe(videoRef.value);
-  return () => observer.disconnect();
+  resizeObserver = new ResizeObserver(syncCanvasSize);
+  if (videoRef.value) resizeObserver.observe(videoRef.value);
 });
 
 watch(
@@ -193,6 +273,8 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
   disconnect();
 });
 </script>
@@ -215,13 +297,17 @@ onBeforeUnmount(() => {
             style="min-height: 400px"
             @loadedmetadata="syncCanvasSize"
             @resize="syncCanvasSize"
-          />
+          ></video>
           <canvas
             ref="canvasRef"
-            :class="roiEditMode ? 'absolute left-0 top-0 cursor-crosshair' : 'pointer-events-none absolute left-0 top-0'"
+            :class="
+              roiEditMode
+                ? 'absolute left-0 top-0 cursor-crosshair'
+                : 'pointer-events-none absolute left-0 top-0'
+            "
             @mousedown="onCanvasMouseDown"
             @mouseup="onCanvasMouseUp"
-          />
+          ></canvas>
           <Spin
             v-if="state === 'connecting' || state === 'reconnecting'"
             class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -235,10 +321,10 @@ onBeforeUnmount(() => {
               {{ $t('page.ai.live.status.connected') }}
             </Tag>
             <Tag v-else-if="state === 'connecting'" color="blue">
-              Connecting...
+              {{ $t('page.ai.live.status.connecting') }}
             </Tag>
             <Tag v-else-if="state === 'reconnecting'" color="orange">
-              Reconnecting...
+              {{ $t('page.ai.live.status.reconnecting') }}
             </Tag>
             <Tag v-else-if="state === 'error'" color="red">
               {{ lastError || $t('page.ai.live.status.error') }}
@@ -256,34 +342,56 @@ onBeforeUnmount(() => {
               {{ $t('page.ai.live.actions.startPreview') }}
             </Button>
             <template v-if="state === 'connected'">
-              <Tooltip :title="paused ? 'Resume' : 'Pause'">
+              <Tooltip
+                :title="
+                  paused
+                    ? $t('page.ai.live.actions.resume')
+                    : $t('page.ai.live.actions.pause')
+                "
+              >
                 <Button @click="paused ? resume() : pause()">
                   {{ paused ? '▶' : '⏸' }}
                 </Button>
               </Tooltip>
-              <Tooltip title="Snapshot">
+              <Tooltip :title="$t('page.ai.live.actions.snapshot')">
                 <Button @click="handleSnapshot">📸</Button>
               </Tooltip>
-              <Tooltip title="Fullscreen">
+              <Tooltip :title="$t('page.ai.live.actions.fullscreen')">
                 <Button @click="toggleFullscreen">⛶</Button>
               </Tooltip>
               <!-- Layer manager -->
               <Popover trigger="click" placement="bottomRight">
                 <template #content>
                   <div class="space-y-2" style="width: 160px">
-                    <div class="mb-1 text-xs font-medium text-gray-600">Overlay Layers</div>
-                    <Checkbox v-model:checked="layers.bbox">BBox / Labels</Checkbox>
-                    <Checkbox v-model:checked="layers.roi">ROI Regions</Checkbox>
-                    <Checkbox v-model:checked="layers.trajectory">Trajectories</Checkbox>
-                    <Checkbox v-model:checked="layers.heatmap">Heatmap</Checkbox>
+                    <div class="mb-1 text-xs font-medium text-gray-600">
+                      {{ $t('page.ai.live.panels.layers') }}
+                    </div>
+                    <Checkbox v-model:checked="layers.bbox">
+                      {{ $t('page.ai.live.labels.bboxLabels') }}
+                    </Checkbox>
+                    <Checkbox v-model:checked="layers.roi">
+                      {{ $t('page.ai.live.labels.roiRegions') }}
+                    </Checkbox>
+                    <Checkbox v-model:checked="layers.trajectory">
+                      {{ $t('page.ai.live.labels.trajectories') }}
+                    </Checkbox>
+                    <Checkbox v-model:checked="layers.heatmap">
+                      {{ $t('page.ai.live.labels.heatmap') }}
+                    </Checkbox>
                   </div>
                 </template>
-                <Tooltip title="Layers">
+                <Tooltip :title="$t('page.ai.live.actions.layers')">
                   <Button>◫</Button>
                 </Tooltip>
               </Popover>
               <!-- ROI editor toggle -->
-              <Tooltip :title="roiEditMode ? 'Exit ROI edit' : 'Draw ROI'">
+              <Tooltip
+                :title="
+                  roiEditMode
+                    ? $t('page.ai.live.actions.exitRoiEdit')
+                    : $t('page.ai.live.actions.drawRoi')
+                "
+              >
                 <Button
                   :type="roiEditMode ? 'primary' : 'default'"
                   @click="toggleRoiEditMode"
@@ -292,24 +400,61 @@ onBeforeUnmount(() => {
                 </Button>
               </Tooltip>
               <!-- ROI management popover (when ROIs exist) -->
-              <Popover v-if="roiRects.length > 0" trigger="click" placement="bottomRight">
+              <Popover
+                v-if="roiRects.length > 0"
+                trigger="click"
+                placement="bottomRight"
+              >
                 <template #content>
                   <div style="width: 220px">
                     <div class="mb-2 flex items-center justify-between">
                       <span class="text-xs font-medium text-gray-600">
-                        ROI Regions ({{ roiRects.length }})
+                        {{ $t('page.ai.live.labels.roiRegions') }}
+                        ({{ roiRects.length }})
                       </span>
-                      <Button size="small" danger @click="clearAllRois">Clear All</Button>
+                      <Button size="small" danger @click="clearAllRois">
+                        {{ $t('page.ai.live.actions.clearAll') }}
+                      </Button>
                     </div>
-                    <div v-for="roi in roiRects" :key="roi.id" class="mb-1 flex items-center justify-between rounded bg-gray-50 px-2 py-1">
+                    <div
+                      v-for="roi in roiRects"
+                      :key="roi.id"
+                      class="mb-1 flex items-center justify-between rounded bg-gray-50 px-2 py-1"
+                    >
                       <span class="text-xs">{{ roi.label }}</span>
-                      <Button size="small" type="text" danger @click="removeRoi(roi.id)">✕</Button>
+                      <Button
+                        size="small"
+                        type="text"
+                        danger
+                        @click="removeRoi(roi.id)"
+                      >
+                        ✕
+                      </Button>
                     </div>
+                    <Button
+                      v-if="pipelineId"
+                      type="primary"
+                      size="small"
+                      block
+                      :loading="roiSaving"
+                      :disabled="!roiDirty"
+                      class="mt-2"
+                      @click="saveRoiToPipeline"
+                    >
+                      {{ $t('page.ai.live.actions.saveRoi') }}
+                    </Button>
                   </div>
                 </template>
-                <Tooltip title="Manage ROIs">
+                <Tooltip :title="$t('page.ai.live.actions.manageRois')">
                   <Button>
-                    <span class="text-xs">ROI {{ roiRects.length }}</span>
+                    <span class="text-xs">
+                      {{
+                        $t('page.ai.live.labels.roiCount', {
+                          count: roiRects.length,
+                        })
+                      }}
+                      <span v-if="roiDirty" class="text-orange-500">*</span>
+                    </span>
                   </Button>
                 </Tooltip>
               </Popover>
@@ -318,17 +463,41 @@ onBeforeUnmount(() => {
                 <template #content>
                   <div class="space-y-3" style="width: 200px">
                     <div>
-                      <div class="mb-1 text-xs text-gray-500">Bitrate (kbps)</div>
+                      <div class="mb-1 text-xs text-gray-500">
+                        {{ $t('page.ai.live.labels.bitrateKbps') }}
+                      </div>
                       <Space>
-                        <InputNumber v-model:value="bitrateInput" :min="100" :max="10000" :step="100" size="small" style="width: 100px" />
-                        <Button size="small" @click="handleSetBitrate">Set</Button>
+                        <InputNumber
+                          v-model:value="bitrateInput"
+                          :min="100"
+                          :max="10000"
+                          :step="100"
+                          size="small"
+                          style="width: 100px"
+                        />
+                        <Button size="small" @click="handleSetBitrate">
+                          {{ $t('page.ai.live.actions.set') }}
+                        </Button>
                       </Space>
                     </div>
                     <div>
-                      <div class="mb-1 text-xs text-gray-500">Resolution</div>
+                      <div class="mb-1 text-xs text-gray-500">
+                        {{ $t('page.ai.live.labels.resolution') }}
+                      </div>
                       <Space>
-                        <Select v-model:value="resolutionPreset" :options="[{ label: '480p', value: '480p' }, { label: '720p', value: '720p' }, { label: '1080p', value: '1080p' }]" size="small" style="width: 80px" />
-                        <Button size="small" @click="handleSetResolution">Set</Button>
+                        <Select
+                          v-model:value="resolutionPreset"
+                          :options="[
+                            { label: '480p', value: '480p' },
+                            { label: '720p', value: '720p' },
+                            { label: '1080p', value: '1080p' },
+                          ]"
+                          size="small"
+                          style="width: 80px"
+                        />
+                        <Button size="small" @click="handleSetResolution">
+                          {{ $t('page.ai.live.actions.set') }}
+                        </Button>
                       </Space>
                     </div>
                   </div>
@@ -347,31 +516,39 @@ onBeforeUnmount(() => {
       <Card
         v-if="state === 'connected' && showStats"
         size="small"
-        title="Stream Statistics"
+        :title="$t('page.ai.live.panels.stats')"
       >
         <Descriptions :column="4" bordered size="small">
-          <DescriptionsItem label="Video FPS">
+          <DescriptionsItem :label="$t('page.ai.live.labels.videoFps')">
             {{ streamStats?.videoFps?.toFixed(0) ?? '—' }}
           </DescriptionsItem>
-          <DescriptionsItem label="Bitrate">
+          <DescriptionsItem :label="$t('page.ai.live.labels.bitrate')">
             {{ streamStats ? formatBitrate(streamStats.videoBitrate) : '—' }}
           </DescriptionsItem>
-          <DescriptionsItem label="RTT">
+          <DescriptionsItem :label="$t('page.ai.live.labels.rtt')">
             {{ streamStats ? formatRtt(streamStats.roundTripTime) : '—' }}
           </DescriptionsItem>
-          <DescriptionsItem label="Packet Loss">
-            {{ streamStats ? `${streamStats.packetsLost} / ${streamStats.packetsReceived}` : '—' }}
+          <DescriptionsItem :label="$t('page.ai.live.labels.packetLoss')">
+            {{
+              streamStats
+                ? `${streamStats.packetsLost} / ${streamStats.packetsReceived}`
+                : '—'
+            }}
           </DescriptionsItem>
-          <DescriptionsItem label="AI FPS">
+          <DescriptionsItem :label="$t('page.ai.live.labels.aiFps')">
             {{ latestMetadata?.stats?.fps_ai ?? '—' }}
           </DescriptionsItem>
-          <DescriptionsItem label="AI Latency">
-            {{ latestMetadata?.lat_ms ? `${latestMetadata.lat_ms.toFixed(1)} ms` : '—' }}
+          <DescriptionsItem :label="$t('page.ai.live.labels.aiLatency')">
+            {{
+              latestMetadata?.lat_ms
+                ? `${latestMetadata.lat_ms.toFixed(1)} ms`
+                : '—'
+            }}
           </DescriptionsItem>
-          <DescriptionsItem label="Detections">
+          <DescriptionsItem :label="$t('page.ai.live.labels.detections')">
             {{ latestMetadata?.det?.length ?? 0 }}
           </DescriptionsItem>
-          <DescriptionsItem label="Queue Depth">
+          <DescriptionsItem :label="$t('page.ai.live.labels.queueDepth')">
             {{ latestMetadata?.stats?.q ?? '—' }}
           </DescriptionsItem>
         </Descriptions>
