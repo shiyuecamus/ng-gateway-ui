@@ -32,6 +32,7 @@ export function useChannelColumns(
   return [
     {
       field: 'name',
+      sortable: true,
       title: $t('page.southward.channel.name'),
     },
     {
@@ -131,6 +132,7 @@ export function useDeviceColumns(
   return [
     {
       field: 'deviceName',
+      sortable: true,
       title: $t('page.southward.device.name'),
       type: 'checkbox',
     },
@@ -181,6 +183,7 @@ export function usePointColumns(
   return [
     {
       field: 'name',
+      sortable: true,
       title: $t('page.southward.point.name'),
       type: 'checkbox',
     },
@@ -240,6 +243,7 @@ export function useActionColumns(
   return [
     {
       field: 'name',
+      sortable: true,
       title: $t('page.southward.action.name'),
       type: 'checkbox',
     },

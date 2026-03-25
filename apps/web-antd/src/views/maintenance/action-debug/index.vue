@@ -89,7 +89,9 @@ async function applyAction(info: ActionInfo | null) {
 }
 
 async function loadChannels() {
-  const resp = await handleRequest(() => fetchChannelList());
+  const resp = await handleRequest(() =>
+    fetchChannelList({ sortBy: 'name', sortOrder: 'asc' }),
+  );
   if (!resp) {
     return;
   }
@@ -102,7 +104,10 @@ async function loadDevices() {
     return;
   }
   const resp = await handleRequest(() =>
-    getSubDevicesById(selectedChannelId.value!),
+    getSubDevicesById(selectedChannelId.value!, {
+      sortBy: 'deviceName',
+      sortOrder: 'asc',
+    }),
   );
   if (!resp) {
     return;
@@ -117,7 +122,10 @@ async function loadActions() {
     return;
   }
   const resp = await handleRequest(() =>
-    fetchActionsByDevice(selectedDeviceId.value!),
+    fetchActionsByDevice(selectedDeviceId.value!, {
+      sortBy: 'name',
+      sortOrder: 'asc',
+    }),
   );
   if (!resp) {
     return;

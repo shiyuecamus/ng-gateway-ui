@@ -68,16 +68,22 @@ const gridOptions: VxeGridProps<ActionInfo> = {
       list: 'records',
     },
     ajax: {
-      query: async ({ page }, formValues) => {
+      query: async ({ page, sort }, formValues) => {
         const { deviceId } = modalApi.getData<{ deviceId: IdType }>();
         return await fetchActionPage({
           page: page.currentPage,
           pageSize: page.pageSize,
           deviceId,
+          sortBy: sort.field || undefined,
+          sortOrder: sort.order || undefined,
           ...formValues,
         });
       },
     },
+    sort: true,
+  },
+  sortConfig: {
+    remote: true,
   },
   toolbarConfig: {
     custom: true,

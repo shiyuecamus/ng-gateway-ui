@@ -55,7 +55,7 @@ const rowMetas = ref<MonitorRowMeta[]>([]);
 const rowMetaIdSet = new Set<string>();
 
 const gridOptions: VxeGridProps<MonitorRow> = {
-  height: 'auto', // 如果设置为 auto，则必须确保存在父节点且不允许存在相邻元素，否则会出现高度闪动问题
+  height: 'auto',
   keepSource: true,
   pagerConfig: {},
   toolbarConfig: {
@@ -113,6 +113,10 @@ const statusColor = computed(() => {
   }
 });
 
+function filterSelectOption(input: string, option?: { label?: string }) {
+  return option?.label?.toLowerCase().includes(input.toLowerCase()) ?? false;
+}
+
 function buildRowMetasFromSnapshots(): MonitorRowMeta[] {
   const metas: MonitorRowMeta[] = [];
 
@@ -122,7 +126,6 @@ function buildRowMetasFromSnapshots(): MonitorRowMeta[] {
     sourceType: MonitorRow['sourceType'],
     scope?: MonitorRow['scope'],
   ) => {
-    // Include scope in id so attributes with same key in different scopes won't collide.
     const scopePart = scope ? `-${scope}` : '';
     metas.push({
       id: `${snap.deviceId}-${sourceType}${scopePart}-${key}`,
@@ -218,7 +221,6 @@ function updateGridData() {
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
 
-  // Only hydrate current page values to keep refresh cost O(pageSize).
   const pageRows = allRows
     .slice(startIndex, endIndex)
     .map((row) => hydrateRow(row));
@@ -237,7 +239,6 @@ function updateGridData() {
 watch(
   keyword,
   (newKeyword, oldKeyword) => {
-    // 搜索关键字变化时重置到第一页
     if (newKeyword !== oldKeyword) pager.value.currentPage = 1;
     updateGridData();
   },
@@ -247,7 +248,6 @@ watch(
 watch(
   snapshots,
   () => {
-    // Build metas on first snapshot after subscribe (or after device switch).
     if (rowMetas.value.length === 0 && snapshots.value.size > 0) {
       rowMetas.value = buildRowMetasFromSnapshots();
       rebuildRowMetaIdSet();
@@ -255,7 +255,6 @@ watch(
     updateGridData();
   },
   {
-    // 在本次 DOM 更新之后再刷新表格，避免和 VXE 内部初始化时序竞争
     flush: 'post',
   },
 );
@@ -298,7 +297,7 @@ watch(
 
 async function loadChannels() {
   await handleRequest(
-    () => fetchChannelList(),
+    () => fetchChannelList({ sortBy: 'name', sortOrder: 'asc' }),
     (resp) => {
       channelOptions.value = resp ?? [];
     },
@@ -311,7 +310,11 @@ async function loadDevices() {
     return;
   }
   await handleRequest(
-    () => getSubDevicesById(selectedChannelId.value!),
+    () =>
+      getSubDevicesById(selectedChannelId.value!, {
+        sortBy: 'deviceName',
+        sortOrder: 'asc',
+      }),
     (resp) => {
       deviceOptions.value = resp ?? [];
     },
@@ -368,6 +371,8 @@ onMounted(async () => {
           <Select
             v-model:value="selectedChannelId"
             :allow-clear="true"
+            :show-search="true"
+            :filter-option="filterSelectOption"
             :options="
               channelOptions.map((c) => ({
                 label: c.name,
@@ -381,6 +386,8 @@ onMounted(async () => {
             v-model:value="selectedDeviceId"
             :allow-clear="true"
             :disabled="!selectedChannelId"
+            :show-search="true"
+            :filter-option="filterSelectOption"
             :options="
               deviceOptions.map((d) => ({
                 label: d.deviceName,

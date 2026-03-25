@@ -87,16 +87,22 @@ const gridOptions: VxeGridProps<DeviceInfo> = {
       list: 'records',
     },
     ajax: {
-      query: async ({ page }, formValues) => {
+      query: async ({ page, sort }, formValues) => {
         const { channelId } = modalApi.getData<{ channelId: IdType }>();
         return await fetchDevicePage({
           page: page.currentPage,
           pageSize: page.pageSize,
           channelId,
+          sortBy: sort.field || undefined,
+          sortOrder: sort.order || undefined,
           ...formValues,
         });
       },
     },
+    sort: true,
+  },
+  sortConfig: {
+    remote: true,
   },
   toolbarConfig: {
     custom: true,

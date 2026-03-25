@@ -4,6 +4,7 @@ import type {
   ActionInfo,
   CommonPageRequest,
   CommonPageResponse,
+  CommonSortRequest,
   IdType,
 } from '@vben/types';
 
@@ -19,7 +20,7 @@ export namespace ActionApi {
   export const batchDelete = `${base}/batch-delete`;
   export const clear = `${base}/clear`;
 
-  export interface ActionPageParams extends CommonPageRequest {
+  export interface ActionPageParams extends CommonPageRequest, CommonSortRequest {
     deviceId?: IdType;
     name?: string;
     command?: string;
@@ -52,8 +53,13 @@ export async function debugAction(id: IdType, data: ActionDebugRequest) {
   return requestClient.post<ActionDebugResponse>(ActionApi.debug(id), data);
 }
 
-export async function fetchActionsByDevice(deviceId: IdType) {
-  return requestClient.get<ActionInfo[]>(ActionApi.byDevice(deviceId));
+export async function fetchActionsByDevice(
+  deviceId: IdType,
+  params?: CommonSortRequest,
+) {
+  return requestClient.get<ActionInfo[]>(ActionApi.byDevice(deviceId), {
+    params,
+  });
 }
 
 export async function batchDeleteAction(ids: IdType[]) {

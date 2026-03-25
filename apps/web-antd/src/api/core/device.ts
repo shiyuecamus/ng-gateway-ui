@@ -2,6 +2,7 @@ import type {
   CommitResult,
   CommonPageRequest,
   CommonPageResponse,
+  CommonSortRequest,
   CommonStatus,
   CommonTimeRangeRequest,
   DeviceInfo,
@@ -32,7 +33,8 @@ export namespace DeviceApi {
   /** device page params */
   export interface DevicePageParams
     extends CommonPageRequest,
-      CommonTimeRangeRequest {
+      CommonTimeRangeRequest,
+      CommonSortRequest {
     deviceName?: string;
     deviceType?: string;
     channelId?: IdType;

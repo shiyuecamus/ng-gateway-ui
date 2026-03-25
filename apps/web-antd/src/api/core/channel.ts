@@ -4,6 +4,7 @@ import type {
   CommitResult,
   CommonPageRequest,
   CommonPageResponse,
+  CommonSortRequest,
   CommonStatus,
   CommonTimeRangeRequest,
   DeviceInfo,
@@ -34,7 +35,9 @@ export namespace ChannelApi {
 
   /** channel page params */
   export interface ChannelPageParams
-    extends CommonPageRequest, CommonTimeRangeRequest {
+    extends CommonPageRequest,
+      CommonTimeRangeRequest,
+      CommonSortRequest {
     name?: string;
     status?: (typeof CommonStatus)[keyof typeof CommonStatus];
   }
@@ -69,8 +72,8 @@ export async function fetchChannelPage(params: ChannelApi.ChannelPageParams) {
 /**
  * Fetch all channels (for selectors / monitoring).
  */
-export async function fetchChannelList() {
-  return requestClient.get<ChannelInfo[]>(ChannelApi.list);
+export async function fetchChannelList(params?: CommonSortRequest) {
+  return requestClient.get<ChannelInfo[]>(ChannelApi.list, { params });
 }
 
 /**
@@ -130,8 +133,11 @@ export async function changeChannelStatus(
  * @param id - Channel ID
  * @returns Promise with sub devices response
  */
-export async function getSubDevicesById(id: IdType) {
-  return requestClient.get<DeviceInfo[]>(ChannelApi.subDevices(id));
+export async function getSubDevicesById(
+  id: IdType,
+  params?: CommonSortRequest,
+) {
+  return requestClient.get<DeviceInfo[]>(ChannelApi.subDevices(id), { params });
 }
 
 /**

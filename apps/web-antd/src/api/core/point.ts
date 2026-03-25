@@ -1,6 +1,7 @@
 import type {
   CommonPageRequest,
   CommonPageResponse,
+  CommonSortRequest,
   IdType,
   PointInfo,
 } from '@vben/types';
@@ -15,7 +16,7 @@ export namespace PointApi {
   export const batchDelete = `${base}/batch-delete`;
   export const clear = `${base}/clear`;
 
-  export interface PointPageParams extends CommonPageRequest {
+  export interface PointPageParams extends CommonPageRequest, CommonSortRequest {
     deviceId?: IdType;
     name?: string;
     key?: string;

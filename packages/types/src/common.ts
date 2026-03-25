@@ -15,8 +15,8 @@ interface CommonTimeRangeRequest {
 }
 
 interface CommonSortRequest {
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 interface CommonPageResponse<T> {
