@@ -21,6 +21,14 @@ export interface MonitorUpdateHint {
   keys: string[];
 }
 
+/** Per-point value envelope from the server. */
+export interface MonitorPointEntry {
+  /** The raw typed value. */
+  v: unknown;
+  /** Per-point source timestamp (RFC3339) when available. */
+  ts?: string;
+}
+
 /**
  * Single row in realtime monitor table.
  */
@@ -40,6 +48,7 @@ export interface MonitorRow {
    * Used to avoid ambiguity when same key exists in multiple attribute scopes.
    */
   scope?: 'client' | 'server' | 'shared';
+  /** Per-point source timestamp when available, otherwise device-level lastUpdate. */
   lastUpdate: string;
 }
 
@@ -50,14 +59,20 @@ export interface MonitorDeviceSnapshot {
   deviceId: number;
   deviceName: string;
   channelId: number;
-  telemetry: Record<string, unknown>;
-  clientAttributes: Record<string, unknown>;
-  sharedAttributes: Record<string, unknown>;
-  serverAttributes: Record<string, unknown>;
+  telemetry: Record<string, MonitorPointEntry>;
+  clientAttributes: Record<string, MonitorPointEntry>;
+  sharedAttributes: Record<string, MonitorPointEntry>;
+  serverAttributes: Record<string, MonitorPointEntry>;
   lastUpdate: string;
 }
 
 export type MonitorConnectionStatus = GatewayWsConnectionStatus;
+
+export interface MonitorDeviceMeta {
+  channelId: number;
+  deviceName: string;
+  id: number;
+}
 
 // ---- WS protocol models for `/api/ws/monitor` ----
 
@@ -76,31 +91,27 @@ export type MonitorClientMessage =
 export type MonitorSnapshotMessage = BaseServerMessage & {
   type: 'snapshot';
   attributes: {
-    client: Record<string, unknown>;
-    server: Record<string, unknown>;
-    shared: Record<string, unknown>;
+    client: Record<string, MonitorPointEntry>;
+    server: Record<string, MonitorPointEntry>;
+    shared: Record<string, MonitorPointEntry>;
   };
-  device: {
-    channelId: number;
-    deviceName: string;
-    id: number;
-  };
+  meta: MonitorDeviceMeta;
   lastUpdate: string;
-  telemetry: Record<string, unknown>;
+  telemetry: Record<string, MonitorPointEntry>;
 };
 
 export type MonitorUpdateMessage =
   | (BaseServerMessage & {
       type: 'update';
       dataType: 'telemetry';
-      deviceId: number;
+      meta: MonitorDeviceMeta;
       timestamp: string;
-      values: Record<string, unknown>;
+      values: Record<string, MonitorPointEntry>;
     })
   | (BaseServerMessage & {
       type: 'update';
       dataType: 'attributes';
-      deviceId: number;
+      meta: MonitorDeviceMeta;
       /**
        * Optional scope hint. Some servers may emit a scope string, but the
        * client still maintains all three attribute maps.
@@ -108,9 +119,9 @@ export type MonitorUpdateMessage =
       scope?: MonitorAttributeScope;
       timestamp: string;
       values: Partial<{
-        client: Record<string, unknown>;
-        server: Record<string, unknown>;
-        shared: Record<string, unknown>;
+        client: Record<string, MonitorPointEntry>;
+        server: Record<string, MonitorPointEntry>;
+        shared: Record<string, MonitorPointEntry>;
       }>;
     });
 

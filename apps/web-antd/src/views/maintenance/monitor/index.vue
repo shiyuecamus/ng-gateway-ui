@@ -168,25 +168,25 @@ function hydrateRow(meta: MonitorRowMeta): MonitorRow {
     };
   }
 
-  let value: unknown;
+  let entry: { v?: unknown; ts?: string } | undefined;
   if (meta.sourceType === 'telemetry') {
-    value = snap.telemetry?.[meta.key];
+    entry = snap.telemetry?.[meta.key];
   } else {
     switch (meta.scope) {
       case 'client': {
-        value = snap.clientAttributes?.[meta.key];
+        entry = snap.clientAttributes?.[meta.key];
         break;
       }
       case 'server': {
-        value = snap.serverAttributes?.[meta.key];
+        entry = snap.serverAttributes?.[meta.key];
         break;
       }
       case 'shared': {
-        value = snap.sharedAttributes?.[meta.key];
+        entry = snap.sharedAttributes?.[meta.key];
         break;
       }
       default: {
-        value =
+        entry =
           snap.clientAttributes?.[meta.key] ??
           snap.sharedAttributes?.[meta.key] ??
           snap.serverAttributes?.[meta.key];
@@ -196,8 +196,8 @@ function hydrateRow(meta: MonitorRowMeta): MonitorRow {
 
   return {
     ...meta,
-    value,
-    lastUpdate: snap.lastUpdate,
+    value: entry?.v,
+    lastUpdate: entry?.ts ?? snap.lastUpdate,
   };
 }
 

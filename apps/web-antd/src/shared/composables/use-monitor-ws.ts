@@ -1,5 +1,6 @@
 import type {
   MonitorClientMessage,
+  MonitorDeviceMeta,
   MonitorDeviceSnapshot,
   MonitorServerMessage,
   MonitorSubscribeMessage,
@@ -82,17 +83,7 @@ export function useMonitorWs() {
         break;
       }
       case 'snapshot': {
-        const snapshot: MonitorDeviceSnapshot = {
-          deviceId: msg.device.id,
-          deviceName: msg.device.deviceName,
-          channelId: msg.device.channelId,
-          telemetry: msg.telemetry ?? {},
-          clientAttributes: msg.attributes?.client ?? {},
-          sharedAttributes: msg.attributes?.shared ?? {},
-          serverAttributes: msg.attributes?.server ?? {},
-          lastUpdate: msg.lastUpdate,
-        };
-        snapshots.value.set(snapshot.deviceId, snapshot);
+        applyMonitorMessage(msg);
         scheduleTrigger();
         break;
       }
@@ -101,47 +92,69 @@ export function useMonitorWs() {
         break;
       }
       case 'update': {
-        const existing = snapshots.value.get(msg.deviceId);
-        if (!existing) break;
-
-        if (msg.dataType === 'telemetry') {
-          Object.assign(existing.telemetry, msg.values ?? {});
-          addHint(
-            msg.deviceId,
-            'telemetry',
-            undefined,
-            Object.keys(msg.values ?? {}),
-          );
-        } else if (msg.dataType === 'attributes') {
-          const values = msg.values ?? {};
-          Object.assign(existing.clientAttributes, values.client ?? {});
-          Object.assign(existing.sharedAttributes, values.shared ?? {});
-          Object.assign(existing.serverAttributes, values.server ?? {});
-          addHint(
-            msg.deviceId,
-            'attributes',
-            'client',
-            Object.keys(values.client ?? {}),
-          );
-          addHint(
-            msg.deviceId,
-            'attributes',
-            'shared',
-            Object.keys(values.shared ?? {}),
-          );
-          addHint(
-            msg.deviceId,
-            'attributes',
-            'server',
-            Object.keys(values.server ?? {}),
-          );
-        }
-
-        existing.lastUpdate = msg.timestamp;
+        applyMonitorMessage(msg);
         scheduleTrigger();
         break;
       }
     }
+  }
+
+  function applyMonitorMessage(
+    msg: Extract<MonitorServerMessage, { type: 'snapshot' | 'update' }>,
+  ) {
+    if (msg.type === 'snapshot') {
+      upsertSnapshot({
+        deviceId: msg.meta.id,
+        deviceName: msg.meta.deviceName,
+        channelId: msg.meta.channelId,
+        telemetry: (msg.telemetry ?? {}) as MonitorDeviceSnapshot['telemetry'],
+        clientAttributes: (msg.attributes?.client ?? {}) as MonitorDeviceSnapshot['clientAttributes'],
+        sharedAttributes: (msg.attributes?.shared ?? {}) as MonitorDeviceSnapshot['sharedAttributes'],
+        serverAttributes: (msg.attributes?.server ?? {}) as MonitorDeviceSnapshot['serverAttributes'],
+        lastUpdate: msg.lastUpdate,
+      });
+      return;
+    }
+
+    const existing = ensureSnapshot(msg.meta, msg.timestamp);
+    const deviceId = msg.meta.id;
+
+    if (msg.dataType === 'telemetry') {
+      Object.assign(existing.telemetry, msg.values ?? {});
+      addHint(deviceId, 'telemetry', undefined, Object.keys(msg.values ?? {}));
+    } else {
+      const values = msg.values ?? {};
+      Object.assign(existing.clientAttributes, values.client ?? {});
+      Object.assign(existing.sharedAttributes, values.shared ?? {});
+      Object.assign(existing.serverAttributes, values.server ?? {});
+      addHint(deviceId, 'attributes', 'client', Object.keys(values.client ?? {}));
+      addHint(deviceId, 'attributes', 'shared', Object.keys(values.shared ?? {}));
+      addHint(deviceId, 'attributes', 'server', Object.keys(values.server ?? {}));
+    }
+
+    existing.lastUpdate = msg.timestamp;
+  }
+
+  function upsertSnapshot(snapshot: MonitorDeviceSnapshot) {
+    snapshots.value.set(snapshot.deviceId, snapshot);
+  }
+
+  function ensureSnapshot(meta: MonitorDeviceMeta, timestamp: string) {
+    const existing = snapshots.value.get(meta.id);
+    if (existing) return existing;
+
+    const snapshot: MonitorDeviceSnapshot = {
+      deviceId: meta.id,
+      deviceName: meta.deviceName,
+      channelId: meta.channelId,
+      telemetry: {},
+      clientAttributes: {},
+      sharedAttributes: {},
+      serverAttributes: {},
+      lastUpdate: timestamp,
+    };
+    upsertSnapshot(snapshot);
+    return snapshot;
   }
 
   function scheduleTrigger() {
