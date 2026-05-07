@@ -40,6 +40,10 @@ interface BasicUserInfo {
    */
   phone?: string;
   /**
+   * Real display name.
+   */
+  realName?: string;
+  /**
    * 用户角色
    */
   roles?: SimpleRole[];

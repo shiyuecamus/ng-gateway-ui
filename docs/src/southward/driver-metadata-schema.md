@@ -72,7 +72,7 @@ UI 端会按当前语言做 fallback（当前 locale → base language → en-US
   - `description`：驱动描述（可选）
   - `driver_type`：驱动唯一标识
   - `metadata_fn`：返回 `DriverSchemas` 的函数（通常是 `build_metadata`）
-  - `component`：驱动组件类型（实现 `Connector/Session/Handle` 并提供 `fn new(ctx)`）
+  - `component`：驱动组件类型（实现 `Connector/Session/Handle`；`Connector::new` 为 `async`，由 `ng_driver_factory!` 在驱动自有 `NG_RUNTIME` 上 `await`；语义见 [`南向驱动开发`](/dev/driver-dev) 中 *Async runtime semantics* / 硬性约束）
   - `model_convert`：模型转换器（实现 `SouthwardModelConverter`，用于低频 model -> runtime 结构转换）
   - `channel_capacity`：可选；驱动内部 actor 队列容量
 

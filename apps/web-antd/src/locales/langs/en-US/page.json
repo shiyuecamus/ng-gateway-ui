@@ -169,6 +169,11 @@
         "countdownSeconds": "s"
       },
       "subscription": "Subscription",
+      "exportPoints": {
+        "action": "Export OPC UA Points",
+        "success": "Point workbook download started",
+        "unsupportedPluginType": "Only OPC UA Server apps support point export"
+      },
       "subscriptionForm": {
         "target": "Subscription Target",
         "allDevices": "Subscribe All Devices",

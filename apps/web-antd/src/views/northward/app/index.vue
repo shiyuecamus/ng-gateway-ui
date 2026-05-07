@@ -20,6 +20,7 @@ import {
   changeAppStatus,
   createApp,
   deleteApp,
+  downloadOpcuaServerPoints,
   fetchAllPlugins,
   fetchAppPage,
   updateApp,
@@ -147,6 +148,10 @@ function onActionClick(payload: OnActionClickParams<AppInfo>) {
       handleEdit(row);
       break;
     }
+    case 'exportPoints': {
+      handleExportPoints(row);
+      break;
+    }
     case 'logLevel': {
       appLogLevelModalApi
         .setData({ appId: row.id, appName: row.name })
@@ -220,6 +225,43 @@ function handleSubscription(row: AppInfo) {
 
 async function handleSubscriptionSubmit() {
   await gridApi.query();
+}
+
+/**
+ * Download materialized OPC UA Server points for an app.
+ * @param row - Target app row.
+ */
+async function handleExportPoints(row: AppInfo) {
+  if (!row.pluginType?.startsWith('opcua-server')) {
+    message.warning(
+      $t('page.northward.app.exportPoints.unsupportedPluginType'),
+    );
+    return;
+  }
+
+  await handleRequest(
+    () => downloadOpcuaServerPoints(row.id),
+    ({ blob, filename }) => {
+      downloadBlob(blob, filename);
+      message.success($t('page.northward.app.exportPoints.success'));
+    },
+  );
+}
+
+/**
+ * Trigger a browser download for a Blob without keeping object URLs around.
+ * @param blob - Blob to download.
+ * @param filename - Target file name.
+ */
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename || 'opcua-server-points.xlsx';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 /**

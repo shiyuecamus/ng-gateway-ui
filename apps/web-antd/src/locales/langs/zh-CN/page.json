@@ -169,6 +169,11 @@
         "countdownSeconds": "秒"
       },
       "subscription": "订阅",
+      "exportPoints": {
+        "action": "导出 OPC UA 点位",
+        "success": "点位文件已开始下载",
+        "unsupportedPluginType": "仅 OPC UA Server 类型应用支持导出点位"
+      },
       "subscriptionForm": {
         "target": "订阅应用",
         "allDevices": "订阅全部设备",

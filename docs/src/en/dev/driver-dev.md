@@ -34,9 +34,10 @@ In NG Gateway, a "Southward Driver" is not just a pure protocol parsing library,
 
 ::: warning Contracts Must Be Obeyed
 1.  **`metadata_fn` must be pure**: Do not read files, environment variables, or network. Probe phase must be reproducible and side-effect free.
-2.  **`Connector::new(ctx)` must be synchronous and I/O free**: All network/file/blocking I/O must be placed in `connect()` / `init()` / `run()`.
-3.  **Hot Path (`SouthwardHandle`) forbids blocking**: `collect_data` / `write_point` must be asynchronous non-blocking, forbidding long lock holding or synchronous I/O.
-4.  **Strictly forbid `unwrap()` / `expect()`**: Production-grade code must handle all errors, return `Result` with context.
+2.  **`Connector::new(ctx)` is `async` and is polled on the driver's own `NG_RUNTIME`**: The SDK FFI wrapper spawns the construction future onto the driver runtime and guards the resulting `JoinHandle` with `AbortOnDropHandle`. You may freely use `tokio::spawn`, `tokio::time`, `tokio::fs`, and `tokio::task::spawn_blocking`. All connector-scoped (cross-attempt) long-lived resources should be initialised here so that the supervision `connect()` window stays as tight as possible.
+3.  **`Connector::new` MUST be cancel-safe**: If the host drops the construction future (API timeout, parent cancellation), the inner task is aborted at its next `.await` point. Any partial state (connection pools, spawned tasks, allocated channels) MUST be reclaimed via `Drop` (an RAII guard around a `CancellationToken` is the recommended pattern).
+4.  **Hot Path (`SouthwardHandle`) forbids blocking**: `collect_data` / `write_point` must be asynchronous non-blocking, forbidding long lock holding or synchronous I/O.
+5.  **Strictly forbid `unwrap()` / `expect()`**: Production-grade code must handle all errors, return `Result` with context.
 :::
 
 ## 1. Create Plugin Crate
@@ -287,7 +288,7 @@ impl SouthwardModelConverter for YourConverter {
 -   Provide stable aggregation dimensions for `error_summary/error_code` to facilitate alerting and troubleshooting
     -   `error_summary`: Human-readable short sentence (**Do not** stuff large objects/long stacks)
     -   `error_code`: Stable, low cardinality (e.g., `tcp_connect_timeout` / `auth_failed` / `config_invalid` / `protocol_decode_error`)
--   **Do not** do any network/blocking I/O here (`Connector::new(ctx)` explicitly forbids I/O; `connect()` is the place to establish session)
+-   This callback should **only classify errors**; do not perform network or blocking I/O here (session establishment belongs to `connect()`)
 -   Leave "High frequency details" to `tracing`, leave "Low frequency aggregation dimensions" to `error_code/error_summary`
 :::
 
@@ -312,7 +313,7 @@ impl Connector for YourConnector {
     type Handle = YourHandle;
     type Session = YourSession;
 
-    fn new(ctx: Self::InitContext) -> Result<Self, DriverError> {
+    async fn new(ctx: Self::InitContext) -> Result<Self, DriverError> {
         let config = crate::converter::parse_channel_config(&ctx)?;
         let handle = Arc::new(YourHandle::new());
         Ok(Self { config, handle })
@@ -883,7 +884,8 @@ Repository already has `ng-gateway-bench` (Can refer to its Modbus bench entry):
 
 ## 10. Common Pitfalls
 
--   **Doing I/O in `Connector::new()`**: Causes startup phase blocking, and violates SDK contract (Future may reject directly)
+-   **Running uninterruptible long work in `Connector::new()`**: the construction future MUST be cancel-safe; CPU-bound bootstrap MUST be off-loaded onto `tokio::task::spawn_blocking` and `.await`-ed, so no tokio worker is monopolised
+-   **Performing the network handshake in `Connector::new()` instead of `connect()`**: construction is not part of the supervision retry cycle; the actual handshake belongs to `connect()` so the `RetryPolicy` can drive backoff/retry
 -   **Putting string address/expression parsing in hot path**: Throughput drops significantly, and harder to troubleshoot
 -   **Error classification too coarse**: All errors Retryable leads to meaningless retry storm; All errors Fatal leads to hang on transient fluctuation
 -   **RTU Mis-concurrency**: RS-485 bus concurrent write/read may cause device exception or serial driver chaos

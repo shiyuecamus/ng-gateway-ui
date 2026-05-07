@@ -17,6 +17,10 @@ interface BasicUserInfo {
    */
   nickname: string;
   /**
+   * Real display name.
+   */
+  realName?: string;
+  /**
    * 用户角色
    */
   roles?: SimpleRole[];

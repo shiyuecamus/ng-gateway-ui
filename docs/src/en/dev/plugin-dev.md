@@ -66,11 +66,12 @@ Further down, production-grade plugins usually introduce:
 
 ::: warning Contracts Must Be Obeyed
 1.  **`metadata_fn` must be pure**: Do not read files, environment variables, or network.
-2.  **`Connector::new(ctx)` must be synchronous and I/O free**: All network/file/blocking I/O must be placed in `connect()` / `init()` / `run()`.
-3.  **Hot Path (`NorthwardHandle::process_data`) forbids blocking**: No synchronous I/O, no long lock holding, no unlimited task spawning.
-4.  **Strictly forbid `unwrap()` / `expect()`**: Production-grade code must handle all errors, return `Result` with context.
-5.  **Queue must be bounded**: Any channel/queue used for buffering data must be bounded, with clear strategy when full (Reject/Discard/Merge).
-6.  **Log must not leak secrets**: token/password/certificate/private key must not enter log, error string, Debug output.
+2.  **`Connector::new(ctx)` is `async` and is polled on the plugin's own `NG_RUNTIME`**: The SDK FFI wrapper spawns the construction future onto the plugin runtime and guards the resulting `JoinHandle` with `AbortOnDropHandle`. You may freely use `tokio::spawn`, `tokio::time`, `tokio::fs`, and `tokio::task::spawn_blocking`. All connector-scoped (cross-attempt) long-lived resources (PKI material, monitor tasks, schema registries) should be initialised here so that the supervision `connect()` window stays as tight as possible.
+3.  **`Connector::new` MUST be cancel-safe**: If the host drops the construction future (API timeout, parent cancellation), the inner task is aborted at its next `.await` point. Any partial state (temp files, spawned tasks, allocated channels) MUST be reclaimed via `Drop` (an RAII guard around a `CancellationToken` is the recommended pattern).
+4.  **Hot Path (`NorthwardHandle::process_data`) forbids blocking**: No synchronous I/O, no long lock holding, no unlimited task spawning.
+5.  **Strictly forbid `unwrap()` / `expect()`**: Production-grade code must handle all errors, return `Result` with context.
+6.  **Queue must be bounded**: Any channel/queue used for buffering data must be bounded, with clear strategy when full (Reject/Discard/Merge).
+7.  **Log must not leak secrets**: token/password/certificate/private key must not enter log, error string, Debug output.
 :::
 
 ---
@@ -743,7 +744,7 @@ fn validate_uplink_payload(payload: &UplinkPayloadConfig) -> NorthwardResult<()>
 -   Provide stable aggregation dimensions for `error_summary/error_code` to facilitate alerting and troubleshooting
     -   `error_summary`: Human-readable short sentence (**Do not** stuff large objects/long stacks)
     -   `error_code`: Stable, low cardinality (e.g., `tcp_connect_timeout` / `auth_failed` / `config_invalid` / `protocol_decode_error`)
--   **Do not** do any network/blocking I/O here (`Connector::new(ctx)` explicitly forbids I/O; `connect()` is the place to establish session)
+-   This callback should **only classify errors**; do not perform network or blocking I/O here (session establishment belongs to `connect()`)
 -   Leave "High frequency details" to `tracing`, leave "Low frequency aggregation dimensions" to `error_code/error_summary`
 :::
 
@@ -753,9 +754,11 @@ fn validate_uplink_payload(payload: &UplinkPayloadConfig) -> NorthwardResult<()>
 //! MQTT supervised connector implementation.
 //!
 //! Connector responsibilities:
-//! - `new(ctx)`: capture deps, validate config (no I/O)
-//! - `connect(ctx)`: create session (may perform I/O)
-//! - `classify_error`: tell supervisor whether to retry
+//! - `new(ctx)` (async, polled on plugin NG_RUNTIME): capture deps, validate
+//!   config, materialise connector-scope long-lived resources, spawn
+//!   connector-scope background tasks. Cancel-safe.
+//! - `connect(ctx)`: create the per-attempt session (may perform I/O).
+//! - `classify_error`: tell supervisor whether to retry.
 
 use crate::{
     config::MqttPluginConfig,
@@ -887,7 +890,7 @@ impl Connector for MqttConnector {
     type Handle = MqttHandle;
     type Session = MqttSession;
 
-    fn new(ctx: Self::InitContext) -> Result<Self, <Self::Session as Session>::Error> {
+    async fn new(ctx: Self::InitContext) -> Result<Self, <Self::Session as Session>::Error> {
         Self::from_init(ctx)
     }
 
@@ -987,9 +990,10 @@ Ref Implementation: Provision flow in `ng-gateway-northward/thingsboard/src/conn
 
 ::: details `Lifecycle Semantics Quick Reference`
 
--   `Connector::new(ctx)`
-    -   **What to do**: Capture dependencies (`app_id/app_name/runtime/events_tx/retry_policy/extension_store` etc.), downcast strongly typed config, do pure validation/normalization.
-    -   **Must**: Synchronous, I/O free, Non-blocking; failure should return `ConfigurationError` (Diagnosable).
+-   `Connector::new(ctx)` (`async`, polled on plugin `NG_RUNTIME`)
+    -   **What to do**: Capture dependencies (`app_id/app_name/runtime/events_tx/retry_policy/extension_store` etc.), downcast strongly typed config, do pure validation/normalization, and (when applicable) perform every connector-scoped (cross-attempt) bootstrap — PKI material, long-lived monitor tasks, schema registries, etc.
+    -   **You may** freely use `tokio::spawn`, `tokio::time`, `tokio::fs`, and `tokio::task::spawn_blocking` (for CPU-bound bootstrap such as RSA keygen). The SDK wrapper has already hopped onto the plugin runtime.
+    -   **Must**: cancel-safe (any partial state reclaimed via `Drop`); failure should return `ConfigurationError` (diagnosable).
     -   **Do not**: Spawn long tasks; do not do network/file I/O; do not do "Uncontrollable duration" probing here.
 
 -   `Connector::connect(ctx)`
@@ -1640,7 +1644,8 @@ Verification Points:
 
 ## 10. Common Pitfalls
 
--   **Doing I/O in `Connector::new()`**: Breaks contract, causes startup phase blocking or rejection
+-   **Running uninterruptible long work in `Connector::new()`**: the construction future MUST be cancel-safe; CPU-bound bootstrap MUST be off-loaded onto `tokio::task::spawn_blocking` and `.await`-ed, so no tokio worker is monopolised
+-   **Performing the network handshake in `Connector::new()` instead of `connect()`**: construction is not part of the supervision retry cycle; the actual handshake belongs to `connect()` so the `RetryPolicy` can drive backoff/retry
 -   **Doing Network Request in `process_data()`**: Throughput drops hugely, latency jitter, and drags down AppActor
 -   **Unbounded Queue**: Short time downstream jitter blows up memory
 -   **Error Classification Too Coarse**: All Retryable leads to retry storm; All Fatal treats transient fault as permanent failure

@@ -5,6 +5,8 @@
   "loginSuccess": "登录成功",
   "loginSuccessDesc": "欢迎回来",
   "loginSubtitle": "欢迎使用 {appName}",
+  "urlAutoLoginFailed": "URL 自动登录失败",
+  "urlAutoLoginFailedDesc": "凭证无效或服务异常，请重新登录",
   "selectAccount": "快速选择账号",
   "username": "账号",
   "password": "密码",

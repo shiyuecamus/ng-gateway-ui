@@ -402,6 +402,36 @@ function mapField(
     } as any;
   }
 
+  // `Any` is rendered by `json-editor-vue`. We override two of its defaults:
+  //
+  // 1. `stringified: false`
+  //    By default `json-editor-vue` v-model exchanges values as **stringified
+  //    JSON** (`"[\n  \"a\"\n]"`). That breaks any backend field typed as a
+  //    real array / object (e.g. `advertised_endpoints: Vec<String>`), because
+  //    `serde` then sees a string instead of an array. Forcing
+  //    `stringified: false` means v-model carries the parsed value directly.
+  //
+  // 2. `mode: 'text'`
+  //    The default `tree` mode is unwieldy for the typical IoT-gateway use
+  //    cases (string array, small object). Text mode is more familiar and
+  //    keystroke-friendly. Operators who actually need the tree view can
+  //    still switch via the editor's mode toggle.
+  //
+  // Both can be overridden per-field if a plugin wants to opt back into the
+  // upstream defaults — pre-existing `componentProps` win because the spread
+  // for `prev` is placed last.
+  if (node.data_type.kind === 'Any') {
+    const prev = (base.componentProps ?? {}) as Record<string, any>;
+    base.componentProps = {
+      mode: 'text',
+      stringified: false,
+      mainMenuBar: false,
+      navigationBar: false,
+      statusBar: false,
+      ...prev,
+    } as any;
+  }
+
   base.rules = buildRuleForNode(node);
 
   if ((node.when && node.when.length > 0) || discriminator) {

@@ -1,5 +1,7 @@
 import type { Recordable, UserInfo } from '@vben/types';
 
+import type { AuthApi } from '#/api';
+
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -21,55 +23,80 @@ export const useAuthStore = defineStore('auth', () => {
   const loginLoading = ref(false);
 
   /**
-   * 异步处理登录操作
-   * Asynchronously handle the login process
-   * @param params 登录表单数据
+   * Performs the shared login workflow and stores the issued access token.
+   */
+  async function performLogin(
+    params: AuthApi.LoginParams | Recordable<any>,
+  ): Promise<null | UserInfo> {
+    loginLoading.value = true;
+
+    try {
+      const { token } = await loginApi(params);
+
+      if (!token) {
+        return null;
+      }
+
+      accessStore.setAccessToken(token);
+
+      const userInfo = await fetchUserInfo();
+
+      if (userInfo?.nickname) {
+        notification.success({
+          description: `${$t('authentication.loginSuccessDesc')}:${userInfo.nickname}`,
+          duration: 3,
+          message: $t('authentication.loginSuccess'),
+        });
+      }
+
+      return userInfo;
+    } finally {
+      loginLoading.value = false;
+    }
+  }
+
+  /**
+   * Asynchronously handles the form login process and post-login navigation.
+   * @param params Login form payload.
+   * @param onSuccess Optional callback for custom successful-login navigation.
    */
   async function authLogin(
     params: Recordable<any>,
     onSuccess?: () => Promise<void> | void,
   ) {
-    // 异步处理用户登录操作并获取 accessToken
-    let userInfo: null | UserInfo = null;
-    try {
-      loginLoading.value = true;
-      const { token } = await loginApi(params);
+    const userInfo = await performLogin(params);
 
-      // 如果成功获取到 accessToken
-      if (token) {
-        accessStore.setAccessToken(token);
-
-        // 获取用户信息并存储到 accessStore 中
-        const fetchUserInfoResult = await fetchUserInfo();
-
-        userInfo = fetchUserInfoResult;
-
-        // userStore.setUserInfo(userInfo);
-        // accessStore.setAccessCodes(accessCodes);
-
-        if (accessStore.loginExpired) {
-          accessStore.setLoginExpired(false);
-        } else {
-          onSuccess
-            ? await onSuccess?.()
-            : await router.push(preferences.app.defaultHomePath);
-        }
-
-        if (userInfo?.nickname) {
-          notification.success({
-            description: `${$t('authentication.loginSuccessDesc')}:${userInfo?.nickname}`,
-            duration: 3,
-            message: $t('authentication.loginSuccess'),
-          });
-        }
+    if (userInfo) {
+      if (accessStore.loginExpired) {
+        accessStore.setLoginExpired(false);
+      } else {
+        onSuccess
+          ? await onSuccess?.()
+          : await router.push(preferences.app.defaultHomePath);
       }
-    } finally {
-      loginLoading.value = false;
     }
 
     return {
       userInfo,
     };
+  }
+
+  /**
+   * Authenticates with credentials provided by URL query parameters.
+   *
+   * Navigation is intentionally controlled by the route guard so this method
+   * only completes token persistence and user-info hydration.
+   */
+  async function urlAutoLogin(
+    params: AuthApi.LoginParams,
+  ): Promise<null | UserInfo> {
+    const userInfo = await performLogin(params);
+
+    if (!userInfo) {
+      throw new Error($t('authentication.urlAutoLoginFailedDesc'));
+    }
+
+    return userInfo;
   }
 
   async function logout(redirect: boolean = true) {
@@ -109,5 +136,6 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUserInfo,
     loginLoading,
     logout,
+    urlAutoLogin,
   };
 });

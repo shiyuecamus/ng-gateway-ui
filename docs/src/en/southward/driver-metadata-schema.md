@@ -72,7 +72,7 @@ UI side will fallback according to current language (Current locale → base lan
     -   `description`: Driver description (Optional)
     -   `driver_type`: Driver unique identifier
     -   `metadata_fn`: Function returning `DriverSchemas` (Usually `build_metadata`)
-    -   `component`: Driver component type (Implement `Connector/Session/Handle` and provide `fn new(ctx)`)
+    -   `component`: Driver component type (implements `Connector` / `Session` / `Handle`; `Connector::new` is `async` and is awaited by `ng_driver_factory!` on the driver's own `NG_RUNTIME`—see *Async runtime semantics* in the driver dev docs)
     -   `model_convert`: Model converter (Implement `SouthwardModelConverter`, used for low-frequency model -> runtime structure conversion)
     -   `channel_capacity`: Optional; Driver internal actor queue capacity
 

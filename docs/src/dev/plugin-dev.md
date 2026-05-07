@@ -66,11 +66,12 @@ description: 以 MQTT 为 Demo，按 1、2、3... 的步骤讲清楚如何在 NG
 
 ::: warning 必须遵守的契约
 1. **`metadata_fn` 必须纯**：不得读文件、环境变量或网络。
-2. **`Connector::new(ctx)` 必须同步且无 I/O**：所有网络/文件/阻塞 I/O 必须放在 `connect()` / `init()` / `run()` 中。
-3. **热路径（`NorthwardHandle::process_data`）禁止阻塞**：不得同步 I/O，不得长时间持锁，不得无限制 spawn 任务。
-4. **严禁 `unwrap()` / `expect()`**：生产级代码必须处理所有错误，返回 `Result` 并携带上下文。
-5. **队列必须有界**：任何用于缓冲数据的 channel/queue 必须 bounded，并明确满了之后的策略（拒绝/丢弃/合并）。
-6. **日志不能泄密**：token/密码/证书/私钥不得进入日志、错误字符串、Debug 输出。
+2. **`Connector::new(ctx)` 是 `async`，且在插件自己的 `NG_RUNTIME` 上被 poll**：SDK FFI Wrapper 会负责把构造 future spawn 到插件 runtime，并用 `AbortOnDropHandle` 守护 `JoinHandle`，因此你可以放心使用 `tokio::spawn`、`tokio::time`、`tokio::fs`、`tokio::task::spawn_blocking` 等任意 tokio 原语；所有连接器范围（cross-attempt）的长生命周期资源（PKI、监控任务、模式注册）都应该在这里完成初始化，让 `connect()` 窗口尽可能短。
+3. **`Connector::new` 必须 cancel-safe**：host 侧若 drop 构造 future（API 超时、上层取消），inner 任务会在下一个 `.await` 处被 abort；任何半成品（临时文件、已 spawn 的任务、已分配的 channel）必须由 `Drop` 链清理（推荐 RAII 守护 `CancellationToken`）。
+4. **热路径（`NorthwardHandle::process_data`）禁止阻塞**：不得同步 I/O，不得长时间持锁，不得无限制 spawn 任务。
+5. **严禁 `unwrap()` / `expect()`**：生产级代码必须处理所有错误，返回 `Result` 并携带上下文。
+6. **队列必须有界**：任何用于缓冲数据的 channel/queue 必须 bounded，并明确满了之后的策略（拒绝/丢弃/合并）。
+7. **日志不能泄密**：token/密码/证书/私钥不得进入日志、错误字符串、Debug 输出。
 :::
 
 ---
@@ -743,7 +744,7 @@ fn validate_uplink_payload(payload: &UplinkPayloadConfig) -> NorthwardResult<()>
 - 给 `error_summary/error_code` 提供稳定聚合维度，便于告警与排障
   - `error_summary`：面向人类阅读的短句（**不要**塞大对象/长堆栈）
   - `error_code`：稳定、低基数（例如 `tcp_connect_timeout` / `auth_failed` / `config_invalid` / `protocol_decode_error`）
-- **不要**在这里做任何网络/阻塞 I/O（`Connector::new(ctx)` 明确禁止 I/O；`connect()` 才是建立会话的地方）
+- 这里**只做错误分类**，不做网络/阻塞 I/O（具体的会话建立属于 `connect()`）
 - 把“高频细节”留给 `tracing`，把“低频聚合维度”留给 `error_code/error_summary`
 :::
 
@@ -753,9 +754,11 @@ fn validate_uplink_payload(payload: &UplinkPayloadConfig) -> NorthwardResult<()>
 //! MQTT supervised connector implementation.
 //!
 //! Connector responsibilities:
-//! - `new(ctx)`: capture deps, validate config (no I/O)
-//! - `connect(ctx)`: create session (may perform I/O)
-//! - `classify_error`: tell supervisor whether to retry
+//! - `new(ctx)` (async, polled on plugin NG_RUNTIME): capture deps, validate
+//!   config, materialise connector-scope long-lived resources, spawn
+//!   connector-scope background tasks. Cancel-safe.
+//! - `connect(ctx)`: create the per-attempt session (may perform I/O).
+//! - `classify_error`: tell supervisor whether to retry.
 
 use crate::{
     config::MqttPluginConfig,
@@ -887,7 +890,7 @@ impl Connector for MqttConnector {
     type Handle = MqttHandle;
     type Session = MqttSession;
 
-    fn new(ctx: Self::InitContext) -> Result<Self, <Self::Session as Session>::Error> {
+    async fn new(ctx: Self::InitContext) -> Result<Self, <Self::Session as Session>::Error> {
         Self::from_init(ctx)
     }
 
@@ -987,9 +990,10 @@ impl Connector for MqttConnector {
 
 ::: details `生命周期语义速查`
 
-- `Connector::new(ctx)`
-  - **做什么**：捕获依赖（`app_id/app_name/runtime/events_tx/retry_policy/extension_store` 等），downcast 强类型配置，做纯校验/归一化。
-  - **必须**：同步、无 I/O、无阻塞；失败应返回 `ConfigurationError`（可诊断）。
+- `Connector::new(ctx)`（`async`，在插件 `NG_RUNTIME` 上被 poll）
+  - **做什么**：捕获依赖（`app_id/app_name/runtime/events_tx/retry_policy/extension_store` 等），downcast 强类型配置，做纯校验/归一化；如有需要，在这里完成所有连接器范围（跨 attempt）的资源初始化（例如 PKI 物料、长生命周期监控任务、模式注册等）。
+  - **可以**：自由使用 `tokio::spawn`、`tokio::time`、`tokio::fs`、`tokio::task::spawn_blocking`（用于 CPU 密集 bootstrap），SDK Wrapper 已经把 future spawn 到了插件 runtime 上。
+  - **必须**：cancel-safe（任何半成品都要由 `Drop` 链清理）；失败应返回 `ConfigurationError`（可诊断）。
   - **不要**：spawn 长任务；不要做网络/文件 I/O；不要在这里做“不可控耗时”的探测。
 
 - `Connector::connect(ctx)`
@@ -1640,7 +1644,8 @@ mosquitto_pub -h 127.0.0.1 -p 1883 -q 1 -t 'ng/v1/demo-app/downlink/write-point'
 
 ## 10. 常见坑
 
-- **在 `Connector::new()` 里做 I/O**：会破坏契约，导致启动阶段阻塞或被拒绝
+- **在 `Connector::new()` 里做不可中断的长任务**：构造 future 必须 cancel-safe；CPU 密集 bootstrap 必须用 `tokio::task::spawn_blocking` 异步等待，避免独占任何 tokio worker
+- **把网络握手做在 `Connector::new()` 而不是 `connect()`**：构造阶段不属于 supervision 重连周期，连接握手应该放在 `connect()` 里，便于按 `RetryPolicy` 退避/重试
 - **在 `process_data()` 里做网络请求**：吞吐下降巨大，延迟抖动，且会拖垮 AppActor
 - **队列无界**：短时间下游抖动会把内存打爆
 - **错误分类过粗**：全 Retryable 会重试风暴；全 Fatal 会把瞬时故障当永久故障
@@ -1734,7 +1739,7 @@ fn validate_uplink_payload(payload: &UplinkPayloadConfig) -> NorthwardResult<()>
 
 ### 2) Connector：attempt 级资源边界在哪里建立？（队列/客户端必须 attempt-scoped）
 
-`Connector::new(ctx)` 必须 **同步 + 无 I/O**，只做 downcast 与纯校验。真正的 attempt 级资源边界应该在 `connect()`：
+`Connector::new(ctx)` 是 `async` 且跑在插件 `NG_RUNTIME` 上：所有**连接器范围（跨 attempt）**的资源（PKI、监控任务、模式注册）都应该在这里完成初始化；真正的 **attempt 级**资源边界应该在 `connect()`：
 
 - **内部出站队列（handle → worker）**：在 `connect()` 创建 `mpsc::channel(cap)`，cap 来自配置且在 converter 已 clamp
 - **客户端与 eventloop**：在 `connect()` 创建 `AsyncClient + EventLoop`，并把 “真正的网络 I/O 泵” 交给 `Session::init/run` 的 `eventloop.poll()`

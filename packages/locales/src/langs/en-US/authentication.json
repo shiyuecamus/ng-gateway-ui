@@ -5,6 +5,8 @@
   "loginSuccess": "Login Successful",
   "loginSuccessDesc": "Welcome Back",
   "loginSubtitle": "Welcome to {appName}",
+  "urlAutoLoginFailed": "URL auto login failed",
+  "urlAutoLoginFailedDesc": "Credentials invalid or service unavailable, please retry",
   "selectAccount": "Quick Select Account",
   "username": "Username",
   "password": "Password",

@@ -1,5 +1,6 @@
 export * from './action';
 export * from './app';
+export * from './opcua-server';
 export * from './app-sub';
 export * from './auth';
 export * from './branding';

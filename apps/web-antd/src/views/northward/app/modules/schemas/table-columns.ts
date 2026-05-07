@@ -67,6 +67,11 @@ export function useColumns(
             tooltip: 'Observability',
           },
           {
+            code: 'exportPoints',
+            icon: 'lucide:download',
+            tooltip: $t('page.northward.app.exportPoints.action'),
+          },
+          {
             code: 'edit',
             icon: 'lucide:edit',
             tooltip: $t('common.edit'),
@@ -84,7 +89,7 @@ export function useColumns(
       headerAlign: 'center',
       showOverflow: false,
       title: $t('common.actions'),
-      width: 220,
+      width: 260,
     },
   ];
 }

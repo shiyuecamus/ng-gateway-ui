@@ -34,9 +34,10 @@ description: 以 Modbus 为 Demo，讲清楚如何在 NG Gateway 中从 0 到 1 
 
 ::: warning 必须遵守的契约
 1. **`metadata_fn` 必须纯**：不得读文件、环境变量或网络。Probe 阶段必须可复现且零副作用。
-2. **`Connector::new(ctx)` 必须同步且无 I/O**：所有网络/文件/阻塞 I/O 必须放在 `connect()` / `init()` / `run()` 中。
-3. **热路径（`SouthwardHandle`）禁止阻塞**：`collect_data` / `write_point` 必须是异步非阻塞的，禁止长时间持锁或同步 I/O。
-4. **严禁 `unwrap()` / `expect()`**：生产级代码必须处理所有错误，返回 `Result` 并携带上下文。
+2. **`Connector::new(ctx)` 是 `async`，且在驱动自己的 `NG_RUNTIME` 上被 poll**：SDK FFI Wrapper 会负责把构造 future spawn 到驱动 runtime，并用 `AbortOnDropHandle` 守护 `JoinHandle`，因此你可以放心使用 `tokio::spawn`、`tokio::time`、`tokio::fs`、`tokio::task::spawn_blocking` 等任意 tokio 原语；所有连接器范围（cross-attempt）的长生命周期资源都应该在这里完成初始化，让 `connect()` 窗口尽可能短。
+3. **`Connector::new` 必须 cancel-safe**：host 侧若 drop 构造 future（API 超时、上层取消），inner 任务会在下一个 `.await` 处被 abort；任何半成品（连接池、已 spawn 的任务、已分配的 channel）必须由 `Drop` 链清理（推荐 RAII 守护 `CancellationToken`）。
+4. **热路径（`SouthwardHandle`）禁止阻塞**：`collect_data` / `write_point` 必须是异步非阻塞的，禁止长时间持锁或同步 I/O。
+5. **严禁 `unwrap()` / `expect()`**：生产级代码必须处理所有错误，返回 `Result` 并携带上下文。
 :::
 
 ## 1. 创建插件 crate
@@ -287,7 +288,7 @@ impl SouthwardModelConverter for YourConverter {
 - 给 `error_summary/error_code` 提供稳定聚合维度，便于告警与排障
   - `error_summary`：面向人类阅读的短句（**不要**塞大对象/长堆栈）
   - `error_code`：稳定、低基数（例如 `tcp_connect_timeout` / `auth_failed` / `config_invalid` / `protocol_decode_error`）
-- **不要**在这里做任何网络/阻塞 I/O（`Connector::new(ctx)` 明确禁止 I/O；`connect()` 才是建立会话的地方）
+- 这里**只做错误分类**，不做网络/阻塞 I/O（具体的会话建立属于 `connect()`）
 - 把“高频细节”留给 `tracing`，把“低频聚合维度”留给 `error_code/error_summary`
 :::
 
@@ -312,7 +313,7 @@ impl Connector for YourConnector {
     type Handle = YourHandle;
     type Session = YourSession;
 
-    fn new(ctx: Self::InitContext) -> Result<Self, DriverError> {
+    async fn new(ctx: Self::InitContext) -> Result<Self, DriverError> {
         let config = crate::converter::parse_channel_config(&ctx)?;
         let handle = Arc::new(YourHandle::new());
         Ok(Self { config, handle })
@@ -883,7 +884,8 @@ ng_driver_factory!(
 
 ## 10. 常见坑
 
-- **在 `Connector::new()` 里做了 I/O**：会导致启动阶段阻塞、并且违反 SDK 契约（未来可能直接拒绝）
+- **在 `Connector::new()` 里做不可中断的长任务**：构造 future 必须 cancel-safe；CPU 密集 bootstrap 必须用 `tokio::task::spawn_blocking` 异步等待，避免独占任何 tokio worker
+- **把网络握手做在 `Connector::new()` 而不是 `connect()`**：构造阶段不属于 supervision 重连周期，连接握手应该放在 `connect()` 里，便于按 `RetryPolicy` 退避/重试
 - **把字符串地址/表达式解析放到热路径**：吞吐下降明显，且更难排障
 - **错误分类过粗**：所有错误都 Retryable 会导致无意义重试风暴；所有错误都 Fatal 会导致短暂波动直接挂死
 - **RTU 误并发**：RS-485 总线并发写/读可能造成设备异常或串口驱动混乱

@@ -9,6 +9,7 @@ import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
 import { generateAccess } from './access';
+import { setupUrlAutoLoginGuard } from './url-auto-login';
 
 /**
  * 通用守卫配置
@@ -126,6 +127,8 @@ function setupAccessGuard(router: Router) {
 function createRouterGuard(router: Router) {
   /** 通用 */
   setupCommonGuard(router);
+  /** URL 参数自动登录，必须在权限访问守卫之前执行 */
+  setupUrlAutoLoginGuard(router);
   /** 权限访问 */
   setupAccessGuard(router);
 }
