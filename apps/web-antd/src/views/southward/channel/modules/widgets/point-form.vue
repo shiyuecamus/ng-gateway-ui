@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { IdType, PointInfo, Recordable } from '@vben/types';
 
+import type { DriverSchemas, Node } from '#/shared/dynamic-schema';
+
 import { nextTick, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
@@ -15,12 +17,12 @@ import { Card } from 'ant-design-vue';
 import { useVbenForm } from '#/adapter/form';
 import { fetchDriverSchemasById } from '#/api/core/driver';
 import { getPointById } from '#/api/core/point';
-
 import {
   mapPointSchemasToForm,
+  projectActiveDriverConfig,
   sortDriverSchemas,
-  type DriverSchemas,
 } from '#/shared/dynamic-schema';
+
 import { usePointBasicFormSchema } from '../schemas/form';
 
 defineOptions({ name: 'PointForm' });
@@ -36,6 +38,7 @@ const recordId = ref<IdType>(undefined);
 const deviceId = ref<IdType>(undefined);
 const driverId = ref<IdType>(undefined);
 const hasDriverSchema = ref(false);
+const pointSchemas = ref<Node[]>([]);
 
 const [BasicForm, basicFormApi] = useVbenForm({
   handleSubmit: async (_values) => {},
@@ -56,7 +59,7 @@ const [DriverForm, driverFormApi] = useVbenForm({
 });
 
 const [Modal, modalApi] = useVbenDrawer({
-  class: 'w-1/2',
+  class: 'w-[920px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   showConfirmButton: true,
   onCancel() {
@@ -65,10 +68,14 @@ const [Modal, modalApi] = useVbenDrawer({
   onConfirm: async () => {
     const base = await basicFormApi.validateAndSubmitForm();
     const driverConfig = await driverFormApi.validateAndSubmitForm();
+    if (!base || !driverConfig) return;
     emit('submit', type.value, recordId.value, {
       deviceId: deviceId.value as IdType,
       ...base,
-      driverConfig: driverConfig as Recordable<any>,
+      driverConfig: projectActiveDriverConfig(
+        pointSchemas.value,
+        driverConfig as Record<string, any>,
+      ) as Recordable<any>,
     } as PointInfo);
   },
   onOpenChange: async (isOpen: boolean) => {
@@ -122,6 +129,7 @@ async function init() {
 
 async function loadDriverSchema(id: IdType) {
   hasDriverSchema.value = false;
+  pointSchemas.value = [];
   driverFormApi.setState({ schema: [] });
   await nextTick();
   await driverFormApi.resetForm();
@@ -132,6 +140,7 @@ async function loadDriverSchema(id: IdType) {
     () => fetchDriverSchemasById(id),
     async (schemas: DriverSchemas) => {
       const sorted = sortDriverSchemas(schemas);
+      pointSchemas.value = sorted.point;
       const formSchemas = mapPointSchemasToForm(sorted);
       hasDriverSchema.value = formSchemas.length > 0;
       driverFormApi.setState({ schema: formSchemas });
@@ -172,4 +181,3 @@ async function loadDriverSchema(id: IdType) {
     </div>
   </Modal>
 </template>
-

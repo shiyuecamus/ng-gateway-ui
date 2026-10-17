@@ -1,23 +1,23 @@
 ---
 title: 'EnvelopeJson (Stable Envelope)'
-description: 'Northward default payload: schema_version + event.kind + envelope(meta) + payload.data. Suitable for long-term evolution and mixed events.'
+description: 'Northward default payload: boot_contract + event.kind + envelope(meta) + payload.data. Suitable for the exact boot contract and mixed events.'
 ---
 
 ## 1. Design Goals
 
 EnvelopeJson pursues three things:
 
--   **Stable**: wire format has `schema_version`, facilitating long-term evolution
+-   **Stable**: wire format requires `boot_contract: "boot"`
 -   **Routable**: `event.kind` is a stable discriminator field (Required for mixed topic scenarios)
 -   **Payload untagged**: Business data is placed in `payload.data`, no longer nested enum tag, reducing coupling
 
 ---
 
-## 2. JSON Shape (schema_version = 1)
+## 2. JSON Shape (boot_contract = "boot")
 
 ```json
 {
-  "schema_version": 1,
+  "boot_contract": "boot",
   "event": { "kind": "telemetry" },
   "envelope": {
     "ts_ms": 1734870900000,

@@ -1,10 +1,10 @@
+import type { ConnectionState } from './connection-state';
 import type {
   BaseClientMessage,
   BaseServerMessage,
   WsPingMessage,
   WsPongMessage,
 } from './ws';
-import type { ConnectionState } from './connection-state';
 
 export type MetricsScope = 'app' | 'channel' | 'device' | 'global';
 
@@ -207,7 +207,7 @@ export interface TrendPoint {
 
 export interface MetricsSubscribeMessage extends BaseClientMessage {
   type: 'subscribe';
-  requestId?: string;
+  requestId: string;
   scope: MetricsScope;
   id?: number;
   intervalMs?: number;
@@ -215,7 +215,7 @@ export interface MetricsSubscribeMessage extends BaseClientMessage {
 
 export interface MetricsUnsubscribeMessage extends BaseClientMessage {
   type: 'unsubscribe';
-  requestId?: string;
+  requestId: string;
   scope?: MetricsScope;
   id?: number;
 }
@@ -227,7 +227,7 @@ export type MetricsClientMessage =
 
 export interface MetricsSubscribedMessage extends BaseServerMessage {
   type: 'subscribed';
-  requestId?: string;
+  requestId: string;
   scope?: MetricsScope;
   id?: number;
 }
@@ -243,7 +243,7 @@ export type MetricsSnapshotMessage =
   | (BaseServerMessage & {
       data: ChannelStatsSnapshot;
       id: number;
-      requestId?: string;
+      requestId: string;
       scope: 'channel';
       ts: number;
       type: 'snapshot';
@@ -251,14 +251,14 @@ export type MetricsSnapshotMessage =
   | (BaseServerMessage & {
       data: DeviceRowsPayload;
       id: number;
-      requestId?: string;
+      requestId: string;
       scope: 'device';
       ts: number;
       type: 'snapshot';
     })
   | (BaseServerMessage & {
       data: GatewayStatusSnapshot;
-      requestId?: string;
+      requestId: string;
       scope: 'global';
       ts: number;
       type: 'snapshot';
@@ -266,44 +266,14 @@ export type MetricsSnapshotMessage =
   | (BaseServerMessage & {
       data: NorthwardAppStatsSnapshot;
       id: number;
-      requestId?: string;
+      requestId: string;
       scope: 'app';
       ts: number;
       type: 'snapshot';
-    });
-
-export type MetricsUpdateMessage =
-  | (BaseServerMessage & {
-      data: ChannelStatsSnapshot;
-      id: number;
-      scope: 'channel';
-      ts: number;
-      type: 'update';
-    })
-  | (BaseServerMessage & {
-      data: DeviceRowsPayload;
-      id: number;
-      scope: 'device';
-      ts: number;
-      type: 'update';
-    })
-  | (BaseServerMessage & {
-      data: GatewayStatusSnapshot;
-      scope: 'global';
-      ts: number;
-      type: 'update';
-    })
-  | (BaseServerMessage & {
-      data: NorthwardAppStatsSnapshot;
-      id: number;
-      scope: 'app';
-      ts: number;
-      type: 'update';
     });
 
 export type MetricsServerMessage =
   | MetricsErrorMessage
   | MetricsSnapshotMessage
   | MetricsSubscribedMessage
-  | MetricsUpdateMessage
   | WsPongMessage;

@@ -211,7 +211,7 @@ Recommend adopting "Two Logical Lanes + Budget Isolation" design (Roadmap):
 
 Currently northward plugins mainly use **JSON** payload, and provide multiple "Predictable JSON Shapes" to balance readability and throughput:
 
--   **EnvelopeJson (Default Recommended)**: Stable protocol envelope (`schema_version` + `event.kind` + `payload.data`), suitable for integration and long-term evolution.
+-   **EnvelopeJson (Default Recommended)**: Stable protocol envelope (`boot_contract` + `event.kind` + `payload.data`), suitable for integration and the exact boot contract.
 -   **Kv / TimeseriesRows**: More biased towards throughput/TSDB flattened shape (Optionally include meta).
 -   **MappedJson**: Declarative mapping (Map internal data to field structure expected by your platform).
 

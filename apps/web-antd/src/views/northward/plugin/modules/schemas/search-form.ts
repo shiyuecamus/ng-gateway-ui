@@ -1,7 +1,7 @@
 import type { VbenFormSchema } from '@vben/common-ui';
 
 import { $t } from '@vben/locales';
-import { PluginSource, OsArch, OsType } from '@vben/types';
+import { OsArch, OsType, PluginSource } from '@vben/types';
 
 export const searchFormSchema: VbenFormSchema[] = [
   {

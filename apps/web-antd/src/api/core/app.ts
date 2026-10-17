@@ -103,8 +103,10 @@ export async function updateApp(payload: AppInfo) {
  * Delete a northward app by identifier.
  * @param id - App identifier.
  */
-export async function deleteApp(id: IdType) {
-  return requestClient.delete<boolean>(AppApi.remove(id));
+export async function deleteApp(id: IdType, expectedRevision: string) {
+  return requestClient.delete<boolean>(AppApi.remove(id), {
+    params: { expectedRevision },
+  });
 }
 
 /**
@@ -123,10 +125,12 @@ export async function getAppById(id: IdType) {
 export async function changeAppStatus(
   id: IdType,
   status: (typeof CommonStatus)[keyof typeof CommonStatus],
+  expectedRevision: string,
 ) {
   return requestClient.put(AppApi.changeStatus, {
     id,
     status,
+    expectedRevision,
   });
 }
 

@@ -4,6 +4,7 @@ import type { ChannelInfo, IdType, Recordable } from '@vben/types';
 
 import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { confirm, Page, useVbenDrawer, useVbenModal } from '@vben/common-ui';
@@ -12,6 +13,7 @@ import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 import { CommonStatus, EntityType } from '@vben/types';
 
+import { useIntervalFn } from '@vueuse/core';
 import { Button, message, Switch } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -22,15 +24,24 @@ import {
   fetchChannelPage,
   updateChannel,
 } from '#/api';
+import { activateChannel } from '#/api/core/channel';
 
-import ConfigViewer from './modules/widgets/config-viewer.vue';
-import ChannelForm from './modules/widgets/form.vue';
-import LogLevelModal from './modules/widgets/log-level-modal.vue';
 import { searchFormSchema, useColumns } from './modules/schemas';
+import OpcuaClientCertificateModal from './modules/widgets/certificate.vue';
+import ConfigViewer from './modules/widgets/config-viewer.vue';
+import EngineeringModal from './modules/widgets/engineering.vue';
+import ChannelForm from './modules/widgets/form.vue';
+import Iec104InterrogationModal from './modules/widgets/iec104-interrogation.vue';
+import LogLevelModal from './modules/widgets/log-level-modal.vue';
+import MmsTlsModal from './modules/widgets/mms-tls.vue';
+import OnlineEngineeringModal from './modules/widgets/online-engineering.vue';
 import SubDeviceModal from './modules/widgets/sub-device-manager.vue';
 
 const { handleRequest } = useRequestHandler();
 const router = useRouter();
+const pendingConfigurations = ref(false);
+const activating = ref(new Set<IdType>());
+let refreshingConfigurations = false;
 
 const formOptions: VbenFormProps = {
   // 默认展开
@@ -60,13 +71,19 @@ const gridOptions: VxeGridProps<ChannelInfo> = {
     },
     ajax: {
       query: async ({ page, sort }, formValues) => {
-        return await fetchChannelPage({
+        const result = await fetchChannelPage({
           page: page.currentPage,
           pageSize: page.pageSize,
           sortBy: sort.field || undefined,
           sortOrder: sort.order || undefined,
           ...formValues,
         });
+        pendingConfigurations.value = result.records.some((channel) =>
+          ['activating', 'pending'].includes(
+            channel.configuration?.state ?? '',
+          ),
+        );
+        return result;
       },
     },
     sort: true,
@@ -113,8 +130,75 @@ const [ChannelLogLevelModalRef, channelLogLevelModalApi] = useVbenModal({
   connectedComponent: LogLevelModal,
 });
 
+const [CertificateModal, certificateModalApi] = useVbenModal({
+  connectedComponent: OpcuaClientCertificateModal,
+});
+
+const [EngineeringModalRef, engineeringModalApi] = useVbenModal({
+  connectedComponent: EngineeringModal,
+});
+const [OnlineEngineeringModalRef, onlineEngineeringModalApi] = useVbenModal({
+  connectedComponent: OnlineEngineeringModal,
+});
+const [MmsTlsModalRef, mmsTlsModalApi] = useVbenModal({
+  connectedComponent: MmsTlsModal,
+});
+const [Iec104InterrogationModalRef, iec104InterrogationModalApi] = useVbenModal(
+  {
+    connectedComponent: Iec104InterrogationModal,
+  },
+);
+function openCapturedEngineering(digest: string) {
+  engineeringModalApi.setData({ digest }).open();
+}
+
+useIntervalFn(async () => {
+  if (!pendingConfigurations.value || refreshingConfigurations) return;
+  refreshingConfigurations = true;
+  try {
+    await gridApi.query();
+  } finally {
+    refreshingConfigurations = false;
+  }
+}, 2000);
+
+async function handleActivate(row: ChannelInfo) {
+  if (!row.canActivate || !row.configuration || activating.value.has(row.id))
+    return;
+  activating.value.add(row.id);
+  try {
+    const result = await handleRequest(() =>
+      activateChannel(row.id, row.configuration!.desiredRevision),
+    );
+    if (result?.state === 'failed') {
+      message.warning(
+        result.lastError ?? $t('page.southward.channel.activation.failed'),
+      );
+    } else if (result) {
+      message.success($t(`page.southward.channel.activation.${result.state}`));
+    }
+    await gridApi.query();
+  } finally {
+    activating.value.delete(row.id);
+  }
+}
+
 function onActionClick({ code, row }: OnActionClickParams<ChannelInfo>) {
   switch (code) {
+    case 'certificate': {
+      certificateModalApi
+        .setData({
+          channelId: row.id,
+          channelName: row.name,
+        })
+        .setState({
+          title: $t('page.southward.channel.certificate.titleWithName', {
+            name: row.name,
+          }),
+        })
+        .open();
+      break;
+    }
     case 'configView': {
       handleConfigView(row);
       break;
@@ -125,6 +209,10 @@ function onActionClick({ code, row }: OnActionClickParams<ChannelInfo>) {
     }
     case 'edit': {
       handleEdit(row);
+      break;
+    }
+    case 'iec104Interrogation': {
+      iec104InterrogationModalApi.setData({ channelId: row.id }).open();
       break;
     }
     case 'logLevel': {
@@ -138,8 +226,16 @@ function onActionClick({ code, row }: OnActionClickParams<ChannelInfo>) {
         .open();
       break;
     }
+    case 'mmsTls': {
+      mmsTlsModalApi.setData({ channelId: row.id }).open();
+      break;
+    }
     case 'observability': {
       router.push(`/southward/channel/${row.id}/observability`);
+      break;
+    }
+    case 'onlineEngineering': {
+      onlineEngineeringModalApi.setData({ channelId: row.id }).open();
       break;
     }
     case 'subDevice': {
@@ -265,6 +361,56 @@ const handleFormSubmit = async (
 <template>
   <Page auto-content-height>
     <Grid>
+      <template #configuration="{ row }">
+        <div v-if="row.configuration" class="flex flex-col gap-1 py-1">
+          <Tag
+            :color="
+              row.configuration.state === 'active'
+                ? 'green'
+                : row.configuration.state === 'failed'
+                  ? 'red'
+                  : 'orange'
+            "
+            class="w-fit"
+          >
+            {{
+              $t(`page.southward.channel.activation.${row.configuration.state}`)
+            }}
+          </Tag>
+          <span class="text-xs text-muted-foreground">
+            {{
+              $t('page.southward.channel.activation.revisions', {
+                desired: row.configuration.desiredRevision,
+                applied: row.configuration.appliedRevision ?? '—',
+              })
+            }}
+          </span>
+          <span
+            v-if="row.configuration.lastError"
+            class="text-xs text-destructive"
+          >
+            {{ row.configuration.lastError }}
+          </span>
+          <code
+            v-if="row.engineeringPublication"
+            class="block max-w-full truncate text-xs"
+            :title="row.engineeringPublication.sourceDigest"
+            >SHA-256: {{ row.engineeringPublication.sourceDigest }}
+          </code>
+          <Button
+            v-if="
+              row.canActivate &&
+              ['failed', 'pending'].includes(row.configuration.state)
+            "
+            size="small"
+            :loading="activating.has(row.id)"
+            @click="handleActivate(row)"
+          >
+            {{ $t('page.southward.channel.activation.retry') }}
+          </Button>
+        </div>
+        <span v-else>—</span>
+      </template>
       <template #status="{ row }">
         <Switch
           :checked="row.status === CommonStatus.ENABLED"
@@ -272,6 +418,9 @@ const handleFormSubmit = async (
         />
       </template>
       <template #toolbar-actions>
+        <Button class="mr-2" @click="engineeringModalApi.open()">
+          {{ $t('page.southward.channel.engineering.title') }}
+        </Button>
         <Button class="mr-2" type="primary" @click="handleCreate">
           <span>{{
             `${$t('common.createWithName', { name: $t('page.southward.title') })}`
@@ -283,5 +432,10 @@ const handleFormSubmit = async (
     <ConfigViewerModal />
     <SubDeviceModalRef />
     <ChannelLogLevelModalRef />
+    <CertificateModal />
+    <MmsTlsModalRef />
+    <Iec104InterrogationModalRef />
+    <EngineeringModalRef @published="gridApi.query()" />
+    <OnlineEngineeringModalRef @captured="openCapturedEngineering" />
   </Page>
 </template>

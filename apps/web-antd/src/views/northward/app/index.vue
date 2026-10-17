@@ -13,7 +13,7 @@ import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 import { CommonStatus, EntityType } from '@vben/types';
 
-import { Button, message, Switch } from 'ant-design-vue';
+import { Button, message, Switch, Tag, Tooltip } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -27,6 +27,7 @@ import {
 } from '#/api';
 
 import { createSearchFormSchema, useColumns } from './modules/schemas';
+import OpcuaServerCertificateModal from './modules/widgets/certificate.vue';
 import AppForm from './modules/widgets/form.vue';
 import AppLogLevelModal from './modules/widgets/log-level-modal.vue';
 import SubscriptionDrawer from './modules/widgets/subscription.vue';
@@ -131,6 +132,10 @@ const [AppLogLevelModalRef, appLogLevelModalApi] = useVbenModal({
   connectedComponent: AppLogLevelModal,
 });
 
+const [CertificateModal, certificateModalApi] = useVbenModal({
+  connectedComponent: OpcuaServerCertificateModal,
+});
+
 /**
  * Handle table action button clicks.
  * @param payload - Event payload.
@@ -140,6 +145,19 @@ const [AppLogLevelModalRef, appLogLevelModalApi] = useVbenModal({
 function onActionClick(payload: OnActionClickParams<AppInfo>) {
   const { code, row } = payload;
   switch (code) {
+    case 'certificate': {
+      if (row.pluginType !== 'opcua-server') {
+        message.warning(
+          $t('page.northward.app.exportPoints.unsupportedPluginType'),
+        );
+        break;
+      }
+      certificateModalApi
+        .setData({ appId: row.id, appName: row.name })
+        .setState({ title: $t('page.northward.app.certificate.title') })
+        .open();
+      break;
+    }
     case 'delete': {
       handleDelete(row);
       break;
@@ -232,7 +250,7 @@ async function handleSubscriptionSubmit() {
  * @param row - Target app row.
  */
 async function handleExportPoints(row: AppInfo) {
-  if (!row.pluginType?.startsWith('opcua-server')) {
+  if (row.pluginType !== 'opcua-server') {
     message.warning(
       $t('page.northward.app.exportPoints.unsupportedPluginType'),
     );
@@ -308,7 +326,7 @@ async function toggleStatus(row: AppInfo) {
       ? CommonStatus.DISABLED
       : CommonStatus.ENABLED;
   await handleRequest(
-    () => changeAppStatus(row.id, status),
+    () => changeAppStatus(row.id, status, row.desiredRevision),
     async () => {
       message.success($t('common.action.changeStatusSuccess'));
       await gridApi.query();
@@ -331,7 +349,7 @@ function handleDelete(row: AppInfo) {
   })
     .then(async () => {
       await handleRequest(
-        () => deleteApp(row.id),
+        () => deleteApp(row.id, row.desiredRevision),
         async () => {
           message.success(
             $t('common.action.deleteSuccessWithName', { name: row.name }),
@@ -357,6 +375,31 @@ onMounted(() => {
           @update:checked="toggleStatus(row)"
         />
       </template>
+      <template #configurationState="{ row }">
+        <Tooltip
+          :title="
+            row.activationError ||
+            $t('page.northward.app.configuration.revision', {
+              desired: row.desiredRevision,
+              applied: row.appliedRevision ?? '—',
+            })
+          "
+        >
+          <Tag
+            :color="
+              row.configurationState === 'active'
+                ? 'green'
+                : row.configurationState === 'failed'
+                  ? 'red'
+                  : 'orange'
+            "
+          >
+            {{
+              $t(`page.northward.app.configuration.${row.configurationState}`)
+            }}
+          </Tag>
+        </Tooltip>
+      </template>
       <template #toolbar-actions>
         <Button class="mr-2" type="primary" @click="handleCreate">
           <span>{{
@@ -370,5 +413,6 @@ onMounted(() => {
     <FormDrawer @submit="handleFormSubmit" />
     <SubModal @submitted="handleSubscriptionSubmit" />
     <AppLogLevelModalRef />
+    <CertificateModal />
   </Page>
 </template>

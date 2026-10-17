@@ -59,7 +59,6 @@ Key Fields:
     -   Too large: Slow device occupies concurrency slot, dragging down overall throughput
 -   **maxConcurrentCollections**: Max concurrent collections
     -   Main lever to boost throughput, but increases CPU/Network/Driver concurrency pressure
--   **outboundQueueCapacity**: Bounded queue capacity Collector → Gateway
     -   Too small: Easy backpressure or drops (Depends on drop policy)
     -   Too large: Occupy more memory, and "Backlog" masks downstream slowness
 -   **retryPolicy**: Retry and backoff policy

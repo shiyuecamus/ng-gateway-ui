@@ -21,12 +21,67 @@ export interface MonitorUpdateHint {
   keys: string[];
 }
 
-/** Per-point value envelope from the server. */
+/** Source-time availability is independent of source-clock quality. */
+export type MonitorSourceTimeStatus =
+  | 'invalid'
+  | 'notBound'
+  | 'notObserved'
+  | 'notProvided'
+  | 'partial'
+  | 'provided'
+  | 'uninterpreted';
+
+/** A derived timestamp always retains its physical clock role. */
+export interface MonitorDataTime {
+  time: string;
+  origin: 'gatewayReceived' | 'gatewayStateChanged' | 'source';
+  fallback:
+    | null
+    | { kind: 'clockFailure' | 'invalid' | 'unsynchronized' }
+    | { kind: 'unavailable'; status: MonitorSourceTimeStatus };
+}
+
+/** Protocol-level time never silently becomes per-point source time. */
+export interface MonitorProtocolTime {
+  kind: 'datasetStateChanged' | 'reportCreated' | 'upstreamServer';
+  time: string;
+}
+
+/** Complete typed point sample emitted by the canonical SDK sample contract. */
 export interface MonitorPointEntry {
-  /** The raw typed value. */
-  v: unknown;
-  /** Per-point source timestamp (RFC3339) when available. */
-  ts?: string;
+  pointId: number;
+  pointKey: string;
+  value: null | unknown;
+  valueType: null | number;
+  sourceQuality: {
+    raw: null | { bitLen: number; bytes: number[]; protocol: string };
+    test: boolean | null;
+    validity: 'good' | 'invalid' | 'questionable' | 'unknown';
+  };
+  freshness: 'current' | 'recovering' | 'stale' | 'unknown';
+  sourceTime: null | string;
+  sourceTimeStatus: MonitorSourceTimeStatus;
+  dataTime: MonitorDataTime | null;
+  timeQuality: null | {
+    accuracy: null | number;
+    clockFailure: boolean | null;
+    clockNotSynchronized: boolean | null;
+    leapSecondsKnown: boolean | null;
+    raw: null | { bitLen: number; bytes: number[]; protocol: string };
+    substituted: boolean | null;
+    summerTime: boolean | null;
+    validity: 'good' | 'invalid' | 'questionable' | 'unknown';
+  };
+  protocolTime: MonitorProtocolTime | null;
+  receivedTime: null | string;
+  stateChangedAt: string;
+  origin: {
+    configEpoch: null | number;
+    sessionEpoch: null | number;
+    sourceEpoch: null | number;
+    sourceId: null | string;
+  };
+  updateKind: 'freshness' | 'observation';
 }
 
 /**
@@ -39,6 +94,19 @@ export interface MonitorRow {
   deviceName: string;
   key: string;
   value: unknown;
+  valueType?: null | number;
+  sourceQuality?: MonitorPointEntry['sourceQuality']['validity'];
+  sourceFacts?: MonitorPointEntry['sourceQuality'];
+  timeFacts?: MonitorPointEntry['timeQuality'];
+  sourceMode?: 'normal' | 'test' | 'unknown';
+  timeValidity?: 'good' | 'invalid' | 'questionable' | 'unknown';
+  freshness?: MonitorPointEntry['freshness'];
+  sourceTime?: null | string;
+  sourceTimeStatus?: MonitorSourceTimeStatus;
+  receivedTime?: null | string;
+  protocolTime?: MonitorProtocolTime | null;
+  stateChangedAt?: string;
+  dataTime?: MonitorDataTime | null;
   sourceType: MonitorSourceType;
   /**
    * Attribute scope for attributes rows.
@@ -48,8 +116,6 @@ export interface MonitorRow {
    * Used to avoid ambiguity when same key exists in multiple attribute scopes.
    */
   scope?: 'client' | 'server' | 'shared';
-  /** Per-point source timestamp when available, otherwise device-level lastUpdate. */
-  lastUpdate: string;
 }
 
 /**
@@ -79,8 +145,8 @@ export interface MonitorDeviceMeta {
 export interface MonitorSubscribeMessage extends BaseClientMessage {
   type: 'subscribe';
   channelId?: number;
-  deviceId?: number;
-  deviceIds?: number[];
+  requestId: string;
+  deviceIds: number[];
 }
 
 export type MonitorClientMessage =
@@ -89,52 +155,26 @@ export type MonitorClientMessage =
   | WsUnsubscribeMessage;
 
 export type MonitorSnapshotMessage = BaseServerMessage & {
-  type: 'snapshot';
   attributes: {
     client: Record<string, MonitorPointEntry>;
     server: Record<string, MonitorPointEntry>;
     shared: Record<string, MonitorPointEntry>;
   };
+  lastUpdate: null | string;
   meta: MonitorDeviceMeta;
-  lastUpdate: string;
+  requestId: string;
   telemetry: Record<string, MonitorPointEntry>;
+  type: 'snapshot';
 };
 
-export type MonitorUpdateMessage =
-  | (BaseServerMessage & {
-      type: 'update';
-      dataType: 'telemetry';
-      meta: MonitorDeviceMeta;
-      timestamp: string;
-      values: Record<string, MonitorPointEntry>;
-    })
-  | (BaseServerMessage & {
-      type: 'update';
-      dataType: 'attributes';
-      meta: MonitorDeviceMeta;
-      /**
-       * Optional scope hint. Some servers may emit a scope string, but the
-       * client still maintains all three attribute maps.
-       */
-      scope?: MonitorAttributeScope;
-      timestamp: string;
-      values: Partial<{
-        client: Record<string, MonitorPointEntry>;
-        server: Record<string, MonitorPointEntry>;
-        shared: Record<string, MonitorPointEntry>;
-      }>;
-    });
-
 export type MonitorSubscribedMessage = BaseServerMessage & {
-  type: 'subscribed';
   deviceIds: number[];
   requestId?: string;
+  type: 'subscribed';
 };
 
 export type MonitorServerMessage =
-  | WsPongMessage
-  | WsErrorMessage
   | MonitorSnapshotMessage
-  | MonitorUpdateMessage
-  | MonitorSubscribedMessage;
-
+  | MonitorSubscribedMessage
+  | WsErrorMessage
+  | WsPongMessage;

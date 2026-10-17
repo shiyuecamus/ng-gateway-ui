@@ -10,9 +10,10 @@ import type { NetworkTabKey } from './modules/schemas';
 import { computed, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
-import { useIsMobile } from '@vben-core/composables';
 import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
+
+import { useIsMobile } from '@vben-core/composables';
 
 import { Alert, Button, Card, Tabs } from 'ant-design-vue';
 
@@ -42,14 +43,10 @@ const detailDrawerOpen = ref(false);
 const detailData = ref<NetworkInterfaceDetail | null>(null);
 const detailLoading = ref(false);
 
-const isReadOnly = computed(
-  () => capabilities.value?.platform === 'read_only',
-);
-const canWifi = computed(
-  () => capabilities.value?.canScanWifi === true,
-);
+const isReadOnly = computed(() => capabilities.value?.platform === 'read_only');
+const canWifi = computed(() => capabilities.value?.canScanWifi === true);
 const canAp = computed(
-  () => capabilities.value != null,
+  () => capabilities.value !== null && capabilities.value !== undefined,
 );
 
 const showNoInternetBanner = computed(() => {
@@ -128,7 +125,7 @@ onMounted(() => {
         class="network-main-card"
       >
         <Tabs
-          v-model:activeKey="activeTab"
+          v-model:active-key="activeTab"
           :size="isMobile ? 'small' : 'middle'"
           :tab-bar-gutter="isMobile ? 4 : undefined"
           class="network-tabs"
@@ -141,12 +138,17 @@ onMounted(() => {
               :loading="loading"
               @click="refresh"
             >
-              <span v-if="!isMobile">{{ $t('page.maintenance.network.refresh') }}</span>
+              <span v-if="!isMobile">{{
+                $t('page.maintenance.network.refresh')
+              }}</span>
               <template v-else>↻</template>
             </Button>
           </template>
 
-          <Tabs.TabPane key="overview" :tab="$t('page.maintenance.network.overview')">
+          <Tabs.TabPane
+            key="overview"
+            :tab="$t('page.maintenance.network.overview')"
+          >
             <OverviewCards
               :interfaces="interfaces"
               :loading="loading"
@@ -164,7 +166,11 @@ onMounted(() => {
             key="wifi"
             :tab="$t('page.maintenance.network.wifi')"
           >
-            <WifiTab :read-only="isReadOnly" :is-mobile="isMobile" :capabilities="capabilities" />
+            <WifiTab
+              :read-only="isReadOnly"
+              :is-mobile="isMobile"
+              :capabilities="capabilities"
+            />
           </Tabs.TabPane>
 
           <Tabs.TabPane
@@ -174,7 +180,6 @@ onMounted(() => {
           >
             <ApTab :capabilities="capabilities" :is-mobile="isMobile" />
           </Tabs.TabPane>
-
         </Tabs>
       </Card>
     </div>

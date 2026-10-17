@@ -1,160 +1,44 @@
 ---
 title: 'CJT188'
-description: 'NG Gateway CJ/T 188 南向驱动（只读）：使用、配置、运行语义、数据类型映射、DI/field_key（对齐当前实现）。'
+description: 'CJ/T188 明文采集配置、原生记录校验与业务能力边界。'
 ---
 
-## 1. 概览与能力边界
+## 能力与配置迁移
 
-CJ/T 188 是国内水/热/燃气等表具常用规约，常见版本为 **CJ/T 188-2004** 与 **CJ/T 188-2018**。链路常见两类：**RS-485（串口）** 与 **串口服务器转 TCP**。
+驱动只提供主动采集。`write_point`、Action 和物理控制绑定均明确拒绝，不发送控制报文。协议内核为 `ng-proto-cjt188`；串口/TCP、监督试次和 SDK 投影由驱动持有。
 
-NG Gateway 的 CJ/T188 南向驱动（`ng-driver-cjt188`）是一个以 **DI Schema 驱动解析**为核心的轮询采集驱动
+本次为破坏式配置迁移。旧 `version`、`connection.type`、`max_timeouts`、`wakeup_preamble`、`field_key` 不再接受。通道必须明确选择 `profile`：
 
-:::: warning 重要（能力边界）
-- **只读**：驱动不支持 `execute_action` 与 `write_point`（下行未实现），请不要为该驱动配置任何 Action/写点能力。
-- **仅主动采集**：驱动用于 `collection_type = Collection` 场景（由网关调度 `collect_data` 发起读取）。
-::::
+| profile | DI 线序与数据含义 |
+| --- | --- |
+| `standard2004` | 2004 明文记录配置，工程 DI `901F` 发送 `90 1F`；不实现加密服务。 |
+| `standard2018` | 原表 DI1/DI0 标识，工程 DI `901F` 发送 `1F 90`；拒绝密文响应。 |
+| `yiduWaterV12` | 益都光电直读水表 V1.2，仅水表 `901F`；结算量和时间按该厂商保留零模式表示不可用。 |
 
-## 2. 配置模型
+```json
+{
+  "profile": "standard2018",
+  "connection": { "kind": "tcp", "host": "127.0.0.1", "port": 5001 },
+  "wakeupPreamble": [254, 254, 254, 254],
+  "idleMs": 30,
+  "maxPendingRequests": 32,
+  "maxNoiseBytes": 1024,
+  "sourceUtcOffsetMinutes": 480
+}
+```
 
-### 2.1 Channel（通道）驱动配置
+串口使用 `connection.kind="serial"`，字段为 `port`、`baudRate`、`dataBits`、`stopBits`、`parity`。要求标准波特率 300/600/1200/2400/4800/9600 和 8E1。唤醒码为空或 2～4 个 FE；线路空闲间隔 30～1000 ms。UTC 偏移为显式表具配置，不从宿主时区推断；不配置时数值采集保留未知源时间，时间测点需显式配置偏移。
 
-#### 2.1.1 `version`（协议版本）
+设备配置为 `{ "meterType": 16, "address": "00000000000001" }`。地址必须是 14 位十进制 BCD 数字。表类型只接受 10H～19H、20H～29H、30H～39H、40H～49H；不把中间保留类型归入自定义族。2018 全 99 地址不允许用于主动读。
 
-- **`V2004`**
-- **`V2018`**
+测点配置为 `{ "di": "901F", "fieldKey": "current_flow" }`。同一设备相同 DI 的测点与别名共享一次读取、完整校验和同一接收时间。未知字段、未资格化 DI、单位冲突和金额类型错误在发送前拒绝。
 
-#### 2.1.2 `connection.type`（连接方式）
+## 数据与生命周期语义
 
-- **`Serial`**：串口/RS-485（推荐用于直连 485 总线）
-- **`Tcp`**：TCP（串口服务器/网关）
+完整记录长度必须精确匹配；未绑定的字段也必须有效。BCD 负数使用最高 F 半字节；FF/EE 全字段（包括单位）分别表示不可用/故障，不伪造零值。ST 保留两字节及厂商位，不把连接成功映射为源质量 Good。
 
-Serial 参数（当 `connection.type = Serial`）：
+数值在内核保留整数 mantissa 和十进制位数。驱动按原始单位和配置输出单位做有理数换算，再执行一次 uplink Transform；整数投影拒绝小数截断。温度为 ℃，压力为 kPa，工时为 h。金额和价格必须用 `String` 与 identity Transform，输出精确十进制文本。
 
-- **`connection.port`**：串口路径
-- **`connection.baud_rate`**：波特率
-- **`connection.data_bits`**：数据位（默认 8）
-- **`connection.stop_bits`**：停止位（默认 1）
-- **`connection.parity`**：校验位
+每次实际通信在独占总线内产生 modulo-256 SER，正常与异常响应均校验原始 SER。异常保留完整 ST。排队、线路空闲、发送和接收共用原期限；实际写入/flush 的每次 poll 也校验期限与取消。活跃交换被丢弃、取消、超时或污染时退出原连接，禁止旧响应进入下一交换；监督停止取消并收回实际 I/O owner。
 
-TCP 参数（当 `connection.type = Tcp`）：
-
-- **`connection.host`**：主机
-- **`connection.port`**：端口
-
-#### 2.1.3 `max_timeouts`（连续超时触发重连）
-
-该字段直接驱动“超时触发重连”逻辑：
-
-- **`max_timeouts = 0`**：禁用“连续超时触发重连”（但 **IO/Transport 错误仍会触发重连**）
-- **`max_timeouts > 0`**：当 `连续请求超时次数` 大于 `max_timeouts` 时，驱动请求 supervisor 断开并重建会话
-
-:::: tip 建议
-- 不建议把 `max_timeouts` 设为 1（容易抖动重连），默认 3 通常更稳。
-- 如果现场链路抖动大且设备响应慢：优先调大 `connection_policy.read_timeout_ms`，其次再调大 `max_timeouts`。
-::::
-
-#### 2.1.4 `wakeup_preamble`（前置唤醒码）
-
-`wakeup_preamble` 是一个 `u8` 数组（默认 `[0xFE, 0xFE, 0xFE, 0xFE]`）。驱动会在**每次发送 CJ/T 188 帧之前**先写入这段字节到链路：
-
-- 适用于一些“需要 0xFE 唤醒”的 RS-485 表具
-- 如果明确不需要，可配置为空数组 `[]` 以减少带宽与写入开销
-
-### 2.2 Device（设备）驱动配置
-
-Device 的 `driver_config` 关键字段：
-
-- **`meterType`**：表类型（T，1 字节整数 0..=255）
-  - 决定 **表具族（MeterTypeFamily）**：Water/Heat/Gas/Custom
-  - 表具族决定 schema 选择：同一个 DI 在不同族可能有不同字段结构
-- **`address`**：14 位 hex 字符串，表示 **A6..A0**（`高位在前`）
-  - 驱动会自动转换为协议线序 **A0..A6**（`低位字节先传`）
-
-### 2.3 Point（点位）驱动配置
-
-- **`di`**：4 位 hex（2 字节 DI，例如 `901F`）
-- **`field_key`**：该 DI schema 中的字段键（例如 `current_flow`、`datetime`）
-
-:::: tip 建模最佳实践
-一个 DI 通常包含多个字段（例如 `901F` 同时包含 `current_flow`/`datetime`/`status`）：
-
-- **多字段采集**：建多个 Point，**DI 相同、field_key 不同**
-- **性能**：驱动会按 DI 分组读取，同一设备同一 DI 只发起一次请求，然后把结果分发到多个 Point（减少请求次数，吞吐更高）
-::::
-
-## 3. 数据类型映射表
-
-### 3.1 Schema DataFormat → “源标量”语义
-
-codec 层先把字节解码为一个“源标量”（decoded scalar），然后再按 Point 的 `data_type + scale` 产出最终 `NGValue`。
-
-| Schema DataFormat | 字节语义 | 源标量类型 | 备注 |
-| --- | --- | --- | --- |
-| `BCD { decimals }` | BCD 数值（带小数位） | `f64` | 小数位由 schema 固定，Point 不配置 decimals |
-| `BCDInteger` | BCD 整数 | `u64` | 适合计数/工时/日期(日)等 |
-| `Binary` | 小端无符号整数 | `u64` | 用于 bitset/枚举/计数等 |
-| `DateTime` | 7 字节 BCD 时间 | `i64` | 输出为 epoch ms（UTC） |
-| `Status` | 2 字节状态位（小端） | `u64` | 语义为 `u16`，便于按位解析 |
-| `BCDWithUnit { data_length, decimals }` | BCD 数值 + 1 字节单位码 | `f64` | 单位码当前不随值上报 |
-
-### 3.2 `data_type` 强转矩阵
-
-驱动对每个字段的强转遵循统一规则：**先得到源标量**（`f64/u64/i64`），**应用 scale**（如有），再按 `data_type` 产出最终 `NGValue`。
-
-| 目标 `data_type` | 支持的源标量 | 产出 `NGValue` | 关键语义 |
-| --- | --- | --- | --- |
-| `Boolean` | `f64/u64/i64` | `Boolean` | `!= 0` 视为 true |
-| `Int8/Int16/Int32/Int64` | `f64/u64/i64` | 对应整型 | 有 `scale` 时会做 round() 并做范围校验；无 `scale` 时 `u64/i64` 走整数快速路径（更精确） |
-| `UInt8/UInt16/UInt32/UInt64` | `f64/u64/i64` | 对应无符号整型 | 同上；`i64` 转 `UInt*` 需要非负且可表示 |
-| `Float32/Float64` | `f64/u64/i64` | 对应浮点 | 有 `scale` 时直接缩放 |
-| `String` | `f64/u64/i64` | `String` | 数值转字符串 |
-| `Binary` | `f64/u64/i64` | `Binary` | 数值按 **大端**字节序写入 bytes（仅建议用于调试/透传，不建议作为业务值） |
-| `Timestamp` | `f64/u64/i64` | `Timestamp` | 表示 **epoch ms**；由 DateTime 解码产出的源标量（`i64`）推荐直接配 `Timestamp` |
-
-:::: warning 注意
-`Status` 字段语义是 `u16` bitset。建议 `data_type=UInt16`，再在规则引擎/北向侧按位拆分（例如阀门开关、电池欠压等）。
-::::
-
-## 4. 支持的 DI / field_key
-
-驱动内置 schema 数量较大（包含大量区间 DI），建议按“表具族 + DI 范围”理解。完整列表与解释见 `./address-di.md`，此处给出概览：
-
-- **Water/Gas**
-  - `901F`
-  - `D120..D12B`（12 个）
-  - `D200..D2FF`（256 个）
-  - `D300..D3FF`（256 个，定时冻结）
-  - `D400..D4FF`（256 个，瞬时冻结）
-- **Heat**
-  - `901F`
-  - `911F`
-  - `D120..D12B`
-  - `D200..D2FF`
-- **Common（所有表具族通用）**
-  - `907F`、`8102`、`8103`、`8104`、`8105`
-
-## 5. 典型建模示例
-
-### 5.1 水表/燃气 `901F`：同时采集累积量、时间、状态
-
-建议建 3 个 Point（同一设备同一 DI，只读一次）：
-
-- `di=901F` + `field_key=current_flow` + `data_type=Float64`（建议 `unit=m³`）
-- `di=901F` + `field_key=datetime` + `data_type=Timestamp`
-- `di=901F` + `field_key=status` + `data_type=UInt16`
-
-### 5.2 冻结数据 `D3XX/D4XX`：时间 + 累积量 + 瞬时量
-
-Water/Gas 的冻结 DI 会产出 `freeze_datetime`（建议 `Timestamp`）、`cumulative_flow`、`flow_rate`、`temperature`、`pressure` 等字段；建议优先用 `Float64` 承载数值字段。
-
-## 6. 故障排查
-
-- **读不到数据 / 频繁超时**：
-  - 优先增大 `connection_policy.read_timeout_ms`
-  - 确认串口参数与现场一致；必要时保留默认 `wakeup_preamble`
-  - 合理设置 `max_timeouts`（过小会抖动重连）
-- **日志提示 “No schema found”**：
-  - 确认 `meterType` 是否正确（表具族决定 schema 选择）
-  - 确认 DI 是否在当前实现支持范围（见 [`address-di.md`](./address-di.md)）
-- **日志提示 “Point value not produced”**：
-  - `field_key` 可能拼写错误，或不属于该 DI/表具族
+完整 DI 表及仍需资格化的项目见 [地址与 DI](./address-di.md)。软件证据与真实仪表、串口物理时序及标准符合性证明分别记录；当前 D5 尚未完成全部验收。

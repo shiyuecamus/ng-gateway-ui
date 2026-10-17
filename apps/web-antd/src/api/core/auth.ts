@@ -1,20 +1,20 @@
-import { baseRequestClient, requestClient } from '#/api/request';
+import { requestClient } from '#/api/request';
 
 export namespace AuthApi {
   export const base = '/auth';
   export const login = `${base}/login`;
-  export const refresh = `${base}/refresh`;
   export const logout = `${base}/logout`;
-  export const codes = `${base}/codes`;
 
   /** 登录接口参数 */
   export interface LoginParams {
+    requestId: string;
     password?: string;
     username?: string;
   }
 
   /** 登录接口返回值 */
   export interface LoginResult {
+    mustChangePassword: boolean;
     jti?: string;
     sub: string;
     iss: string;
@@ -27,11 +27,6 @@ export namespace AuthApi {
     token: string;
     access_token_expire: number;
   }
-
-  export interface RefreshTokenResult {
-    data: string;
-    status: number;
-  }
 }
 
 /**
@@ -41,27 +36,18 @@ export async function loginApi(data: AuthApi.LoginParams) {
   return requestClient.post<AuthApi.LoginResult>(AuthApi.login, data);
 }
 
-/**
- * 刷新accessToken
- */
-export async function refreshTokenApi() {
-  return baseRequestClient.post<AuthApi.RefreshTokenResult>(AuthApi.refresh, {
-    withCredentials: true,
-  });
-}
-
-/**
- * 退出登录
- */
+/** Revoke the actual authenticated session before clearing local state. */
 export async function logoutApi() {
-  return baseRequestClient.post(AuthApi.logout, {
-    withCredentials: true,
-  });
+  return requestClient.post<boolean>(AuthApi.logout);
 }
 
-/**
- * 获取用户权限码
- */
-export async function getAccessCodesApi() {
-  return requestClient.get<string[]>(AuthApi.codes);
+/** A successful password change invalidates every previous session. */
+export async function changePasswordApi(
+  oldPassword: string,
+  newPassword: string,
+) {
+  return requestClient.put<boolean>('/auth/password', {
+    oldPassword,
+    newPassword,
+  });
 }

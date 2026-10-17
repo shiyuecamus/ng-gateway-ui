@@ -228,7 +228,6 @@
       "collectionTimeoutMs": "采集超时（ms）",
       "collectionTimeoutMsTip": "建议根据设备/协议延迟设置；过小会导致采集频繁超时。",
       "maxConcurrentCollections": "最大并发采集数",
-      "outboundQueueCapacity": "出站队列容量",
       "retryPolicyTitle": "重试策略",
       "maxAttemptsUnlimited": "无限重试",
       "maxAttemptsUnlimitedTip": "开启后 max_attempts 以 null 表示无限重试。",

@@ -7,11 +7,10 @@ import { DataType } from './common';
 interface ActionDebugRequest {
   params: Record<string, any>;
   timeoutMs?: number;
-}
-
-interface ActionDebugResponse {
-  result: Recordable<any>;
-  elapsedMs: number;
+  idempotencyKey: string;
+  expectedChannelId?: number;
+  expectedDeviceId?: number;
+  expectedConfigurationRevision?: string;
 }
 
 interface ActionInfo extends BaseEntity {
@@ -36,4 +35,4 @@ interface Parameter {
   driverConfig: Recordable<any>;
 }
 
-export type { ActionInfo, ActionDebugRequest, ActionDebugResponse };
+export type { ActionDebugRequest, ActionInfo };

@@ -36,11 +36,15 @@ const { isDark } = usePreferences();
 
 const metrics = useMetricsWs({
   intervalMs: 1000,
-  uiTriggerMinIntervalMs: 200,
   trendPoints: 60,
 });
-const { status: wsStatus, appSnapshot, appSnapshotTs, connect, disconnect } =
-  metrics;
+const {
+  status: wsStatus,
+  appSnapshot,
+  appSnapshotTs,
+  connect,
+  disconnect,
+} = metrics;
 
 const statusText = computed(() => {
   switch (wsStatus.value) {
@@ -368,7 +372,7 @@ onBeforeUnmount(() => {
     </div>
 
     <Card size="small" :title="$t('page.northward.app.observability.snapshot')">
-      <Descriptions :column="2" bordered size="small">
+      <Descriptions :column="{ xs: 1, md: 2 }" bordered size="small">
         <DescriptionsItem :label="$t('page.northward.app.observability.state')">
           {{ connectionPhase }}
         </DescriptionsItem>

@@ -71,7 +71,9 @@ export const formSchema: FormSchema[] = [
     },
     fieldName: 'email',
     label: $t('page.system.user.email'),
-    rules: z.string().email($t('errors.invalidEmail')).optional(),
+    rules: z
+      .union([z.literal(''), z.string().email($t('errors.invalidEmail'))])
+      .optional(),
   },
   {
     component: 'InputPassword',
@@ -83,6 +85,13 @@ export const formSchema: FormSchema[] = [
     },
     fieldName: 'password',
     label: $t('page.system.user.password'),
-    rules: 'required',
+    rules: z
+      .string()
+      .refine(
+        (value) =>
+          [...value].length >= 15 &&
+          new TextEncoder().encode(value).length <= 72,
+        { message: $t('authentication.passwordLengthRule') },
+      ),
   },
 ];

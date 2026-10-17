@@ -1,7 +1,11 @@
 <script lang="ts" setup>
-import type { ChannelInfo, DeviceInfo } from '@vben/types';
-
-import type { MonitorDeviceSnapshot, MonitorRow } from '@vben/types';
+import type {
+  ChannelInfo,
+  DeviceInfo,
+  MonitorDeviceSnapshot,
+  MonitorPointEntry,
+  MonitorRow,
+} from '@vben/types';
 
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
 
@@ -18,19 +22,21 @@ import { Page } from '@vben/common-ui';
 import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 
-import { Input, Select, Tag } from 'ant-design-vue';
+import { Alert, Button, Input, Select, Tag } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { fetchChannelList, getSubDevicesById } from '#/api';
 import { useMonitorWs } from '#/shared/composables/use-monitor-ws';
 
 import { useMonitorColumns } from './modules/schemas';
+import SampleQuality from './modules/widgets/sample-quality.vue';
 
 const channelOptions = ref<ChannelInfo[]>([]);
 const deviceOptions = ref<DeviceInfo[]>([]);
 const selectedChannelId = ref<number | undefined>();
 const selectedDeviceId = ref<number | undefined>();
 const keyword = ref('');
+const qualityDetailRowId = ref<string>();
 
 const pager = ref({
   currentPage: 1,
@@ -40,6 +46,8 @@ const pager = ref({
 
 const {
   status: connectionStatus,
+  baselineAccepted,
+  lastError,
   snapshots,
   updateHints,
   subscribe,
@@ -50,7 +58,7 @@ const {
 
 const { handleRequest } = useRequestHandler();
 
-type MonitorRowMeta = Omit<MonitorRow, 'lastUpdate' | 'value'>;
+type MonitorRowMeta = Omit<MonitorRow, 'value'>;
 const rowMetas = ref<MonitorRowMeta[]>([]);
 const rowMetaIdSet = new Set<string>();
 
@@ -68,6 +76,7 @@ const gridOptions: VxeGridProps<MonitorRow> = {
 
 const gridEvents: VxeGridListeners<MonitorRow> = {
   pageChange({ currentPage, pageSize }) {
+    qualityDetailRowId.value = undefined;
     pager.value.currentPage = currentPage;
     pager.value.pageSize = pageSize;
     updateGridData();
@@ -167,11 +176,10 @@ function hydrateRow(meta: MonitorRowMeta): MonitorRow {
     return {
       ...meta,
       value: undefined,
-      lastUpdate: '',
     };
   }
 
-  let entry: { v?: unknown; ts?: string } | undefined;
+  let entry: MonitorPointEntry | undefined;
   if (meta.sourceType === 'telemetry') {
     entry = snap.telemetry?.[meta.key];
   } else {
@@ -199,9 +207,32 @@ function hydrateRow(meta: MonitorRowMeta): MonitorRow {
 
   return {
     ...meta,
-    value: entry?.v,
-    lastUpdate: entry?.ts ?? snap.lastUpdate,
+    value: entry?.value,
+    valueType: entry?.valueType,
+    sourceQuality: entry?.sourceQuality.validity ?? 'unknown',
+    sourceFacts: entry?.sourceQuality,
+    timeFacts: entry?.timeQuality,
+    sourceMode: sourceMode(entry?.sourceQuality.test),
+    timeValidity: entry?.timeQuality?.validity ?? 'unknown',
+    freshness:
+      baselineAccepted.value && connectionStatus.value === 'connected'
+        ? (entry?.freshness ?? 'unknown')
+        : 'stale',
+    sourceTime: entry?.sourceTime,
+    sourceTimeStatus: entry?.sourceTimeStatus,
+    receivedTime: entry?.receivedTime,
+    stateChangedAt: entry?.stateChangedAt,
+    protocolTime: entry?.protocolTime,
+    dataTime: entry?.dataTime,
   };
+}
+
+function sourceMode(
+  test: boolean | null | undefined,
+): MonitorRow['sourceMode'] {
+  if (test === true) return 'test';
+  if (test === false) return 'normal';
+  return 'unknown';
 }
 
 function updateGridData() {
@@ -356,18 +387,42 @@ onMounted(async () => {
   await nextTick();
   await loadChannels();
 });
+
+watch([selectedChannelId, selectedDeviceId, keyword], () => {
+  qualityDetailRowId.value = undefined;
+});
 </script>
 
 <template>
   <Page auto-content-height>
+    <Alert
+      v-if="lastError"
+      class="mb-3"
+      type="warning"
+      show-icon
+      :message="lastError.message"
+    >
+      <template #action>
+        <Button size="small" @click="connect">
+          {{ $t('authentication.retryStream') }}
+        </Button>
+      </template>
+    </Alert>
     <Grid>
+      <template #sourceQuality="{ row }">
+        <SampleQuality
+          :row="row"
+          :open="qualityDetailRowId === row.id"
+          @update:open="qualityDetailRowId = $event ? row.id : undefined"
+        />
+      </template>
       <template #toolbar-actions>
         <Tag :color="statusColor" class="text-[13px]">
           {{ statusText }}
         </Tag>
       </template>
       <template #toolbar-tools>
-        <div class="flex items-center gap-3">
+        <div class="flex w-full flex-wrap items-center gap-3">
           <Select
             v-model:value="selectedChannelId"
             :allow-clear="true"
@@ -379,7 +434,8 @@ onMounted(async () => {
                 value: c.id,
               }))
             "
-            class="w-52"
+            class="w-full min-w-0 sm:w-52"
+            :aria-label="$t('page.monitor.realtime.channel')"
             :placeholder="$t('page.monitor.realtime.channel')"
           />
           <Select
@@ -394,13 +450,15 @@ onMounted(async () => {
                 value: d.id,
               }))
             "
-            class="w-72"
+            class="w-full min-w-0 sm:w-72"
+            :aria-label="$t('page.monitor.realtime.device')"
             :placeholder="$t('page.monitor.realtime.device')"
           />
           <Input
             v-model:value="keyword"
+            :aria-label="$t('page.monitor.realtime.searchPlaceholder')"
             :placeholder="$t('page.monitor.realtime.searchPlaceholder')"
-            class="w-64"
+            class="w-full min-w-0 sm:w-64"
             allow-clear
           />
         </div>

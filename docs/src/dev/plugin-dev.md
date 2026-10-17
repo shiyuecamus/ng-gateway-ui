@@ -23,7 +23,7 @@ description: 以 MQTT 为 Demo，按 1、2、3... 的步骤讲清楚如何在 NG
 
 - **网关侧 - Host 负责**：
   - 动态加载插件库：`./plugins/builtin` 与 `./plugins/custom`
-  - Probe 探测：OS/Arch、checksum、SDK/API 版本、静态元数据（UI Schema）
+  - Probe 探测：OS/Arch、checksum、SDK boot 契约与构建身份、静态元数据（UI Schema）
   - 统一日志桥接与动态日志级别治理（全局/按 App 的 override）
   - 给每个 App 创建隔离 runtime（队列、buffer、metrics、span），并把 `NorthwardData` 按背压策略投递给插件
   - 管理连接与重试（由 SDK 的 supervision loop 统一治理）
@@ -92,7 +92,7 @@ cd ng-plugin-mqtt
 ```toml
 [package]
 name = "ng-plugin-mqtt"
-version = "0.1.0"
+version = "0.0.0-boot"
 edition = "2021"
 publish = false
 
@@ -100,7 +100,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ng-gateway-sdk = "0.1"
+ng-gateway-sdk = "=0.0.0-boot"
 tokio = { version = "1", features = ["full", "tracing"] }
 async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }
@@ -1536,7 +1536,7 @@ ng_plugin_factory!(
 - Probe 页重点确认：
   - OS/Arch、checksum
   - `plugin_type`、`version`
-  - `api_version` / `sdk_version`
+  - `boot_contract` / `sdk_version`
   - 静态元数据（UI Schema）是否能正确渲染配置表单
 
 3) **Install 并绑定到 App**
@@ -1560,7 +1560,7 @@ ng_plugin_factory!(
 ### 9.2 发布与兼容性清单
 
 - **多平台产物**：`.so/.dylib/.dll` 且 OS/Arch 必须匹配运行环境
-- **ABI/API 版本**：loader 会校验 `ng_plugin_api_version()` 与 host 一致（不一致直接拒绝）
+- **boot 契约**：loader 会校验 `ng_plugin_boot_contract()` 与 host 一致（不一致直接拒绝）
 - **SDK 版本**：不建议跨大版本混用；至少在 Probe 页确认 `sdk_version` 符合预期
 - **动态依赖**：确认产物不依赖运行环境缺失的动态库（尤其是 TLS/openssl 相关）
 - **配置兼容性**：

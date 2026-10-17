@@ -7,13 +7,13 @@ import { $t } from '@vben/locales';
 
 import { Empty, Spin } from 'ant-design-vue';
 
-import InterfaceCard from './interface-card.vue';
 import InterfaceCardMobile from './interface-card-mobile.vue';
+import InterfaceCard from './interface-card.vue';
 
 const props = defineProps<{
   interfaces: NetworkInterfaceSummary[];
-  loading: boolean;
   isMobile: boolean;
+  loading: boolean;
 }>();
 
 const emit = defineEmits<{

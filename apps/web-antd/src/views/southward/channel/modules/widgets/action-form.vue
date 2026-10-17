@@ -4,6 +4,7 @@ import type { Ref } from 'vue';
 import type { ActionInfo, IdType, Recordable } from '@vben/types';
 
 import type { VbenFormSchema } from '#/adapter/form';
+import type { DriverSchemas } from '#/shared/dynamic-schema';
 
 import { nextTick, ref } from 'vue';
 
@@ -20,14 +21,13 @@ import { Card } from 'ant-design-vue';
 import { useVbenForm } from '#/adapter/form';
 import { getActionById } from '#/api/core/action';
 import { fetchDriverSchemasById } from '#/api/core/driver';
-
-import ActionParameterManager from './action-parameter-manager.vue';
-import { useActionBasicFormSchema } from '../schemas/form';
 import {
   mapActionSchemasToForm,
   sortDriverSchemas,
-  type DriverSchemas,
 } from '#/shared/dynamic-schema';
+
+import { useActionBasicFormSchema } from '../schemas/form';
+import ActionParameterManager from './action-parameter-manager.vue';
 
 defineOptions({ name: 'ActionForm' });
 
@@ -57,7 +57,7 @@ const [BasicForm, basicFormApi] = useVbenForm({
 });
 
 const [ModalRoot, modalApi] = useVbenDrawer({
-  class: 'w-1/2',
+  class: 'w-[920px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   showConfirmButton: true,
   onCancel() {
@@ -155,4 +155,3 @@ async function loadDriverSchema(id: IdType) {
     </div>
   </ModalRoot>
 </template>
-

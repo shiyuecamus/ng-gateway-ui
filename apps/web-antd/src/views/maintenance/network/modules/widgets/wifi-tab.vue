@@ -40,15 +40,19 @@ import {
   wifiConnectPreflight,
 } from '#/api/core';
 
-import { prefixToSubnetMask, securityShortLabel, signalQualityLevel } from '../schemas';
+import {
+  prefixToSubnetMask,
+  securityShortLabel,
+  signalQualityLevel,
+} from '../schemas';
 import WifiConnectModal from './wifi-connect-modal.vue';
 import WifiIpConfig from './wifi-ip-config.vue';
 import WifiSavedNetworks from './wifi-saved-networks.vue';
 
 const props = defineProps<{
-  readOnly: boolean;
-  isMobile: boolean;
   capabilities: NetworkCapabilities | null;
+  isMobile: boolean;
+  readOnly: boolean;
 }>();
 
 const { handleRequest } = useRequestHandler();
@@ -58,15 +62,15 @@ const initialLoading = ref(true);
 const accessPoints = ref<WifiAccessPoint[]>([]);
 const scanErrorMessage = ref('');
 const scanStatus = ref<WifiScanStatus>('ready');
-const wifiStatus = ref<WifiStaStatus | null>(null);
+const wifiStatus = ref<null | WifiStaStatus>(null);
 const bestWifiIface = ref<NetworkInterfaceSummary | null>(null);
 
 const connectModalOpen = ref(false);
-const selectedAp = ref<WifiAccessPoint | null>(null);
+const selectedAp = ref<null | WifiAccessPoint>(null);
 const connecting = ref(false);
 const disconnecting = ref(false);
 
-const connectResult = ref<'idle' | 'success' | 'failed'>('idle');
+const connectResult = ref<'failed' | 'idle' | 'success'>('idle');
 let connectResultTimer: ReturnType<typeof setTimeout> | undefined;
 
 // Pull-to-refresh state
@@ -78,35 +82,41 @@ const pullThreshold = 60;
 const descColumn = computed(() => (props.isMobile ? 1 : { xs: 1, sm: 2 }));
 const canEditWifiIp = computed(
   () =>
-    !props.readOnly
-    && props.capabilities?.canConfigureInterfaces === true
-    && bestWifiIface.value != null,
+    !props.readOnly &&
+    props.capabilities?.canConfigureInterfaces === true &&
+    bestWifiIface.value !== null &&
+    bestWifiIface.value !== undefined,
 );
 const showScanHint = computed(
   () =>
-    !initialLoading.value
-    && !scanning.value
-    && accessPoints.value.length === 0
-    && scanStatus.value !== 'ready'
-    && Boolean(scanHintMessage.value),
+    !initialLoading.value &&
+    !scanning.value &&
+    accessPoints.value.length === 0 &&
+    scanStatus.value !== 'ready' &&
+    Boolean(scanHintMessage.value),
 );
 const scanHintMessage = computed(() => {
   switch (props.capabilities?.os) {
-    case 'macos':
+    case 'macos': {
       return $t('page.maintenance.network.wifiConfig.scanPermissionHintMacos');
-    case 'windows':
-      return $t('page.maintenance.network.wifiConfig.scanPermissionHintWindows');
-    default:
+    }
+    case 'windows': {
+      return $t(
+        'page.maintenance.network.wifiConfig.scanPermissionHintWindows',
+      );
+    }
+    default: {
       return '';
+    }
   }
 });
 
 function formatRequestError(error: any): string {
   return (
-    error?.response?.data?.message
-    || error?.response?.data?.msg
-    || error?.message
-    || String(error)
+    error?.response?.data?.message ||
+    error?.response?.data?.msg ||
+    error?.message ||
+    String(error)
   );
 }
 
@@ -114,9 +124,13 @@ async function loadWifiInterface() {
   await handleRequest(
     () => fetchNetworkInterfaces(),
     (data) => {
-      const wifiIfaces = data.filter((i: NetworkInterfaceSummary) => i.kind === 'wifi');
+      const wifiIfaces = data.filter(
+        (i: NetworkInterfaceSummary) => i.kind === 'wifi',
+      );
       bestWifiIface.value =
-        wifiIfaces.find((i: NetworkInterfaceSummary) => i.linkState === 'up') ?? wifiIfaces[0] ?? null;
+        wifiIfaces.find((i: NetworkInterfaceSummary) => i.linkState === 'up') ??
+        wifiIfaces[0] ??
+        null;
     },
   );
 }
@@ -130,7 +144,8 @@ async function doScan() {
     (data: WifiScanResult) => {
       accessPoints.value = data.accessPoints;
       scanStatus.value = data.status;
-      scanErrorMessage.value = data.status === 'ready' ? '' : (data.message ?? '');
+      scanErrorMessage.value =
+        data.status === 'ready' ? '' : (data.message ?? '');
     },
     (error) => {
       accessPoints.value = [];
@@ -144,7 +159,9 @@ async function doScan() {
 async function loadStatus() {
   await handleRequest(
     () => fetchWifiStatus(),
-    (data) => { wifiStatus.value = data; },
+    (data) => {
+      wifiStatus.value = data;
+    },
   );
 }
 
@@ -160,8 +177,8 @@ function openConnectHidden() {
   connectResult.value = 'idle';
 }
 
-const pendingPreflight = ref<WifiConnectPreflight | null>(null);
-const pendingRequest = ref<WifiConnectRequest | null>(null);
+const pendingPreflight = ref<null | WifiConnectPreflight>(null);
+const pendingRequest = ref<null | WifiConnectRequest>(null);
 const preflightConfirmOpen = ref(false);
 const disconnectConfirmOpen = ref(false);
 
@@ -171,10 +188,12 @@ async function doConnect(request: WifiConnectRequest) {
   clearTimeout(connectResultTimer);
 
   // Run preflight check to detect AP side-effects.
-  let preflight: WifiConnectPreflight | null = null;
+  let preflight: null | WifiConnectPreflight = null;
   await handleRequest(
     () => wifiConnectPreflight(request),
-    (data) => { preflight = data; },
+    (data) => {
+      preflight = data;
+    },
   );
 
   if (preflight && (preflight as WifiConnectPreflight).apWillStop) {
@@ -207,7 +226,8 @@ async function doConnect(request: WifiConnectRequest) {
 
 async function executeConnect(request: WifiConnectRequest) {
   preflightConfirmOpen.value = false;
-  const willLoseConnection = pendingPreflight.value?.connectionWillBeLost === true;
+  const willLoseConnection =
+    pendingPreflight.value?.connectionWillBeLost === true;
   connecting.value = true;
   connectResult.value = 'idle';
   clearTimeout(connectResultTimer);
@@ -223,7 +243,9 @@ async function executeConnect(request: WifiConnectRequest) {
       wifiStatus.value = data;
       connectResult.value = 'success';
       if (!willLoseConnection) {
-        message.success($t('page.maintenance.network.wifiConfig.connectSuccess'));
+        message.success(
+          $t('page.maintenance.network.wifiConfig.connectSuccess'),
+        );
         connectResultTimer = setTimeout(() => {
           connectModalOpen.value = false;
           connectResult.value = 'idle';
@@ -262,7 +284,9 @@ function requestDisconnect() {
   }
 }
 
-const savedNetworksRef = ref<InstanceType<typeof WifiSavedNetworks> | null>(null);
+const savedNetworksRef = ref<InstanceType<typeof WifiSavedNetworks> | null>(
+  null,
+);
 
 async function doDisconnect() {
   disconnectConfirmOpen.value = false;
@@ -271,7 +295,9 @@ async function doDisconnect() {
     () => disconnectWifi({ disableAutoconnect: true }),
     () => {
       wifiStatus.value = null;
-      message.success($t('page.maintenance.network.wifiConfig.disconnectSuccess'));
+      message.success(
+        $t('page.maintenance.network.wifiConfig.disconnectSuccess'),
+      );
     },
   );
   disconnecting.value = false;
@@ -287,11 +313,21 @@ function onSavedNetworkForgotten() {
 function signalIcon(quality: number): string {
   const level = signalQualityLevel(quality);
   switch (level) {
-    case 'excellent': return 'mdi:wifi-strength-4';
-    case 'good': return 'mdi:wifi-strength-3';
-    case 'fair': return 'mdi:wifi-strength-2';
-    case 'weak': return 'mdi:wifi-strength-1';
-    default: return 'mdi:wifi-strength-outline';
+    case 'excellent': {
+      return 'mdi:wifi-strength-4';
+    }
+    case 'fair': {
+      return 'mdi:wifi-strength-2';
+    }
+    case 'good': {
+      return 'mdi:wifi-strength-3';
+    }
+    case 'weak': {
+      return 'mdi:wifi-strength-1';
+    }
+    default: {
+      return 'mdi:wifi-strength-outline';
+    }
   }
 }
 
@@ -339,25 +375,37 @@ onMounted(async () => {
           class="flex items-center justify-center rounded-lg bg-primary/10"
           :class="isMobile ? 'h-9 w-9' : 'h-10 w-10'"
         >
-          <IconifyIcon icon="mdi:wifi" class="text-primary size-5" />
+          <IconifyIcon icon="mdi:wifi" class="size-5 text-primary" />
         </div>
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-center gap-1.5">
-            <span class="truncate text-sm font-semibold">{{ bestWifiIface.displayName || bestWifiIface.name }}</span>
+            <span class="truncate text-sm font-semibold">{{
+              bestWifiIface.displayName || bestWifiIface.name
+            }}</span>
             <Tag
               :color="bestWifiIface.linkState === 'up' ? 'success' : 'default'"
               size="small"
               class="!m-0"
             >
-              {{ bestWifiIface.linkState === 'up'
-                ? $t('page.maintenance.network.linkUp')
-                : $t('page.maintenance.network.linkDown') }}
+              {{
+                bestWifiIface.linkState === 'up'
+                  ? $t('page.maintenance.network.linkUp')
+                  : $t('page.maintenance.network.linkDown')
+              }}
             </Tag>
-            <Tag v-if="bestWifiIface.connectedSsid" color="blue" size="small" class="!m-0">
+            <Tag
+              v-if="bestWifiIface.connectedSsid"
+              color="blue"
+              size="small"
+              class="!m-0"
+            >
               {{ bestWifiIface.connectedSsid }}
             </Tag>
           </div>
-          <div v-if="bestWifiIface.macAddress" class="truncate text-xs text-gray-400">
+          <div
+            v-if="bestWifiIface.macAddress"
+            class="truncate text-xs text-gray-400"
+          >
             {{ bestWifiIface.macAddress }}
           </div>
         </div>
@@ -382,34 +430,57 @@ onMounted(async () => {
         bordered
       >
         <Descriptions.Item label="SSID">
-          <Tag color="blue" size="small" class="!m-0">{{ wifiStatus.ssid }}</Tag>
+          <Tag color="blue" size="small" class="!m-0">
+            {{ wifiStatus.ssid }}
+          </Tag>
         </Descriptions.Item>
-        <Descriptions.Item :label="$t('page.maintenance.network.wifiConfig.signal')">
+        <Descriptions.Item
+          :label="$t('page.maintenance.network.wifiConfig.signal')"
+        >
           {{ wifiStatus.signalQuality }}%
-          <span v-if="wifiStatus.signalDbm != null" class="ml-1 text-xs text-gray-400">
+          <span
+            v-if="wifiStatus.signalDbm != null"
+            class="ml-1 text-xs text-gray-400"
+          >
             ({{ wifiStatus.signalDbm }} dBm)
           </span>
         </Descriptions.Item>
-        <Descriptions.Item :label="$t('page.maintenance.network.wifiConfig.ip')">
+        <Descriptions.Item
+          :label="$t('page.maintenance.network.wifiConfig.ip')"
+        >
           <span class="break-all">{{ wifiStatus.ipAddress ?? '—' }}</span>
         </Descriptions.Item>
         <Descriptions.Item :label="$t('page.maintenance.network.subnetMask')">
-          {{ prefixToSubnetMask(bestWifiIface?.ipv4?.addresses?.[0]?.prefixLength) }}
+          {{
+            prefixToSubnetMask(
+              bestWifiIface?.ipv4?.addresses?.[0]?.prefixLength,
+            )
+          }}
         </Descriptions.Item>
-        <Descriptions.Item :label="$t('page.maintenance.network.wifiConfig.gateway')">
+        <Descriptions.Item
+          :label="$t('page.maintenance.network.wifiConfig.gateway')"
+        >
           {{ wifiStatus.gateway ?? '—' }}
         </Descriptions.Item>
-        <Descriptions.Item :label="$t('page.maintenance.network.wiredConfig.ipMode')">
+        <Descriptions.Item
+          :label="$t('page.maintenance.network.wiredConfig.ipMode')"
+        >
           <Tag size="small" class="!m-0">
-            {{ bestWifiIface?.ipv4?.method === 'static'
-              ? $t('page.maintenance.network.static')
-              : $t('page.maintenance.network.dhcp') }}
+            {{
+              bestWifiIface?.ipv4?.method === 'static'
+                ? $t('page.maintenance.network.static')
+                : $t('page.maintenance.network.dhcp')
+            }}
           </Tag>
         </Descriptions.Item>
-        <Descriptions.Item :label="$t('page.maintenance.network.wifiConfig.security')">
+        <Descriptions.Item
+          :label="$t('page.maintenance.network.wifiConfig.security')"
+        >
           {{ wifiStatus.security ?? '—' }}
         </Descriptions.Item>
-        <Descriptions.Item :label="$t('page.maintenance.network.wifiConfig.band')">
+        <Descriptions.Item
+          :label="$t('page.maintenance.network.wifiConfig.band')"
+        >
           {{ wifiStatus.band ?? '—' }}
           <span v-if="wifiStatus.channel" class="ml-1 text-xs text-gray-400">
             Ch {{ wifiStatus.channel }}
@@ -425,26 +496,29 @@ onMounted(async () => {
       </Descriptions>
 
       <!-- Not connected: show basic interface info -->
-      <Descriptions
-        v-else
-        size="small"
-        :column="descColumn"
-        bordered
-      >
+      <Descriptions v-else size="small" :column="descColumn" bordered>
         <Descriptions.Item :label="$t('page.maintenance.network.ipAddress')">
-          <span class="break-all">{{ bestWifiIface.ipv4?.addresses?.[0]?.address ?? '—' }}</span>
+          <span class="break-all">{{
+            bestWifiIface.ipv4?.addresses?.[0]?.address ?? '—'
+          }}</span>
         </Descriptions.Item>
         <Descriptions.Item :label="$t('page.maintenance.network.subnetMask')">
-          {{ prefixToSubnetMask(bestWifiIface.ipv4?.addresses?.[0]?.prefixLength) }}
+          {{
+            prefixToSubnetMask(bestWifiIface.ipv4?.addresses?.[0]?.prefixLength)
+          }}
         </Descriptions.Item>
         <Descriptions.Item :label="$t('page.maintenance.network.gateway')">
           {{ bestWifiIface.ipv4?.gateway ?? '—' }}
         </Descriptions.Item>
-        <Descriptions.Item :label="$t('page.maintenance.network.wiredConfig.ipMode')">
+        <Descriptions.Item
+          :label="$t('page.maintenance.network.wiredConfig.ipMode')"
+        >
           <Tag size="small" class="!m-0">
-            {{ bestWifiIface.ipv4?.method === 'static'
-              ? $t('page.maintenance.network.static')
-              : $t('page.maintenance.network.dhcp') }}
+            {{
+              bestWifiIface.ipv4?.method === 'static'
+                ? $t('page.maintenance.network.static')
+                : $t('page.maintenance.network.dhcp')
+            }}
           </Tag>
         </Descriptions.Item>
         <Descriptions.Item
@@ -463,7 +537,12 @@ onMounted(async () => {
       :interface-name="bestWifiIface.name"
       :current-ipv4="bestWifiIface.ipv4"
       :is-mobile="isMobile"
-      @applied="() => { loadWifiInterface(); loadStatus(); }"
+      @applied="
+        () => {
+          loadWifiInterface();
+          loadStatus();
+        }
+      "
     />
 
     <!-- Scan section -->
@@ -473,14 +552,24 @@ onMounted(async () => {
 
     <div class="mb-3 flex items-center justify-end gap-2">
       <Button v-if="!readOnly" size="small" @click="openConnectHidden">
-        {{ isMobile
-          ? $t('page.maintenance.network.wifiConfig.hiddenNetwork')
-          : $t('page.maintenance.network.wifiConfig.connectToHidden') }}
+        {{
+          isMobile
+            ? $t('page.maintenance.network.wifiConfig.hiddenNetwork')
+            : $t('page.maintenance.network.wifiConfig.connectToHidden')
+        }}
       </Button>
-      <Button type="primary" ghost size="small" :loading="scanning" @click="doScan">
-        {{ scanning
-          ? $t('page.maintenance.network.wifiConfig.scanning')
-          : $t('page.maintenance.network.wifiConfig.scan') }}
+      <Button
+        type="primary"
+        ghost
+        size="small"
+        :loading="scanning"
+        @click="doScan"
+      >
+        {{
+          scanning
+            ? $t('page.maintenance.network.wifiConfig.scanning')
+            : $t('page.maintenance.network.wifiConfig.scan')
+        }}
       </Button>
     </div>
 
@@ -495,9 +584,11 @@ onMounted(async () => {
         class="mr-1 size-4 transition-transform"
         :class="{ 'rotate-180': pullDistance >= pullThreshold }"
       />
-      {{ pullDistance >= pullThreshold
-        ? $t('page.maintenance.network.wifiConfig.releaseToRefresh')
-        : $t('page.maintenance.network.wifiConfig.pullToRefresh') }}
+      {{
+        pullDistance >= pullThreshold
+          ? $t('page.maintenance.network.wifiConfig.releaseToRefresh')
+          : $t('page.maintenance.network.wifiConfig.pullToRefresh')
+      }}
     </div>
 
     <!-- Wi-Fi list with pull-to-refresh container -->
@@ -509,17 +600,23 @@ onMounted(async () => {
     >
       <!-- Skeleton screen during initial load -->
       <div v-if="initialLoading" class="flex flex-col gap-2">
-        <div v-for="i in 5" :key="i" class="flex items-center gap-3 rounded-md px-3 py-3">
+        <div
+          v-for="i in 5"
+          :key="i"
+          class="flex items-center gap-3 rounded-md px-3 py-3"
+        >
           <Skeleton.Avatar :size="20" shape="square" active />
           <div class="flex-1">
             <Skeleton.Input active style="width: 60%; height: 16px" />
-            <Skeleton.Input active style="width: 40%; height: 12px; margin-top: 4px" />
+            <Skeleton.Input
+              active
+              style="width: 40%; height: 12px; margin-top: 4px"
+            />
           </div>
         </div>
       </div>
 
       <template v-else>
-
         <Alert
           v-if="showScanHint"
           type="info"
@@ -548,11 +645,22 @@ onMounted(async () => {
 
                 <div
                   class="min-w-0 flex-1"
-                  @click="isMobile && !readOnly && !item.isConnected ? openConnect(item) : undefined"
+                  @click="
+                    isMobile && !readOnly && !item.isConnected
+                      ? openConnect(item)
+                      : undefined
+                  "
                 >
                   <div class="flex items-center gap-2">
-                    <span class="truncate text-sm font-medium">{{ item.ssid }}</span>
-                    <Tag v-if="item.isConnected" color="success" size="small" class="!m-0">
+                    <span class="truncate text-sm font-medium">{{
+                      item.ssid
+                    }}</span>
+                    <Tag
+                      v-if="item.isConnected"
+                      color="success"
+                      size="small"
+                      class="!m-0"
+                    >
                       {{ $t('page.maintenance.network.wifiConfig.connected') }}
                     </Tag>
                   </div>
@@ -595,9 +703,11 @@ onMounted(async () => {
     <template v-if="isMobile">
       <Drawer
         :open="connectModalOpen"
-        :title="selectedAp
-          ? `${$t('page.maintenance.network.wifiConfig.connect')} — ${selectedAp.ssid}`
-          : $t('page.maintenance.network.wifiConfig.connectToHidden')"
+        :title="
+          selectedAp
+            ? `${$t('page.maintenance.network.wifiConfig.connect')} — ${selectedAp.ssid}`
+            : $t('page.maintenance.network.wifiConfig.connectToHidden')
+        "
         placement="bottom"
         height="auto"
         class="wifi-connect-sheet"
@@ -638,22 +748,32 @@ onMounted(async () => {
       :closable="true"
       :title="$t('page.maintenance.network.wifiConfig.connectConfirmTitle')"
       class="wifi-confirm-sheet"
-      @close="preflightConfirmOpen = false; pendingPreflight = null; pendingRequest = null;"
+      @close="
+        preflightConfirmOpen = false;
+        pendingPreflight = null;
+        pendingRequest = null;
+      "
     >
-      <Alert
-        v-if="pendingPreflight"
-        type="warning"
-        show-icon
-        class="!mb-4"
-      >
+      <Alert v-if="pendingPreflight" type="warning" show-icon class="!mb-4">
         <template #message>
-          <div v-for="(w, idx) in pendingPreflight.warnings" :key="idx" class="text-sm">
+          <div
+            v-for="(w, idx) in pendingPreflight.warnings"
+            :key="idx"
+            class="text-sm"
+          >
             {{ w }}
           </div>
         </template>
       </Alert>
       <div class="flex gap-3">
-        <Button block @click="preflightConfirmOpen = false; pendingPreflight = null; pendingRequest = null;">
+        <Button
+          block
+          @click="
+            preflightConfirmOpen = false;
+            pendingPreflight = null;
+            pendingRequest = null;
+          "
+        >
           {{ $t('page.maintenance.network.confirmCancel') }}
         </Button>
         <Button
@@ -686,7 +806,13 @@ onMounted(async () => {
         <Button block @click="disconnectConfirmOpen = false">
           {{ $t('page.maintenance.network.confirmCancel') }}
         </Button>
-        <Button type="primary" danger block :loading="disconnecting" @click="() => doDisconnect()">
+        <Button
+          type="primary"
+          danger
+          block
+          :loading="disconnecting"
+          @click="() => doDisconnect()"
+        >
           {{ $t('page.maintenance.network.confirmAction') }}
         </Button>
       </div>

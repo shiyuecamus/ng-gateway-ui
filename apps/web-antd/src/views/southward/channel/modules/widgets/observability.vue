@@ -58,7 +58,6 @@ const { isDark } = usePreferences();
 // Single WS connection: we can subscribe to multiple scopes on the same socket.
 const metrics = useMetricsWs({
   intervalMs: 1000,
-  uiTriggerMinIntervalMs: 200,
   trendPoints: 60,
 });
 

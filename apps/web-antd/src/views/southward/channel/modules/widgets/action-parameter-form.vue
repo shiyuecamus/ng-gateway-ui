@@ -105,7 +105,7 @@ watch(
 );
 
 const [ParameterDrawer, parameterDrawerApi] = useVbenDrawer({
-  class: 'w-1/2',
+  class: 'w-[920px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   showConfirmButton: true,
   onCancel() {
@@ -196,4 +196,3 @@ function resolveDriverDefaultValues(
     </div>
   </ParameterDrawer>
 </template>
-

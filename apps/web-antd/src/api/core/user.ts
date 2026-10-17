@@ -20,8 +20,7 @@ export namespace UserApi {
 
   /** user page params */
   export interface UserPageParams
-    extends CommonPageRequest,
-      CommonTimeRangeRequest {
+    extends CommonPageRequest, CommonTimeRangeRequest {
     name?: string;
     status?: (typeof CommonStatus)[keyof typeof CommonStatus];
   }
@@ -31,7 +30,9 @@ export namespace UserApi {
  * get user info
  */
 export async function getUserInfoApi() {
-  return requestClient.get<UserInfo>(UserApi.info);
+  return requestClient.get<UserInfo & { mustChangePassword: boolean }>(
+    UserApi.info,
+  );
 }
 
 /**
@@ -50,7 +51,7 @@ export async function fetchUserPage(params: UserApi.UserPageParams) {
  * @param data - User data
  * @returns Promise with create user response
  */
-export async function createUser(data: UserInfo) {
+export async function createUser(data: CreateUserRequest) {
   return requestClient.post(UserApi.base, data);
 }
 
@@ -59,7 +60,7 @@ export async function createUser(data: UserInfo) {
  * @param data - User data
  * @returns Promise with update user response
  */
-export async function updateUser(data: UserInfo) {
+export async function updateUser(data: UpdateUserRequest) {
   return requestClient.put(UserApi.base, data);
 }
 
@@ -105,4 +106,20 @@ export async function changeUserStatus(
  */
 export async function resetUserPassword(id: IdType, newPassword: string) {
   return requestClient.put(UserApi.resetPassword, { id, newPassword });
+}
+
+/** Accepted create fields; presentation and authority fields never enter this request. */
+export interface CreateUserRequest {
+  username: string;
+  password: string;
+  nickname: string;
+  phone?: string;
+  email?: string;
+}
+/** A profile patch never changes login identity or role membership. */
+export interface UpdateUserRequest {
+  id: IdType;
+  nickname: string;
+  phone?: null | string;
+  email?: null | string;
 }

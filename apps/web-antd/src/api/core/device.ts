@@ -32,9 +32,7 @@ export namespace DeviceApi {
 
   /** device page params */
   export interface DevicePageParams
-    extends CommonPageRequest,
-      CommonTimeRangeRequest,
-      CommonSortRequest {
+    extends CommonPageRequest, CommonSortRequest, CommonTimeRangeRequest {
     deviceName?: string;
     deviceType?: string;
     channelId?: IdType;

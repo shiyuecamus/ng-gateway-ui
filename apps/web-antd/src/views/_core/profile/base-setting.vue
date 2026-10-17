@@ -1,65 +1,83 @@
 <script setup lang="ts">
-import type { BasicOption } from '@vben/types';
+import type { UserInfo } from '@vben/types';
 
-import type { VbenFormSchema } from '#/adapter/form';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 
-import { computed, onMounted, ref } from 'vue';
+import { $t } from '@vben/locales';
 
-import { ProfileBaseSetting } from '@vben/common-ui';
+import {
+  Alert,
+  Button,
+  Card,
+  Descriptions,
+  DescriptionsItem,
+  Space,
+  Spin,
+  Tag,
+} from 'ant-design-vue';
 
-import { getUserInfoApi } from '#/api';
+import { getUserInfoApi } from '#/api/core/user';
 
-const profileBaseSettingRef = ref();
-
-const MOCK_ROLES_OPTIONS: BasicOption[] = [
-  {
-    label: '管理员',
-    value: 'super',
-  },
-  {
-    label: '用户',
-    value: 'user',
-  },
-  {
-    label: '测试',
-    value: 'test',
-  },
-];
-
-const formSchema = computed((): VbenFormSchema[] => {
-  return [
-    {
-      fieldName: 'realName',
-      component: 'Input',
-      label: '姓名',
-    },
-    {
-      fieldName: 'username',
-      component: 'Input',
-      label: '用户名',
-    },
-    {
-      fieldName: 'roles',
-      component: 'Select',
-      componentProps: {
-        mode: 'tags',
-        options: MOCK_ROLES_OPTIONS,
-      },
-      label: '角色',
-    },
-    {
-      fieldName: 'introduction',
-      component: 'Textarea',
-      label: '个人简介',
-    },
-  ];
-});
-
-onMounted(async () => {
-  const data = await getUserInfoApi();
-  profileBaseSettingRef.value.getFormApi().setValues(data);
+const account = ref<null | UserInfo>(null);
+const loading = ref(false);
+const error = ref('');
+let generation = 0;
+/** Only server-owned account and role facts are shown; no placeholder save action exists. */
+async function load() {
+  const current = ++generation;
+  loading.value = true;
+  error.value = '';
+  try {
+    const result = await getUserInfoApi();
+    if (current === generation) account.value = result;
+  } catch (error_) {
+    if (current === generation)
+      error.value =
+        error_ instanceof Error
+          ? error_.message
+          : $t('page.system.user.profileLoadFailed');
+  } finally {
+    if (current === generation) loading.value = false;
+  }
+}
+onMounted(load);
+onBeforeUnmount(() => {
+  generation += 1;
 });
 </script>
+
 <template>
-  <ProfileBaseSetting ref="profileBaseSettingRef" :form-schema="formSchema" />
+  <Card :title="$t('page.auth.profile')">
+    <template #extra>
+      <Button :loading="loading" @click="load">
+        {{ $t('common.refresh') }}
+      </Button>
+    </template>
+    <Space direction="vertical" :size="16" class="w-full">
+      <Alert
+        type="info"
+        show-icon
+        :message="$t('page.system.user.profileReadonly')"
+      />
+      <Alert v-if="error" type="error" show-icon :message="error" />
+      <Spin :spinning="loading">
+        <Descriptions v-if="account" bordered :column="{ xs: 1, md: 2 }">
+          <DescriptionsItem
+            v-for="field in ['username', 'nickname', 'email', 'phone'] as const"
+            :key="field"
+            :label="$t(`page.system.user.${field}`)"
+          >
+            {{ account[field] || '—' }}
+          </DescriptionsItem>
+          <DescriptionsItem :label="$t('entity.role')">
+            <Space :size="8" wrap>
+              <Tag v-for="role in account.roles" :key="role.id" class="!m-0">
+                {{ role.code }}
+              </Tag>
+            </Space>
+          </DescriptionsItem>
+        </Descriptions>
+      </Spin>
+    </Space>
+  </Card>
 </template>

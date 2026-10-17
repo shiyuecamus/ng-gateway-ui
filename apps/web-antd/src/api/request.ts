@@ -6,7 +6,6 @@ import type { RequestClientOptions } from '@vben/request';
 import { useAppConfig } from '@vben/hooks';
 import { preferences } from '@vben/preferences';
 import {
-  authenticateResponseInterceptor,
   defaultResponseInterceptor,
   errorMessageResponseInterceptor,
   RequestClient,
@@ -16,8 +15,6 @@ import { useAccessStore } from '@vben/stores';
 import { message } from 'ant-design-vue';
 
 import { useAuthStore } from '#/store';
-
-import { refreshTokenApi } from './core';
 
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
 
@@ -35,25 +32,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     const accessStore = useAccessStore();
     const authStore = useAuthStore();
     accessStore.setAccessToken(null);
-    if (
-      preferences.app.loginExpiredMode === 'modal' &&
-      accessStore.isAccessChecked
-    ) {
-      accessStore.setLoginExpired(true);
-    } else {
-      await authStore.logout();
-    }
-  }
-
-  /**
-   * 刷新token逻辑
-   */
-  async function doRefreshToken() {
-    const accessStore = useAccessStore();
-    const resp = await refreshTokenApi();
-    const newToken = resp.data;
-    accessStore.setAccessToken(newToken);
-    return newToken;
+    await authStore.clearSession();
   }
 
   function formatToken(token: null | string) {
@@ -67,7 +46,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
 
       config.headers.Authorization = formatToken(accessStore.accessToken);
       config.headers['Accept-Language'] = preferences.app.locale;
-      config.headers['Accept-Api-Version'] = 'v1';
+      config.headers['X-Gateway-Contract'] = 'boot';
       return config;
     },
   });
@@ -81,16 +60,19 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     }),
   );
 
-  // token过期的处理
-  client.addResponseInterceptor(
-    authenticateResponseInterceptor({
-      client,
-      doReAuthenticate,
-      doRefreshToken,
-      enableRefreshToken: preferences.app.enableRefreshToken,
-      formatToken,
-    }),
-  );
+  // Persistent sessions require a new login after expiry or revocation.
+  client.addResponseInterceptor({
+    rejected: async (error) => {
+      if (
+        error?.response?.status === 401 &&
+        error?.config?.url !== '/auth/login' &&
+        error?.config?.headers?.Authorization ===
+          formatToken(useAccessStore().accessToken)
+      )
+        await doReAuthenticate();
+      throw error;
+    },
+  });
 
   // 通用的错误处理,如果没有进入上面的错误处理逻辑，就会进入这里
   client.addResponseInterceptor(

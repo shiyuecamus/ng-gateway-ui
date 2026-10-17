@@ -2,21 +2,34 @@
 import type { FormOpenData } from '@vben/constants';
 import type { AppInfo, IdType, PluginInfo, Recordable } from '@vben/types';
 
+import type { CertificatePreview } from '#/api/core/certificate';
 import type { PluginConfigSchemas } from '#/shared/dynamic-schema';
 
 import { nextTick, ref } from 'vue';
 
-import { useVbenDrawer } from '@vben/common-ui';
+import { confirm, useVbenDrawer } from '@vben/common-ui';
 import { FormOpenType } from '@vben/constants';
 import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 
 import { set } from '@vben-core/shared/utils';
 
-import { Card, Select, Step, Steps, Tag } from 'ant-design-vue';
+import {
+  Alert,
+  Button,
+  Card,
+  Descriptions,
+  DescriptionsItem,
+  message,
+  Select,
+  Step,
+  Steps,
+  Tag,
+} from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { fetchAllPlugins, getAppById } from '#/api/core';
+import { previewCertificate } from '#/api/core/certificate';
 import { fetchPluginSchemasById } from '#/api/core/plugin';
 import {
   mapPluginConfigSchemasToForm,
@@ -40,12 +53,16 @@ const { handleRequest } = useRequestHandler();
 const currentTab = ref(0);
 const type = ref(FormOpenType.CREATE);
 const recordId = ref<IdType>(undefined);
+const expectedRevision = ref<string | undefined>(undefined);
 const loading = ref(false);
 const plugins = ref<PluginInfo[]>([]);
+const opcuaSelected = ref(false);
+const certificateInput = ref<HTMLInputElement | null>(null);
+const lastCertificate = ref<CertificatePreview | null>(null);
 
 // Step 1: Basic information form
 const [BasicForm, basicFormApi] = useVbenForm({
-  handleSubmit: (_record: Recordable<any>) => {
+  handleSubmit: () => {
     currentTab.value = 1;
   },
   schema: useAppBasicFormSchema([]),
@@ -62,7 +79,7 @@ const [BasicForm, basicFormApi] = useVbenForm({
 
 // Step 2: Retry policy form
 const [RetryPolicyForm, retryPolicyFormApi] = useVbenForm({
-  handleSubmit: async (_record: Recordable<any>) => {
+  handleSubmit: async () => {
     currentTab.value = 2;
   },
   schema: useRetryPolicyFormSchema(),
@@ -82,7 +99,7 @@ const [RetryPolicyForm, retryPolicyFormApi] = useVbenForm({
 
 // Step 3: Queue policy form
 const [QueuePolicyForm, queuePolicyFormApi] = useVbenForm({
-  handleSubmit: async (_record: Recordable<any>) => {
+  handleSubmit: async () => {
     currentTab.value = 3;
   },
   schema: useQueuePolicyFormSchema(),
@@ -110,6 +127,9 @@ const [PluginConfigForm, pluginConfigFormApi] = useVbenForm({
     emit('submit', type.value, recordId.value, {
       ...basic,
       config: pluginConfig,
+      ...(type.value === FormOpenType.EDIT
+        ? { expectedRevision: expectedRevision.value }
+        : {}),
     });
   },
   schema: [],
@@ -126,7 +146,7 @@ const [PluginConfigForm, pluginConfigFormApi] = useVbenForm({
 });
 
 const [Modal, modalApi] = useVbenDrawer({
-  class: 'w-1/2',
+  class: 'w-[920px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   footer: false,
   onCancel() {
@@ -146,6 +166,7 @@ async function init() {
   const { type: t, id: i } = modalApi.getData<FormOpenData>();
   type.value = t;
   recordId.value = i;
+  expectedRevision.value = undefined;
 
   await handleRequest(
     () => fetchAllPlugins(),
@@ -167,6 +188,7 @@ async function init() {
     await handleRequest(
       () => getAppById(recordId.value as IdType),
       async (data: AppInfo) => {
+        expectedRevision.value = data.desiredRevision;
         await onPluginIdChange(data.pluginId, false);
         basicFormApi.setValues({
           name: data.name,
@@ -198,7 +220,15 @@ function filterOption(
   return option?.label?.toLowerCase().includes(input.toLowerCase()) ?? false;
 }
 
-async function onPluginIdChange(id: any, _option?: any, resetForm = true) {
+async function onPluginIdChange(selection: unknown, resetForm = true) {
+  const id =
+    typeof selection === 'number' || typeof selection === 'string'
+      ? selection
+      : undefined;
+  opcuaSelected.value =
+    plugins.value.find((plugin) => plugin.id === id)?.pluginType ===
+    'opcua-server';
+  lastCertificate.value = null;
   if (id === undefined || id === null) {
     pluginConfigFormApi.updateSchema([]);
     return;
@@ -223,6 +253,52 @@ async function onPluginIdChange(id: any, _option?: any, resetForm = true) {
     },
   );
 }
+
+async function onCertificateSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (!file || !opcuaSelected.value) return;
+  try {
+    const preview = await previewCertificate(file);
+    if (!preview.validNow || preview.applicationUris.length === 0) {
+      message.error($t('page.northward.app.certificate.invalidClientIdentity'));
+      return;
+    }
+    const values = await pluginConfigFormApi.getValues();
+    const existing = values?.trusted_client_certs ?? [];
+    if (
+      !Array.isArray(existing) ||
+      existing.some((pin) => typeof pin !== 'string')
+    ) {
+      message.error($t('page.northward.app.certificate.invalidExisting'));
+      return;
+    }
+    const approved = await confirm({
+      title: $t('page.northward.app.certificate.confirmTitle'),
+      icon: 'warning',
+      content: $t('page.northward.app.certificate.confirmContent', {
+        subject: preview.subject,
+        fingerprint: preview.sha256Hex,
+      }),
+    }).then(
+      () => true,
+      () => false,
+    );
+    if (!approved) return;
+    if (existing.includes(preview.derBase64)) {
+      message.info($t('page.northward.app.certificate.alreadyAdded'));
+      return;
+    }
+    await pluginConfigFormApi.setValues({
+      trusted_client_certs: [...existing, preview.derBase64],
+    });
+    lastCertificate.value = preview;
+    message.success($t('page.northward.app.certificate.added'));
+  } catch {
+    message.error($t('page.northward.app.certificate.previewFailed'));
+  }
+}
 </script>
 
 <template>
@@ -239,7 +315,7 @@ async function onPluginIdChange(id: any, _option?: any, resetForm = true) {
           <template #pluginId="slotProps">
             <Select
               v-bind="slotProps"
-              @change="onPluginIdChange"
+              @change="(id) => onPluginIdChange(id)"
               :allow-clear="true"
               :show-search="true"
               :filter-option="filterOption"
@@ -283,6 +359,39 @@ async function onPluginIdChange(id: any, _option?: any, resetForm = true) {
 
       <div v-show="currentTab === 3" class="space-y-4">
         <Card>
+          <div v-if="opcuaSelected" class="mb-4 space-y-3">
+            <Alert
+              type="info"
+              show-icon
+              :message="$t('page.northward.app.certificate.clientInstructions')"
+            />
+            <input
+              ref="certificateInput"
+              class="hidden"
+              type="file"
+              accept=".cer,.crt,.der,.pem,application/pkix-cert"
+              @change="onCertificateSelected"
+            />
+            <Button @click="certificateInput?.click()">
+              {{ $t('page.northward.app.certificate.uploadClient') }}
+            </Button>
+            <Descriptions
+              v-if="lastCertificate"
+              bordered
+              :column="1"
+              size="small"
+            >
+              <DescriptionsItem label="Subject">
+                {{ lastCertificate.subject }}
+              </DescriptionsItem>
+              <DescriptionsItem label="ApplicationUri">
+                {{ lastCertificate.applicationUris.join(', ') }}
+              </DescriptionsItem>
+              <DescriptionsItem label="SHA-256">
+                <code class="break-all">{{ lastCertificate.sha256Hex }}</code>
+              </DescriptionsItem>
+            </Descriptions>
+          </div>
           <PluginConfigForm />
         </Card>
       </div>
@@ -291,4 +400,3 @@ async function onPluginIdChange(id: any, _option?: any, resetForm = true) {
 </template>
 
 <style scoped></style>
-

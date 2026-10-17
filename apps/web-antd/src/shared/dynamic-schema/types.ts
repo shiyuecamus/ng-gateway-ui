@@ -1,6 +1,7 @@
 import type { Nullable } from '@vben/types';
 
 import { preferences } from '@vben/preferences';
+
 import { isNullOrUndefined } from '@vben-core/shared/utils';
 
 /**

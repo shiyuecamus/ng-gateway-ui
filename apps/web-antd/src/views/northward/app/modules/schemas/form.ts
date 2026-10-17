@@ -146,6 +146,24 @@ export function useRetryPolicyFormSchema(): FormSchema[] {
  */
 export function useQueuePolicyFormSchema(): FormSchema[] {
   return [
+    ...(
+      [
+        ['latestCapacity', 10_000, 1_000_000],
+        ['latestMaxBytes', 33_554_432, 1_073_741_824],
+        ['deliveryMaxInFlight', 16, 1024],
+        ['deliveryMaxPayloadBytes', 262_144, 1_073_741_824],
+        ['deliveryTimeoutMs', 30_000, 300_000],
+        ['deliveryRetryMs', 1000, 300_000],
+      ] as const
+    ).map(([field, defaultValue, max]) => ({
+      component: 'InputNumber',
+      fieldName: `queuePolicy.${field}`,
+      label: $t(`page.northward.app.queuePolicy.${field}`),
+      componentProps: { min: 1, max, precision: 0 },
+      controlClass: 'w-full',
+      defaultValue,
+      rules: 'required',
+    })),
     {
       component: 'InputNumber',
       fieldName: 'queuePolicy.capacity',

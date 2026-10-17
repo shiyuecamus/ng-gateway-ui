@@ -9,7 +9,6 @@ import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
 import { generateAccess } from './access';
-import { setupUrlAutoLoginGuard } from './url-auto-login';
 
 /**
  * 通用守卫配置
@@ -50,6 +49,17 @@ function setupAccessGuard(router: Router) {
     const accessStore = useAccessStore();
     const userStore = useUserStore();
     const authStore = useAuthStore();
+
+    if (accessStore.accessToken && !authStore.sessionChecked)
+      await authStore.fetchUserInfo();
+    if (
+      accessStore.accessToken &&
+      authStore.mustChangePassword &&
+      to.path !== '/auth/password'
+    )
+      return '/auth/password';
+    if (to.path === '/auth/password')
+      return accessStore.accessToken ? true : LOGIN_PATH;
 
     // 基本路由，这些路由不需要进入权限拦截
     if (coreRouteNames.includes(to.name as string)) {
@@ -127,8 +137,6 @@ function setupAccessGuard(router: Router) {
 function createRouterGuard(router: Router) {
   /** 通用 */
   setupCommonGuard(router);
-  /** URL 参数自动登录，必须在权限访问守卫之前执行 */
-  setupUrlAutoLoginGuard(router);
   /** 权限访问 */
   setupAccessGuard(router);
 }

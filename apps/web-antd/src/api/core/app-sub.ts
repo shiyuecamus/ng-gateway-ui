@@ -17,8 +17,7 @@ export namespace AppSubApi {
   export const deviceTree = `${base}/device-tree`;
 
   export interface AppSubPageParams
-    extends CommonPageRequest,
-      CommonTimeRangeRequest {
+    extends CommonPageRequest, CommonTimeRangeRequest {
     appId?: IdType;
   }
 }

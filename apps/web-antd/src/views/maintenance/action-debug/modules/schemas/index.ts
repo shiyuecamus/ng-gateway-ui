@@ -5,6 +5,8 @@ import { z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 import { DataType } from '@vben/types';
 
+import { isCanonicalWideInteger } from './wide-integer';
+
 type ParameterDataType = (typeof DataType)[keyof typeof DataType];
 
 /**
@@ -49,6 +51,26 @@ export function buildActionDebugSchema(info: ActionInfo): FormSchema[] {
       };
     }
 
+    if (
+      ([DataType.Int64, DataType.UInt64, DataType.Int128] as number[]).includes(
+        logicalDataType,
+      )
+    ) {
+      const integerString = z
+        .string()
+        .refine((value) => isCanonicalWideInteger(value, logicalDataType));
+      return {
+        component: 'Input',
+        fieldName: p.key,
+        label: p.name,
+        componentProps: {
+          maxlength: logicalDataType === DataType.Int128 ? 40 : 20,
+          class: 'w-full',
+        },
+        rules: p.required ? integerString : integerString.optional(),
+      };
+    }
+
     const isFloat = ([DataType.Float32, DataType.Float64] as number[]).includes(
       logicalDataType as number,
     );
@@ -60,8 +82,6 @@ export function buildActionDebugSchema(info: ActionInfo): FormSchema[] {
         DataType.UInt16,
         DataType.Int32,
         DataType.UInt32,
-        DataType.Int64,
-        DataType.UInt64,
         DataType.Timestamp,
       ] as number[]
     ).includes(logicalDataType as number);
@@ -113,4 +133,3 @@ export function buildActionDebugInitialValues(
 
   return Object.fromEntries(entries) as Record<string, any>;
 }
-

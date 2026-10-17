@@ -8,8 +8,8 @@ import { Collapse } from 'ant-design-vue';
 import IpConfigForm from './ip-config-form.vue';
 
 const props = defineProps<{
-  interfaceName: string | null;
   currentIpv4: Ipv4Config | null | undefined;
+  interfaceName: null | string;
   isMobile: boolean;
 }>();
 

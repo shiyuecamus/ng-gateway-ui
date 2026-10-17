@@ -1,5 +1,10 @@
 <script lang="ts" setup>
-import type { IpConfig, IpMethod, WifiAccessPoint, WifiConnectRequest } from '@vben/types';
+import type {
+  IpConfig,
+  IpMethod,
+  WifiAccessPoint,
+  WifiConnectRequest,
+} from '@vben/types';
 
 import { computed, ref, watch } from 'vue';
 
@@ -22,13 +27,13 @@ import {
 
 const props = withDefaults(
   defineProps<{
-    open: boolean;
-    ap: WifiAccessPoint | null;
+    ap: null | WifiAccessPoint;
     connecting: boolean;
-    connectResult?: 'idle' | 'success' | 'failed';
-    isMobile?: boolean;
+    connectResult?: 'failed' | 'idle' | 'success';
     /** Render as inline form (used inside Drawer bottom-sheet) */
     inlineMode?: boolean;
+    isMobile?: boolean;
+    open: boolean;
   }>(),
   {
     connectResult: 'idle',
@@ -75,9 +80,7 @@ const ipModeOptions = computed(() => [
   { label: $t('page.maintenance.network.static'), value: 'static' },
 ]);
 
-const needsPassword = computed(
-  () => props.ap && props.ap.security !== 'OPEN',
-);
+const needsPassword = computed(() => props.ap && props.ap.security !== 'OPEN');
 
 const title = computed(() =>
   props.ap
@@ -153,7 +156,10 @@ function handleOk() {
 
   <!-- Inline mode: rendered inside parent Drawer (bottom-sheet) -->
   <template v-else-if="inlineMode">
-    <Spin :spinning="connecting" :tip="$t('page.maintenance.network.wifiConfig.connecting')">
+    <Spin
+      :spinning="connecting"
+      :tip="$t('page.maintenance.network.wifiConfig.connecting')"
+    >
       <Form layout="vertical" class="pt-2">
         <div v-if="ap" class="mb-4 flex flex-wrap items-center gap-2">
           <Tag>{{ securityLabel }}</Tag>
@@ -177,12 +183,13 @@ function handleOk() {
         <Form.Item
           v-if="needsPassword || !ap"
           :label="$t('page.maintenance.network.wifiConfig.password')"
-          :help="needsPassword ? $t('page.maintenance.network.wifiConfig.passwordRequired') : undefined"
+          :help="
+            needsPassword
+              ? $t('page.maintenance.network.wifiConfig.passwordRequired')
+              : undefined
+          "
         >
-          <Input.Password
-            v-model:value="password"
-            class="!text-base"
-          />
+          <Input.Password v-model:value="password" class="!text-base" />
         </Form.Item>
 
         <Form.Item v-if="!ap">
@@ -192,22 +199,64 @@ function handleOk() {
         </Form.Item>
 
         <Collapse ghost class="!-mx-4 !mb-2">
-          <Collapse.Panel key="ip" :header="$t('page.maintenance.network.wifiConfig.advancedSettings')">
-            <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipMode')">
-              <Select v-model:value="ipMethod" :options="ipModeOptions" class="!text-base" />
+          <Collapse.Panel
+            key="ip"
+            :header="$t('page.maintenance.network.wifiConfig.advancedSettings')"
+          >
+            <Form.Item
+              :label="$t('page.maintenance.network.wiredConfig.ipMode')"
+            >
+              <Select
+                v-model:value="ipMethod"
+                :options="ipModeOptions"
+                class="!text-base"
+              />
             </Form.Item>
             <template v-if="isStaticIp">
-              <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipAddress')" required>
-                <Input v-model:value="staticIp" placeholder="192.168.1.100" inputmode="decimal" class="!text-base" />
+              <Form.Item
+                :label="$t('page.maintenance.network.wiredConfig.ipAddress')"
+                required
+              >
+                <Input
+                  v-model:value="staticIp"
+                  placeholder="192.168.1.100"
+                  inputmode="decimal"
+                  class="!text-base"
+                />
               </Form.Item>
-              <Form.Item :label="$t('page.maintenance.network.wiredConfig.prefixLength')" required>
-                <InputNumber v-model:value="staticPrefix" :min="1" :max="32" class="!w-full" inputmode="numeric" />
+              <Form.Item
+                :label="$t('page.maintenance.network.wiredConfig.prefixLength')"
+                required
+              >
+                <InputNumber
+                  v-model:value="staticPrefix"
+                  :min="1"
+                  :max="32"
+                  class="!w-full"
+                  inputmode="numeric"
+                />
               </Form.Item>
-              <Form.Item :label="$t('page.maintenance.network.wiredConfig.gateway')">
-                <Input v-model:value="staticGateway" placeholder="192.168.1.1" inputmode="decimal" class="!text-base" />
+              <Form.Item
+                :label="$t('page.maintenance.network.wiredConfig.gateway')"
+              >
+                <Input
+                  v-model:value="staticGateway"
+                  placeholder="192.168.1.1"
+                  inputmode="decimal"
+                  class="!text-base"
+                />
               </Form.Item>
-              <Form.Item :label="$t('page.maintenance.network.wiredConfig.dnsServers')">
-                <Input.TextArea v-model:value="staticDns" :rows="2" :placeholder="$t('page.maintenance.network.wiredConfig.dnsHint')" class="!text-base" />
+              <Form.Item
+                :label="$t('page.maintenance.network.wiredConfig.dnsServers')"
+              >
+                <Input.TextArea
+                  v-model:value="staticDns"
+                  :rows="2"
+                  :placeholder="
+                    $t('page.maintenance.network.wiredConfig.dnsHint')
+                  "
+                  class="!text-base"
+                />
               </Form.Item>
             </template>
           </Collapse.Panel>
@@ -218,7 +267,12 @@ function handleOk() {
             <Button block @click="emit('cancel')">
               {{ $t('common.cancel') }}
             </Button>
-            <Button type="primary" block :loading="connecting" @click="handleOk">
+            <Button
+              type="primary"
+              block
+              :loading="connecting"
+              @click="handleOk"
+            >
               {{ $t('page.maintenance.network.wifiConfig.connect') }}
             </Button>
           </div>
@@ -253,7 +307,11 @@ function handleOk() {
       </div>
     </template>
 
-    <Spin v-else :spinning="connecting" :tip="$t('page.maintenance.network.wifiConfig.connecting')">
+    <Spin
+      v-else
+      :spinning="connecting"
+      :tip="$t('page.maintenance.network.wifiConfig.connecting')"
+    >
       <Form layout="vertical" class="mt-4">
         <div v-if="ap" class="mb-4 flex items-center gap-2">
           <Tag>{{ securityLabel }}</Tag>
@@ -273,7 +331,11 @@ function handleOk() {
         <Form.Item
           v-if="needsPassword || !ap"
           :label="$t('page.maintenance.network.wifiConfig.password')"
-          :help="needsPassword ? $t('page.maintenance.network.wifiConfig.passwordRequired') : undefined"
+          :help="
+            needsPassword
+              ? $t('page.maintenance.network.wifiConfig.passwordRequired')
+              : undefined
+          "
         >
           <Input.Password v-model:value="password" />
         </Form.Item>
@@ -285,22 +347,51 @@ function handleOk() {
         </Form.Item>
 
         <Collapse ghost class="!mb-2">
-          <Collapse.Panel key="ip" :header="$t('page.maintenance.network.wifiConfig.advancedSettings')">
-            <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipMode')">
+          <Collapse.Panel
+            key="ip"
+            :header="$t('page.maintenance.network.wifiConfig.advancedSettings')"
+          >
+            <Form.Item
+              :label="$t('page.maintenance.network.wiredConfig.ipMode')"
+            >
               <Select v-model:value="ipMethod" :options="ipModeOptions" />
             </Form.Item>
             <template v-if="isStaticIp">
-              <Form.Item :label="$t('page.maintenance.network.wiredConfig.ipAddress')" required>
+              <Form.Item
+                :label="$t('page.maintenance.network.wiredConfig.ipAddress')"
+                required
+              >
                 <Input v-model:value="staticIp" placeholder="192.168.1.100" />
               </Form.Item>
-              <Form.Item :label="$t('page.maintenance.network.wiredConfig.prefixLength')" required>
-                <InputNumber v-model:value="staticPrefix" :min="1" :max="32" class="!w-full" />
+              <Form.Item
+                :label="$t('page.maintenance.network.wiredConfig.prefixLength')"
+                required
+              >
+                <InputNumber
+                  v-model:value="staticPrefix"
+                  :min="1"
+                  :max="32"
+                  class="!w-full"
+                />
               </Form.Item>
-              <Form.Item :label="$t('page.maintenance.network.wiredConfig.gateway')">
-                <Input v-model:value="staticGateway" placeholder="192.168.1.1" />
+              <Form.Item
+                :label="$t('page.maintenance.network.wiredConfig.gateway')"
+              >
+                <Input
+                  v-model:value="staticGateway"
+                  placeholder="192.168.1.1"
+                />
               </Form.Item>
-              <Form.Item :label="$t('page.maintenance.network.wiredConfig.dnsServers')">
-                <Input.TextArea v-model:value="staticDns" :rows="2" :placeholder="$t('page.maintenance.network.wiredConfig.dnsHint')" />
+              <Form.Item
+                :label="$t('page.maintenance.network.wiredConfig.dnsServers')"
+              >
+                <Input.TextArea
+                  v-model:value="staticDns"
+                  :rows="2"
+                  :placeholder="
+                    $t('page.maintenance.network.wiredConfig.dnsHint')
+                  "
+                />
               </Form.Item>
             </template>
           </Collapse.Panel>

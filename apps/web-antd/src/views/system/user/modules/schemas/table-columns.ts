@@ -49,21 +49,25 @@ export function useColumns(
         options: [
           {
             code: 'resetPassword',
+            'aria-label': $t('page.system.user.resetPassword'),
             icon: 'lucide:key',
             tooltip: $t('page.system.user.resetPassword'),
           },
           {
             code: 'assignRole',
+            'aria-label': $t('page.system.user.assignRole'),
             icon: 'lucide:users',
             tooltip: $t('page.system.user.assignRole'),
           },
           {
             code: 'edit',
+            'aria-label': $t('common.edit'),
             icon: 'lucide:edit',
             tooltip: $t('common.edit'),
           },
           {
             code: 'delete',
+            'aria-label': $t('common.delete'),
             icon: 'lucide:trash-2',
             tooltip: $t('common.delete'),
             danger: true,

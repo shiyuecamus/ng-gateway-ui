@@ -6,10 +6,10 @@ import type {
   DriverInfo,
   DriverProbeInfo,
   DriverSource,
-  OsArch,
-  OsType,
   DriverTemplateEntity,
   IdType,
+  OsArch,
+  OsType,
 } from '@vben/types';
 
 import { downloadFileFromBlob } from '@vben/utils';
@@ -32,8 +32,7 @@ export namespace DriverApi {
 
   /** driver page params */
   export interface DriverPageParams
-    extends CommonPageRequest,
-      CommonTimeRangeRequest {
+    extends CommonPageRequest, CommonTimeRangeRequest {
     name?: string;
     driver_type?: string;
     source?: (typeof DriverSource)[keyof typeof DriverSource];
@@ -67,8 +66,8 @@ export async function fetchDriverPage(params: DriverApi.DriverPageParams) {
  * fetch all drivers
  * @returns Promise with all drivers response
  */
-export async function fetchAllDrivers() {
-  return requestClient.get<Array<DriverInfo>>(DriverApi.list);
+export async function fetchAllDrivers(signal?: AbortSignal) {
+  return requestClient.get<Array<DriverInfo>>(DriverApi.list, { signal });
 }
 
 /**

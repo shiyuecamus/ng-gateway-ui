@@ -1,5 +1,9 @@
 <script lang="ts" setup>
-import type { ApStatus, ConfigureApRequest, NetworkCapabilities } from '@vben/types';
+import type {
+  ApStatus,
+  ConfigureApRequest,
+  NetworkCapabilities,
+} from '@vben/types';
 
 import { computed, onMounted, ref } from 'vue';
 
@@ -41,21 +45,13 @@ const form = ref({
   channel: 0,
 });
 
-const canManageAp = computed(
-  () => props.capabilities?.canManageAp === true,
-);
+const canManageAp = computed(() => props.capabilities?.canManageAp === true);
 
-const apMode = computed(
-  () => props.capabilities?.apMode ?? 'unavailable',
-);
+const apMode = computed(() => props.capabilities?.apMode ?? 'unavailable');
 
-const isExclusive = computed(
-  () => apMode.value === 'exclusive',
-);
+const isExclusive = computed(() => apMode.value === 'exclusive');
 
-const isActive = computed(
-  () => status.value?.active === true,
-);
+const isActive = computed(() => status.value?.active === true);
 
 const staApLabel = computed(() => {
   switch (apMode.value) {
@@ -227,9 +223,11 @@ onMounted(() => {
         <div v-if="canManageAp" class="mb-3 flex items-center gap-3">
           <Badge
             :status="isActive ? 'success' : 'default'"
-            :text="isActive
-              ? $t('page.maintenance.network.apConfig.active')
-              : $t('page.maintenance.network.apConfig.inactive')"
+            :text="
+              isActive
+                ? $t('page.maintenance.network.apConfig.active')
+                : $t('page.maintenance.network.apConfig.inactive')
+            "
           />
           <Button
             v-if="!isActive"
@@ -252,24 +250,34 @@ onMounted(() => {
         </div>
 
         <Descriptions size="small" :column="isMobile ? 1 : 2" bordered>
-          <Descriptions.Item :label="$t('page.maintenance.network.apConfig.status')">
+          <Descriptions.Item
+            :label="$t('page.maintenance.network.apConfig.status')"
+          >
             <Badge
               :status="isActive ? 'success' : 'default'"
-              :text="isActive
-                ? $t('page.maintenance.network.apConfig.active')
-                : $t('page.maintenance.network.apConfig.inactive')"
+              :text="
+                isActive
+                  ? $t('page.maintenance.network.apConfig.active')
+                  : $t('page.maintenance.network.apConfig.inactive')
+              "
             />
           </Descriptions.Item>
           <Descriptions.Item label="SSID">
             {{ status.ssid || '—' }}
           </Descriptions.Item>
-          <Descriptions.Item :label="$t('page.maintenance.network.apConfig.channel')">
+          <Descriptions.Item
+            :label="$t('page.maintenance.network.apConfig.channel')"
+          >
             {{ status.channel || '—' }}
           </Descriptions.Item>
-          <Descriptions.Item :label="$t('page.maintenance.network.apConfig.ip')">
+          <Descriptions.Item
+            :label="$t('page.maintenance.network.apConfig.ip')"
+          >
             {{ status.ipAddress || '—' }}
           </Descriptions.Item>
-          <Descriptions.Item :label="$t('page.maintenance.network.apConfig.clients')">
+          <Descriptions.Item
+            :label="$t('page.maintenance.network.apConfig.clients')"
+          >
             {{ status.connectedClients ?? '—' }}
           </Descriptions.Item>
           <Descriptions.Item label="STA+AP">
@@ -327,9 +335,11 @@ onMounted(() => {
             :block="isMobile"
             @click="requestApply"
           >
-            {{ applying
-              ? $t('page.maintenance.network.apConfig.applying')
-              : $t('page.maintenance.network.apConfig.apply') }}
+            {{
+              applying
+                ? $t('page.maintenance.network.apConfig.applying')
+                : $t('page.maintenance.network.apConfig.apply')
+            }}
           </Button>
         </Form.Item>
       </Form>
@@ -347,15 +357,23 @@ onMounted(() => {
       @close="confirmStartOpen = false"
     >
       <p class="mb-4 text-sm text-gray-600">
-        {{ isExclusive
-          ? $t('page.maintenance.network.apConfig.startConfirmExclusive')
-          : $t('page.maintenance.network.apConfig.startConfirmNormal') }}
+        {{
+          isExclusive
+            ? $t('page.maintenance.network.apConfig.startConfirmExclusive')
+            : $t('page.maintenance.network.apConfig.startConfirmNormal')
+        }}
       </p>
       <div class="flex gap-3">
         <Button block @click="confirmStartOpen = false">
           {{ $t('page.maintenance.network.confirmCancel') }}
         </Button>
-        <Button type="primary" :danger="isExclusive" block :loading="starting" @click="doStart">
+        <Button
+          type="primary"
+          :danger="isExclusive"
+          block
+          :loading="starting"
+          @click="doStart"
+        >
           {{ $t('page.maintenance.network.confirmAction') }}
         </Button>
       </div>

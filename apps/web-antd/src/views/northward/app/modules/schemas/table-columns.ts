@@ -33,6 +33,12 @@ export function useColumns(
       },
     },
     {
+      field: 'configurationState',
+      title: $t('page.northward.app.configuration.title'),
+      slots: { default: 'configurationState' },
+      width: 200,
+    },
+    {
       field: 'createdAt',
       formatter: 'formatDateTime',
       title: $t('common.baseInfo.createdAt'),
@@ -70,6 +76,11 @@ export function useColumns(
             code: 'exportPoints',
             icon: 'lucide:download',
             tooltip: $t('page.northward.app.exportPoints.action'),
+          },
+          {
+            code: 'certificate',
+            icon: 'lucide:shield-check',
+            tooltip: $t('page.northward.app.certificate.action'),
           },
           {
             code: 'edit',

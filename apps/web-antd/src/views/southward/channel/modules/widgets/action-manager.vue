@@ -25,9 +25,9 @@ import {
 import { importActionCommit, importActionPreview } from '#/api/core/device';
 import { useImportFlow } from '#/shared/composables/use-import-flow';
 
-import ActionForm from './action-form.vue';
 import { actionSearchFormSchema } from '../schemas/search-form';
 import { useActionColumns } from '../schemas/table-columns';
+import ActionForm from './action-form.vue';
 
 defineOptions({ name: 'ActionManager' });
 
@@ -38,7 +38,7 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 });
 
 const [Modal, modalApi] = useVbenModal({
-  class: 'w-4/5',
+  class: 'w-[1280px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   footer: false,
   onCancel() {
@@ -300,4 +300,3 @@ const handleFormSubmit = async (
     <FormDrawer @submit="handleFormSubmit" />
   </Modal>
 </template>
-

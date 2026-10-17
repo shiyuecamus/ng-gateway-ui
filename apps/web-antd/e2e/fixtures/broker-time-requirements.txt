@@ -1,0 +1,4 @@
+certifi==2026.7.22
+kafka-python==2.3.2
+lz4==4.4.5
+pulsar-client==3.8.0

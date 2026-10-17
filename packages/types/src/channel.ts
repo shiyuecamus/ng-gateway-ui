@@ -23,12 +23,33 @@ export interface ConnectionPolicy {
   backoff: RetryPolicy;
 }
 
+interface ChannelConfigurationView {
+  channelId: number;
+  desiredRevision: string;
+  appliedRevision: null | string;
+  state: 'activating' | 'active' | 'disabled' | 'failed' | 'pending';
+  lastError: null | string;
+  updatedAt: string;
+}
+
 interface ChannelInfo extends BaseEntity, StatusInfo {
+  configuration: ChannelConfigurationView | null;
+  canActivate: boolean;
+  engineeringPublication: null | {
+    baseRevision: null | string;
+    channelId: number;
+    createdAt: string;
+    desiredRevision: string;
+    previewDigest: string;
+    publishedBy: string;
+    sourceDigest: string;
+  };
   name: string;
   driverId: IdType;
   driverType: string;
+  runtimeDriverType: null | string;
   collectionType: (typeof CollectionType)[keyof typeof CollectionType];
-  period?: number;
+  period: null | number;
   reportType: (typeof ReportType)[keyof typeof ReportType];
   connectionPolicy: ConnectionPolicy;
   driverConfig: Recordable<any>;

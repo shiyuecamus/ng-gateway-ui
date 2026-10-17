@@ -16,7 +16,8 @@ export namespace PointApi {
   export const batchDelete = `${base}/batch-delete`;
   export const clear = `${base}/clear`;
 
-  export interface PointPageParams extends CommonPageRequest, CommonSortRequest {
+  export interface PointPageParams
+    extends CommonPageRequest, CommonSortRequest {
     deviceId?: IdType;
     name?: string;
     key?: string;

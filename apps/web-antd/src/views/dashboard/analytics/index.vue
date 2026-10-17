@@ -38,13 +38,14 @@ const { isDark } = usePreferences();
 
 const metrics = useMetricsWs({
   intervalMs: 1000,
-  uiTriggerMinIntervalMs: 200,
   trendPoints: 60,
 });
 
 const pingToastKey = 'gateway-ws-ping';
 const pingTimeoutMs = 3500;
 const pingTimeoutHandle = ref<null | number>(null);
+/** True only after the operator presses Ping. Heartbeats must stay silent. */
+const manualPingPending = ref(false);
 
 function clearPingTimeout() {
   if (pingTimeoutHandle.value !== null) {
@@ -54,20 +55,15 @@ function clearPingTimeout() {
 }
 
 function onPingClick() {
-  // If user clicks while disconnected, still try to ping and show feedback.
   metrics.ping();
-  message.loading({
-    content: $t('page.dashboard.gatewayOverview.ping.sending'),
-    key: pingToastKey,
-    duration: 0,
-  });
-
+  manualPingPending.value = true;
   clearPingTimeout();
   pingTimeoutHandle.value = window.setTimeout(() => {
+    manualPingPending.value = false;
     message.warning({
       content: $t('page.dashboard.gatewayOverview.ping.timeout'),
       key: pingToastKey,
-      duration: 1.8,
+      duration: 2,
     });
   }, pingTimeoutMs);
 }
@@ -75,18 +71,33 @@ function onPingClick() {
 watch(
   () => metrics.lastPongAt.value,
   (at) => {
-    if (!at) return;
+    if (!at || !manualPingPending.value) return;
+    manualPingPending.value = false;
     clearPingTimeout();
-    const rtt = metrics.lastPongRttMs.value ?? 0;
-    message.success({
-      content: $t('page.dashboard.gatewayOverview.ping.pong', {
-        ms: Math.round(rtt),
-      }),
-      key: pingToastKey,
-      duration: 1.5,
-    });
   },
 );
+
+const latencyText = computed(() => {
+  if (manualPingPending.value) {
+    return $t('page.dashboard.gatewayOverview.ping.checking');
+  }
+  const rtt = metrics.lastPongRttMs.value;
+  if (rtt === null || !metrics.isConnected.value) return '—';
+  if (rtt < 1) return $t('page.dashboard.gatewayOverview.ping.underOne');
+  return $t('page.dashboard.gatewayOverview.ping.value', {
+    ms: Math.round(rtt),
+  });
+});
+
+const latencyClass = computed(() => {
+  const rtt = metrics.lastPongRttMs.value;
+  if (manualPingPending.value || rtt === null || !metrics.isConnected.value) {
+    return 'text-white/80';
+  }
+  if (rtt >= 1000) return 'text-rose-300';
+  if (rtt >= 200) return 'text-amber-300';
+  return 'text-white/80';
+});
 
 onMounted(() => {
   // Subscribe first so the WS `onConnected` hook can re-send it reliably.
@@ -362,7 +373,7 @@ function navTo(path: string) {
           <div
             class="h-3 w-3 rounded-full"
             :class="
-              metrics.isConnected
+              metrics.isConnected.value
                 ? 'bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.7)]'
                 : 'bg-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.6)]'
             "
@@ -406,6 +417,13 @@ function navTo(path: string) {
             }}</span>
             RX {{ quickFacts?.netRx ?? '-' }} · TX
             {{ quickFacts?.netTx ?? '-' }}
+          </div>
+
+          <div class="rounded-md bg-white/5 px-2 py-1 ring-1 ring-white/10">
+            <span class="text-white/50">{{
+              $t('page.dashboard.gatewayOverview.ping.latency')
+            }}</span>
+            <span :class="latencyClass">{{ latencyText }}</span>
           </div>
 
           <VbenButton

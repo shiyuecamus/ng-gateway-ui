@@ -1,6 +1,6 @@
 ---
 title: 'Modbus'
-description: 'NG Gateway Modbus 南向驱动使用与配置：TCP/RTU、点位建模、字节序/字序、Smart Cast、批量读写与最佳实践。'
+description: 'NG Gateway Modbus 南向驱动使用与配置：TCP/RTU、点位建模、字节序/字序、显式 Transform、批量读写与最佳实践。'
 ---
 
 ## 1. 协议介绍
@@ -12,7 +12,7 @@ Modbus 是一种经典的工业现场通信协议，常见形态包括 **Modbus 
 - **Holding Registers（保持寄存器）**：16-bit 寄存器（通常可读可写）
 - **Input Registers（输入寄存器）**：16-bit 寄存器（通常只读）
 
-NG Gateway Modbus 驱动采用**全异步、零拷贝**架构，在网关侧以高吞吐、低开销方式批量读取/写入点位。支持**Smart Cast**（智能类型转换）和**自动批量规划**。
+驱动将原生 ADU/CRC/TID 处理交给 `tokio-modbus`。纯原始地址规划、完整寄存器字段布局留在本地模块，SDK 转换与实际传输 owner 留在适配层。
 
 ## 2. 配置模型
 
@@ -31,8 +31,8 @@ Channel 是“连接与会话”的边界：**同一条 TCP 连接或同一条 R
 - **`connection.port`**：端口，默认 `502`
 
 ::: tip 建议
-- 现场设备多为固定 IP，建议直接填写 IP；避免 DNS 解析引入额外不确定性。
-:::
+
+- 现场设备多为固定 IP，建议直接填写 IP；避免 DNS 解析引入额外不确定性。:::
 
 #### 2.1.3 RTU 参数（当 `connection.kind = rtu`）
 
@@ -40,9 +40,9 @@ Channel 是“连接与会话”的边界：**同一条 TCP 连接或同一条 R
   - Linux 示例：`/dev/ttyUSB0`
   - Windows 示例：`COM3`
 - **`connection.baudRate`**：波特率（默认 9600）
-- **`connection.dataBits`**：数据位（5/6/7/8，默认 8）
-- **`connection.stopBits`**：停止位（1/2，默认 1）
-- **`connection.parity`**：校验位（None/Odd/Even，默认 None）
+- **`connection.dataBits`**：数据位（必须为8）
+- **`connection.stopBits`**：有校验时为1；无校验时为2
+- **`connection.parity`**：None/Odd/Even，界面默认 Even；标准 RTU 字符为8E1、8O1或8N2
 
 #### 2.1.4 `byteOrder` / `wordOrder`（字节序/字序）
 
@@ -56,38 +56,28 @@ Modbus 寄存器为 16-bit word；当点位数据类型为 32/64-bit 时，会�
 - 常见 PLC：`byteOrder=BigEndian`，`wordOrder=BigEndian`
 - 部分设备（尤其历史设备）对 32-bit/64-bit 使用“字序交换”：`wordOrder=LittleEndian`
 
-建议在上位机/厂家手册中确认；如果读到的 float 值“明显离谱”，优先排查字节序/字序。
-:::
+建议在上位机/厂家手册中确认；如果读到的 float 值“明显离谱”，优先排查字节序/字序。:::
 
-#### 2.1.5 `tcpPoolSize`
+#### 2.1.5 实际 owner 与等待工作
 
-`tcpPoolSize` 用于提升 Modbus TCP 的吞吐：驱动会维护一个 TCP 连接池，采集时在池内做 round-robin 选择连接，从而允许多个请求并发在飞（仍受 core 并发与驱动内部计划约束）。
-
-- **默认值**：`1`
-- **推荐范围**：`1..=32`（过大收益通常不明显，且会增加 PLC/网关资源消耗）
-
-::: warning 
-仅对 `connection.kind=tcp` 生效；RTU 会强制单飞（有效值=1）。当你配置 `tcpPoolSize > 32` 时，驱动会在运行时 clamp 到 `32`。
-:::
+每个 channel 持有一个原生 TCP 连接或 RTU 总线。`maxPendingOperations` 默认32，限制运行与等待的操作数；`maxPendingBytes` 默认33554432，在排队准入前预留原生计划/值字节预算。等待期间也受原始 deadline 和取消约束。`tcpPoolSize`、`maxTimeouts` 已移除并拒绝准入；正在执行的事务不完整时立即销毁其 context。
 
 #### 2.1.6 批量读取规划参数
 
 | 字段 | 作用范围 | 默认值 | 说明 |
-| --- | --- | ---: | --- |
-| `maxBatchRegisters` | 0x03/0x04（寄存器读） | 120 | 单次读请求的最大 span（word 数）。**协议硬上限 <=125**，驱动会 clamp |
-| `maxGapRegisters` | 0x03/0x04（寄存器读） | 1 | 合并相邻点位允许跨越的最大“空洞”（word 地址差） |
+| --- | --- | --: | --- |
+| `maxBatchRegisters` | 0x03/0x04（寄存器读） | 120 | 单次读请求的最大 span（word 数）。严格为1..125 |
+| `maxGapRegisters` | 0x03/0x04（寄存器读） | 8 | 合并相邻点位允许跨越的最大“空洞”（word 地址差） |
 | `maxBatchBits` | 0x01/0x02（bit 读） | 2000 | 单次读请求的最大 span（bit 数）。**协议硬上限 <=2000** |
 | `maxGapBits` | 0x01/0x02（bit 读） | 500 | 合并相邻点位允许跨越的最大“空洞”（bit 地址差） |
 
-::: warning
-`maxBatch*` 表示“一个 range read 的总数量”（span），不是“点位个数”。
-:::
+::: warning `maxBatch*` 表示“一个 range read 的总数量”（span），不是“点位个数”。:::
 
 ### 2.2 Device（设备）配置
 
 Device 表示一个从站（Slave）。
 
-- **`slaveId`**：从站 ID (0-255)
+- **`slaveId`**：Unit ID（TCP1..255；RTU1..247；广播不准入）
 
 #### 2.2.1 Group collection
 
@@ -113,10 +103,8 @@ Modbus 的 `dataType` 是 **wire data type（协议/内存布局语义）**：�
 - `transformDataType`：logical data type（不填则 logical=wire）
 - `transformScale/transformOffset/transformNegate`：数值仿射变换
 
-::: tip 推荐阅读
-完整解释、上行/下行链路、min/max 值域、以及大整数/非数值限制，见：  
-[数据类型与Transform 配置](../data-types-transform.md)。
-:::
+::: tip 推荐阅读完整解释、上行/下行链路、min/max 值域、以及大整数/非数值限制，见：  
+[数据类型与Transform 配置](../data-types-transform.md)。:::
 
 ::: tip address 的 0/1 基问题（必读）
 
@@ -127,8 +115,7 @@ Modbus 的 `dataType` 是 **wire data type（协议/内存布局语义）**：�
 - 如果手册说 **40001 对应第 1 个 Holding Register**，那么协议地址通常是 `0`（40001-40001）。
 - 如果手册直接给出“寄存器偏移 0/1”，以手册定义为准。
 
-建议用一个“已知固定值”的点位做校验（例如设备型号/固件版本寄存器），先把 address 体系校准，再批量建模。
-:::
+建议用一个“已知固定值”的点位做校验（例如设备型号/固件版本寄存器），先把 address 体系校准，再批量建模。:::
 
 ::: tip quantity 如何计算
 
@@ -137,8 +124,7 @@ Modbus 的 `dataType` 是 **wire data type（协议/内存布局语义）**：�
 - **Coils/DiscreteInputs**：单位是 **bit**（线圈数量）
 - **Holding/InputRegisters**：单位是 **word（16-bit）**
 
-对于寄存器类读取，建议按 `data_type` 计算 `quantity`（见 **3. 数据类型映射表**）。如果 quantity 填小了，驱动会尝试进行 **Smart Cast**（如读取 1 个 word 转为 Float32）；填大了则会进行截断或填充。
-:::
+寄存器标量 quantity 必须精确匹配 wire 类型。缺少 quantity、quantity=0、宽度不符均在 I/O 前拒绝。变长字段跨 PDU 完整组装，不截取前缀或自动提升类型。:::
 
 ### 2.4 Action（动作）配置
 
@@ -150,11 +136,10 @@ Action 用于封装一组“写线圈/写寄存器”的操作。
 - **`address`**：起始地址
 - **`quantity`**：写入数量
 
-::: tip 自动功能码推断
-对于北向的 `write_point`（单点写入）操作，如果点位定义的是读功能码（如 `ReadHoldingRegisters`），驱动会自动根据 `quantity` 推断使用写功能码：
-- `quantity <= 1` -> `WriteSingleRegister` (0x06)
-- `quantity > 1` -> `WriteMultipleRegisters` (0x10)
-:::
+::: tip 自动功能码推断对于北向的 `write_point`（单点写入）操作，如果点位定义的是读功能码（如 `ReadHoldingRegisters`），驱动会自动根据 `quantity` 推断使用写功能码：
+
+- `quantity = 1` -> `WriteSingleRegister` (0x06)
+- `quantity > 1` -> `WriteMultipleRegisters` (0x10) :::
 
 ## 3. 数据类型映射表 (Smart Codec)
 
@@ -162,26 +147,19 @@ Action 用于封装一组“写线圈/写寄存器”的操作。
 
 ### 3.1 寄存器类（0x03/0x04）
 
-| DataType | 推荐 quantity (words) | 解码行为 | Smart Cast (降级兼容) |
-| --- | --: | --- | --- |
-| **Boolean** | 1 | 第一个 word != 0 即为 true | - |
-| **Int16** | 1 | 标准 16-bit 有符号整数 | 读 4 words (i64) 截断为 i16 |
-| **UInt16** | 1 | 标准 16-bit 无符号整数 | 读 4 words (u64) 截断为 u16 |
-| **Int32** | 2 | 标准 32-bit 有符号整数 | 若 quantity=1，读取 i16 并提升为 i32 |
-| **UInt32** | 2 | 标准 32-bit 无符号整数 | 若 quantity=1，读取 u16 并提升为 u32 |
-| **Float32** | 2 | IEEE754 单精度浮点 | 若 quantity=1，读取 i16 并转为 f32 |
-| **Float64** | 4 | IEEE754 双精度浮点 | 若 quantity=2，读取 f32 并转为 f64 |
-| **Int64** | 4 | 标准 64-bit 有符号整数 | 若 quantity=2，读取 i32 并提升为 i64 |
-| **UInt64** | 4 | 标准 64-bit 无符号整数 | 若 quantity=2，读取 u32 并提升为 u64 |
-| **Timestamp** | **2 或 4** | **4 words (8 bytes)**: 解析为 i64 毫秒时间戳<br>**2 words (4 bytes)**: 解析为 u32 秒级时间戳并自动乘 1000 | - |
-| **String** | N | UTF-8 字符串，自动去除末尾 `\0` | - |
-| **Binary** | N | 原始字节流 | - |
+| wire `dataType` | 精确 quantity | 行为 |
+| --- | --: | --- |
+| Boolean、Int16、UInt16 | 1 | 完整16位 word |
+| Int32、UInt32、Float32 | 2 | 完整32位标量 |
+| Int64、UInt64、Float64、Timestamp | 4 | 完整64位标量；Timestamp 为有符号毫秒时间戳 |
+| String、Binary | 显式 N | 完整原始字段，可跨 PDU 组装 |
 
-::: warning String 点位的“定长块 + 填充”约定（必读）
-Modbus 协议本身并没有“字符串寄存器”类型，`String` 的读取完全依赖**设备侧的数据存放约定**。当前驱动对 `String` 的行为是：
+UInt8/Int8 字节槽及 Int128 wire 字段未准入。逻辑整数类型转换使用明确支持的 wire 类型与 `transformDataType`。浮点 NaN/infinity、超出2^53整数的非安全仿射转换均拒绝。
+
+::: warning String 点位的“定长块 + 填充”约定（必读）Modbus 协议本身并没有“字符串寄存器”类型，`String` 的读取完全依赖**设备侧的数据存放约定**。当前驱动对 `String` 的行为是：
 
 - 会按 `byteOrder/wordOrder` 把 `quantity` 个寄存器还原成字节流；
-- 然后仅**去除末尾连续的 `0x00`**（去掉尾部 `\0` 填充），再按 UTF-8 解码（无效字节会以替代字符显示）。
+- 然后仅**去除末尾连续的 `0x00`**（去掉尾部 `\0` 填充），再按 UTF-8 解码（无效 UTF-8 直接拒绝）。
 
 因此你需要特别注意：
 
@@ -190,37 +168,30 @@ Modbus 协议本身并没有“字符串寄存器”类型，`String` 的读取�
   - 例：定长 10 个寄存器（20 字节）存放 `"a"` 时，建议写入 `0x61 0x00` 后，剩余 18 字节全部补 `0x00`。
 - **不要只写 `a\\0` 然后不清空剩余寄存器**：如果尾部存在旧数据且不为 `0x00`，驱动不会在第一个 `0x00` 处截断，可能出现 `"a\\0xxxx..."`（包含不可见字符/脏尾巴），看起来像“字符串不对”。
 
-如果现场设备无法保证清尾，建议在设备侧（或上位机写入侧）统一采用“定长块 0 填充”协议；并先用一个已知字符串寄存器验证 `byteOrder/wordOrder` 是否正确。
-:::
+如果现场设备无法保证清尾，建议在设备侧（或上位机写入侧）统一采用“定长块 0 填充”协议；并先用一个已知字符串寄存器验证 `byteOrder/wordOrder` 是否正确。:::
 
-::: details 
-Smart Cast 示例场景：设备有一个温度值，实际上是 `Int16` (255 = 25.5°C)，但你在平台定义为了 `Float32`。
+::: details 显式 wire/logical Transform 示例：设备有一个温度值，实际上是 `Int16` (255 = 25.5°C)，但你在平台定义为了 `Float32`。
 
 - 配置（推荐的“wire/logical 语义分离”）：
   - `dataType=Int16`（wire）
   - `transformDataType=Float64`（logical）
   - `quantity=1`
   - `transformScale=0.1`
-- 驱动行为：读取 1 个 word -> 解析为 i16(wire) -> wire→logical 应用 Transform -> 输出 25.5 
-:::
+- 驱动行为：读取 1 个 word -> 解析为 i16(wire) -> wire→logical 应用 Transform -> 输出 25.5 :::
 
 ### 3.2 线圈类（0x01/0x02）
 
-| DataType | quantity | 说明 |
-| --- | ---: | --- |
-| **Boolean** | 1 | 单 bit 读写 |
-| **Telemetry/Attribute** | N | 驱动会将读取到的 bit 数组映射到对应的点位上。目前建议每个点位 quantity=1 对应一个 bit。 |
+| DataType    | quantity | 说明        |
+| ----------- | -------: | ----------- |
+| **Boolean** |        1 | 单 bit 读写 |
+
+每个线圈/离散输入点位必须为单个 Boolean，quantity=1。数组未准入。
 
 ## 4. 批量读写计划算法
 
-驱动内置 `Planner` 模块，负责将散列的点位请求聚合为最优的 Modbus PDU。
+纯规划器统一准入完整 Unit ID 分组，按功能码/地址确定性排序，先合并原始范围并集，再分割为合法 PDU。alias 共用原始读取，完整组装字段后才执行 byte/word order 和一次 SDK Transform。`maxGap*` 统计未绑定地址数，所以0允许重叠和相邻。非法限制直接拒绝。
 
-1. **分组**：按 `functionCode` 分组（0x03 和 0x04 不能合并）。
-2. **排序**：组内按 `address` 升序。
-3. **扫描与合并**：
-   - 寄存器读（0x03/0x04）：只要 `(next_addr - current_end) <= maxGapRegisters` 且 `(new_end - current_start) <= maxBatchRegisters`，就会合并为一个请求（并受协议上限 clamp）。
-   - bit 读（0x01/0x02）：只要 `(next_addr - current_end) <= maxGapBits` 且 `(new_end - current_start) <= maxBatchBits`，就会合并为一个请求。
-   - 合并会产生“空洞数据”，这些数据会被读取但在解码阶段丢弃。
+工作预算默认 `maxPlanningInputs=4096`、`maxPlanningReferences=65536`、`maxCollectionBytes=16777216`。任一 PDU 失败会使逻辑采集失败，缓冲初始值不会发布。详见[批量规划](./batching.md)。
 
 ### 4.1 性能调优建议
 
@@ -233,3 +204,7 @@ Smart Cast 示例场景：设备有一个温度值，实际上是 `Int16` (255 =
   - 寄存器：`maxGapRegisters` = 0（不跨越空洞），`maxBatchRegisters` = 40~80
   - bit：`maxGapBits` = 0（不跨越空洞），`maxBatchBits` = 128~512
   - 适用：RS-485 干扰大，设备响应慢。
+
+## 破坏式迁移
+
+为每个字段显式配置 quantity 和精确标量宽度，删除旧 `tcpPoolSize`/`maxTimeouts`。Timestamp 使用四个 word 的有符号毫秒；其他设备编码应选择数值 wire 类型与明确的逻辑 Transform。String 严格按 UTF-8 解码，超长写入拒绝。完整准确回显表示服务接受；缺失/错配回显保留不确定性，控制不会自动重放。

@@ -250,8 +250,8 @@ ThingsBoard MQTT ping/pong 只能证明：
   "node_id": "gw-mine-01-a",
   "boot_id": "3f8b9a",
   "timestamp_ms": 1780000000000,
-  "agent_version": "0.1.0",
-  "gateway_version": "0.1.0",
+  "agent_version": "0.0.0-boot",
+  "gateway_version": "0.0.0-boot",
   "resources": {
     "cpu_usage": 0.42,
     "memory_usage": 0.58,

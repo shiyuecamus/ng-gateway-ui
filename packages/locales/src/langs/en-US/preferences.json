@@ -228,7 +228,6 @@
       "collectionTimeoutMs": "Collection timeout (ms)",
       "collectionTimeoutMsTip": "Tune based on device/protocol latency; too small causes frequent timeouts.",
       "maxConcurrentCollections": "Max concurrent collections",
-      "outboundQueueCapacity": "Outbound queue capacity",
       "retryPolicyTitle": "Retry policy",
       "maxAttemptsUnlimited": "Unlimited retries",
       "maxAttemptsUnlimitedTip": "When enabled, max_attempts is sent as null (unlimited).",

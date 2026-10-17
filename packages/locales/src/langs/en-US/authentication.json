@@ -5,8 +5,6 @@
   "loginSuccess": "Login Successful",
   "loginSuccessDesc": "Welcome Back",
   "loginSubtitle": "Welcome to {appName}",
-  "urlAutoLoginFailed": "URL auto login failed",
-  "urlAutoLoginFailedDesc": "Credentials invalid or service unavailable, please retry",
   "selectAccount": "Quick Select Account",
   "username": "Username",
   "password": "Password",
@@ -63,5 +61,18 @@
     "center": "Align Center",
     "alignLeft": "Align Left",
     "alignRight": "Align Right"
-  }
+  },
+  "streamSnapshotRequired": "The displayed data is no longer current. A new complete snapshot is required.",
+  "streamConnectionFailed": "The live connection is unavailable. Check your session and access permissions.",
+  "changePasswordTitle": "Change login password",
+  "bootstrapDescription": "Set an independent password to activate this account. All previous sessions will expire; sign in again with the new password.",
+  "passwordChangeDescription": "Changing the password revokes previous sessions and prevents unsent control stages. Actions already sent retain their actual evidence.",
+  "oldPassword": "Current password",
+  "newPassword": "New password",
+  "passwordLengthRule": "Use at least 15 characters and no more than 72 UTF-8 bytes.",
+  "savePassword": "Save and sign in again",
+  "passwordChanged": "Password changed. Please sign in again.",
+  "bootstrapLoginHint": "Initial administrator credentials are in data/ng-gateway.db.identity/bootstrap-admin.json under the runtime directory. A password change is required after login.",
+  "retryStream": "Reconnect and get a snapshot",
+  "roleChangeEffect": "Saving applies role permissions immediately. Revoking access closes affected live streams and prevents unsent control stages."
 }

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { VbenFormProps } from '@vben/common-ui';
-import type { IdType, Recordable, UserInfo } from '@vben/types';
+import type { UserInfo } from '@vben/types';
 
 import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
@@ -12,6 +12,7 @@ import {
   prompt,
   useAlertContext,
   useVbenDrawer,
+  useVbenModal,
 } from '@vben/common-ui';
 import { FormOpenType } from '@vben/constants';
 import { useRequestHandler } from '@vben/hooks';
@@ -23,15 +24,14 @@ import { Button, Input, message, Switch } from 'ant-design-vue';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   changeUserStatus,
-  createUser,
   deleteUser,
   fetchUserPage,
   resetUserPassword,
-  updateUser,
-} from '#/api';
+} from '#/api/core/user';
 
-import UserForm from './modules/widgets/form.vue';
 import { searchFormSchema, useColumns } from './modules/schemas';
+import UserForm from './modules/widgets/form.vue';
+import RoleAssignments from './modules/widgets/roles.vue';
 
 const { handleRequest } = useRequestHandler();
 
@@ -146,6 +146,8 @@ const handleResetPassword = (row: UserInfo) => {
       // 获取弹窗上下文。注意：只能在setup或者函数式组件中调用
       const { doConfirm } = useAlertContext();
       return h(Input, {
+        type: 'password',
+        autocomplete: 'new-password',
         onKeydown(e: KeyboardEvent) {
           if (e.key === 'Enter') {
             e.preventDefault();
@@ -174,7 +176,11 @@ const handleResetPassword = (row: UserInfo) => {
   });
 };
 
-const handleAssignRole = (_row: UserInfo) => {};
+const [RolesModal, rolesModal] = useVbenModal({
+  connectedComponent: RoleAssignments,
+});
+const handleAssignRole = (row: UserInfo) =>
+  rolesModal.setData({ id: row.id }).open();
 
 const handleDelete = async (row: UserInfo) => {
   confirm({
@@ -212,31 +218,6 @@ const toggleStatus = async (row: UserInfo) => {
     },
   );
 };
-
-const handleFormSubmit = async (
-  type: FormOpenType,
-  id: IdType,
-  values: Recordable<any>,
-) => {
-  await (type === FormOpenType.CREATE
-    ? handleRequest(
-        () => createUser(values as UserInfo),
-        (_) => {
-          message.success($t('common.action.createSuccess'));
-        },
-      )
-    : handleRequest(
-        () =>
-          updateUser({
-            id,
-            ...values,
-          } as UserInfo),
-        (_) => {
-          message.success($t('common.action.updateSuccess'));
-        },
-      ));
-  await gridApi.query();
-};
 </script>
 
 <template>
@@ -256,6 +237,7 @@ const handleFormSubmit = async (
         </Button>
       </template>
     </Grid>
-    <FormDrawer @submit="handleFormSubmit" />
+    <FormDrawer @saved="gridApi.query()" />
+    <RolesModal @saved="gridApi.query()" />
   </Page>
 </template>

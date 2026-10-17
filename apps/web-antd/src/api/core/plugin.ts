@@ -3,12 +3,12 @@ import type {
   CommonPageResponse,
   CommonStatus,
   CommonTimeRangeRequest,
-  PluginInfo,
-  PluginProbeInfo,
-  PluginSource,
   IdType,
   OsArch,
   OsType,
+  PluginInfo,
+  PluginProbeInfo,
+  PluginSource,
 } from '@vben/types';
 
 import type { PluginConfigSchemas } from '#/shared/dynamic-schema';
@@ -27,8 +27,7 @@ export namespace PluginApi {
 
   /** northward plugin page params */
   export interface PluginPageParams
-    extends CommonPageRequest,
-    CommonTimeRangeRequest {
+    extends CommonPageRequest, CommonTimeRangeRequest {
     name?: string;
     plugin_type?: string;
     source?: (typeof PluginSource)[keyof typeof PluginSource];

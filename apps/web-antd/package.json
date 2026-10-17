@@ -20,6 +20,8 @@
     "build:analyze": "pnpm vite build --mode analyze",
     "dev": "pnpm vite --mode development",
     "preview": "vite preview",
+    "test:e2e": "pnpm typecheck:e2e && pnpm build && cargo build --manifest-path ../../../Cargo.toml --locked --release -p ng-gateway-bin -p ng-driver-modbus -p ng-driver-opcua -p ng-plugin-opcua-server && playwright test",
+    "typecheck:e2e": "tsc --project tsconfig.e2e.json --noEmit",
     "typecheck": "vue-tsc --noEmit --skipLibCheck"
   },
   "imports": {

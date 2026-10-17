@@ -46,6 +46,12 @@ interface QueuePolicy {
    * Expiration interval for buffered messages, measured in milliseconds.
    */
   bufferExpireMs: number;
+  latestCapacity: number;
+  latestMaxBytes: number;
+  deliveryMaxInFlight: number;
+  deliveryMaxPayloadBytes: number;
+  deliveryTimeoutMs: number;
+  deliveryRetryMs: number;
 }
 
 /**
@@ -57,7 +63,7 @@ interface AppInfo extends BaseEntity, StatusInfo {
    */
   pluginId: IdType;
   /**
-   * Display name of the plugin associated with the app.
+   * Exact plugin type identifier associated with the app.
    */
   pluginType: string;
   /**
@@ -84,6 +90,17 @@ interface AppInfo extends BaseEntity, StatusInfo {
    * Connection state from runtime manager (optional)
    */
   connectionState?: ConnectionState | null;
+  desiredRevision: string;
+  appliedRevision: null | string;
+  configurationState:
+    | 'activating'
+    | 'active'
+    | 'disabled'
+    | 'failed'
+    | 'pending';
+  activationError: null | string;
+  configurationUpdatedAt: string;
+  expectedRevision?: string;
 }
 
 /**

@@ -33,7 +33,7 @@ const emit = defineEmits<{
 
 const currentTab = ref(0);
 const uploadedFile = ref<File | null>(null);
-const probeInfo = ref<PluginProbeInfo | null>(null);
+const probeInfo = ref<null | PluginProbeInfo>(null);
 const installing = ref(false);
 const installProgress = ref(0);
 const installSuccess = ref(false);
@@ -118,7 +118,7 @@ async function handleInstallClick() {
 }
 
 const [Modal, modalApi] = useVbenModal({
-  class: 'w-2/3',
+  class: 'w-[1040px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   fullscreenButton: false,
   title: $t('page.northward.plugin.install.title'),
@@ -182,7 +182,11 @@ function osArchLabel(value: number) {
 
       <div v-show="currentTab === 1" class="space-y-4">
         <Card>
-          <Descriptions :column="2" size="middle" :bordered="true">
+          <Descriptions
+            :column="{ xs: 1, md: 2 }"
+            size="middle"
+            :bordered="true"
+          >
             <Descriptions.Item :label="$t('page.northward.plugin.name')">
               <Tag color="volcano">
                 {{ probeInfo?.name }}
@@ -198,9 +202,11 @@ function osArchLabel(value: number) {
                 {{ probeInfo?.version }}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item :label="$t('page.northward.plugin.apiVersion')">
+            <Descriptions.Item
+              :label="$t('page.northward.plugin.bootContract')"
+            >
               <Tag color="purple">
-                {{ probeInfo?.apiVersion }}
+                {{ probeInfo?.bootContract }}
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item :label="$t('page.northward.plugin.sdkVersion')">
@@ -295,4 +301,3 @@ function osArchLabel(value: number) {
 </template>
 
 <style scoped></style>
-

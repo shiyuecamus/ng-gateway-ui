@@ -86,6 +86,11 @@ const showDot = computed(() =>
 
 const menus = computed(() => [
   {
+    handler: () => router.push('/auth/password'),
+    icon: 'lucide:key-round',
+    text: $t('authentication.changePasswordTitle'),
+  },
+  {
     handler: () => {
       router.push({ name: 'Profile' });
     },
@@ -175,7 +180,7 @@ watch(
       <UserDropdown
         :avatar
         :menus
-        :text="userStore.userInfo?.realName"
+        :text="userStore.userInfo?.nickname ?? userStore.userInfo?.username"
         :description="userStore.userInfo?.email"
         tag-text="Pro"
         @logout="handleLogout"

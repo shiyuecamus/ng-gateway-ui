@@ -68,6 +68,12 @@ export function useChannelColumns(
       slots: { default: 'status' },
     },
     {
+      field: 'configuration',
+      title: $t('page.southward.channel.activation.title'),
+      minWidth: 200,
+      slots: { default: 'configuration' },
+    },
+    {
       field: 'connectionState',
       title: $t('ui.connectionState.title'),
       cellRender: {
@@ -89,9 +95,36 @@ export function useChannelColumns(
             tooltip: $t('page.southward.channel.configView'),
           },
           {
+            code: 'certificate',
+            icon: 'lucide:shield-check',
+            show: (row: ChannelInfo) =>
+              row.runtimeDriverType?.toLowerCase() === 'opcua',
+            tooltip: $t('page.southward.channel.certificate.action'),
+          },
+          {
             code: 'logLevel',
             icon: 'mdi:math-log',
             tooltip: $t('page.southward.channel.logLevel'),
+          },
+          {
+            code: 'onlineEngineering',
+            'aria-label': $t('page.southward.channel.onlineEngineering.title'),
+            icon: 'lucide:network',
+            show: (row: ChannelInfo) => row.runtimeDriverType === 'iec61850',
+            tooltip: $t('page.southward.channel.onlineEngineering.title'),
+          },
+          {
+            code: 'mmsTls',
+            icon: 'lucide:shield-check',
+            show: (row: ChannelInfo) => row.runtimeDriverType === 'iec61850',
+            tooltip: $t('page.southward.channel.mmsTls.title'),
+          },
+          {
+            code: 'iec104Interrogation',
+            'aria-label': $t('page.southward.channel.interrogation.title'),
+            icon: 'lucide:refresh-cw',
+            show: (row: ChannelInfo) => row.runtimeDriverType === 'iec104',
+            tooltip: $t('page.southward.channel.interrogation.title'),
           },
           {
             code: 'subDevice',

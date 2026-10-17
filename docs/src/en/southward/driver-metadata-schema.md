@@ -322,7 +322,7 @@ Select **"Southward" -> "Driver"** in the left menu to enter driver management i
 Template Features:
 
 -   First row is **Localized Header** (Match columns by header during import; do not change header)
--   Writes hidden `__meta__` sheet (Contains driver_type, entity, locale, schema_version, etc.), used for compatibility validation during import
+-   Writes hidden `__meta__` sheet (Contains driver_type, entity, locale, boot_contract, etc.), used for boot-contract validation during import
 -   Enum fields will generate dropdown boxes (Reduce spelling errors)
 
 During import, backend will read `__meta__` to validate if template belongs to current driver, and perform the following for each row according to schemas:
@@ -362,7 +362,7 @@ Select **"Southward" -> "Channel"** in the left menu to enter channel management
 
 ### 1) Why does import always fail when I create an Excel myself?
 
-Import strongly depends on `__meta__` (driver_type/entity/locale/schema_version) in the template and header matching. Please always download template from gateway before filling.
+Import strongly depends on `__meta__` (driver_type/entity/locale/boot_contract) in the template and header matching. Please always download template from gateway before filling.
 
 ### 2) Why does one action need "Multiple Rows"?
 

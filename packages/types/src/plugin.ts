@@ -2,7 +2,7 @@ import type { Recordable } from '@vben-core/typings';
 
 import type { BaseEntity } from './base';
 
-import { PluginSource, OsArch, OsType } from '@vben-core/typings';
+import { OsArch, OsType, PluginSource } from '@vben-core/typings';
 
 interface PluginInfo extends BaseEntity {
   name: string;
@@ -10,7 +10,7 @@ interface PluginInfo extends BaseEntity {
   driverType: string;
   source: (typeof PluginSource)[keyof typeof PluginSource];
   version: string;
-  apiVersion: number;
+  bootContract: string;
   sdkVersion: string;
   osType: (typeof OsType)[keyof typeof OsType];
   osArch: (typeof OsArch)[keyof typeof OsArch];
@@ -26,7 +26,7 @@ interface PluginProbeInfo {
   pluginType: string;
   source: (typeof PluginSource)[keyof typeof PluginSource];
   version: string;
-  apiVersion: number;
+  bootContract: string;
   sdkVersion: string;
   osType: (typeof OsType)[keyof typeof OsType];
   osArch: (typeof OsArch)[keyof typeof OsArch];

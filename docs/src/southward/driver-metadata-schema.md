@@ -332,7 +332,7 @@ fn build_action_nodes() -> Vec<Node> {
 模板特性：
 
 - 第一行是**本地化表头**（导入时按表头匹配列；不要改表头）
-- 会写入隐藏的 `__meta__` sheet（包含 driver_type、entity、locale、schema_version 等），用于导入时做兼容校验
+- 会写入隐藏的 `__meta__` sheet（包含 driver_type、entity、locale、boot_contract 等），用于导入时校验唯一 boot 契约
 - enum 字段会生成下拉框（减少拼写错误）
 
 导入时，后端会读取 `__meta__` 校验模板是否属于当前驱动，并按 schemas 对每行进行：
@@ -372,10 +372,9 @@ fn build_action_nodes() -> Vec<Node> {
 
 ### 1) 为什么我自己建了个 Excel，导入总是失败？
 
-导入会强依赖模板里的 `__meta__`（driver_type/entity/locale/schema_version）与表头匹配。请始终从网关下载模板再填写。
+导入会强依赖模板里的 `__meta__`（driver_type/entity/locale/boot_contract）与表头匹配。请始终从网关下载模板再填写。
 
 ### 2) 同一个动作为什么要“多行”？
 
 Action 的 Excel 模板是一行一个参数；系统会按 `(动作名称, 命令)` 聚合多行参数为一个动作（适合把多个现场写入点位封装为一个“业务动作”）。
-
 

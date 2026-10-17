@@ -1,0 +1,75 @@
+name: ng-time-broker
+
+services:
+  kafka:
+    image: apache/kafka:4.2.1@sha256:9916d60eca5d599550e2c320230808fda342124ba550bb4ac4ea8591803262a0
+    labels:
+      io.ng-gateway.time-fixture: timestamp-semantics
+    ports:
+      - '127.0.0.1:39092:39092'
+    cpus: 2
+    mem_limit: 2g
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:39092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://127.0.0.1:39092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_RETENTION_HOURS: 1
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx768m
+    healthcheck:
+      test:
+        [
+          CMD,
+          /opt/kafka/bin/kafka-topics.sh,
+          --bootstrap-server,
+          localhost:9092,
+          --list,
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 12
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+  pulsar:
+    image: apachepulsar/pulsar:4.0.6@sha256:c30ad1646e00b2a7c9e89de949a91b6506afc5f1bd3f402a23eefc46990def88
+    labels:
+      io.ng-gateway.time-fixture: timestamp-semantics
+    ports:
+      - '127.0.0.1:36650:36650'
+      - '127.0.0.1:38080:8080'
+    cpus: 3
+    mem_limit: 4g
+    environment:
+      PULSAR_MEM: -Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m
+      PULSAR_PREFIX_brokerServicePort: 36650
+      PULSAR_PREFIX_defaultRetentionTimeInMinutes: 60
+      PULSAR_PREFIX_defaultRetentionSizeInMB: 64
+    command:
+      - sh
+      - -c
+      - bin/apply-config-from-env.py conf/standalone.conf && exec bin/pulsar standalone --advertised-address 127.0.0.1 --no-functions-worker --no-stream-storage
+    healthcheck:
+      test: [CMD, /pulsar/bin/pulsar-admin, brokers, healthcheck]
+      interval: 5s
+      timeout: 15s
+      retries: 12
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'

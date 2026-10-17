@@ -3,95 +3,22 @@ title: 'Modbus 批量读写计划与性能调优'
 description: '解读 Modbus 驱动的批量合并算法（寄存器/bit 分开：maxBatch*/maxGap*），以及在 RS-485/TCP 场景下的吞吐与稳定性调参建议。'
 ---
 
-## 批量合并发生在什么阶段
+## 完整原始范围规划
 
-当 Channel 以 Polling 模式轮询采集时，驱动会对每个 Device 的可读点位做批量规划，尽可能把多个点位合并成更少的 Modbus 请求。这个过程完全在内存中进行（`Planner` 模块），不产生网络 I/O。
+同一 Unit ID 分组的全部可读字段在 I/O 前统一准入。规划按原始功能码/地址排序，先合并重叠或相邻范围，再把范围并集分割为合法 PDU；不同地址空间分别处理。alias 和嵌套字段共用原始读取，各个逻辑字段完整组装后才进入 SDK 转换。
 
-## 合并算法
+`maxGap*` 表示两个排他结束地址范围之间的未绑定地址数。0 允许重叠和相邻，禁止跨空洞。`maxBatchRegisters` 必须为1..125，`maxBatchBits` 必须为1..2000；非法配置直接拒绝。允许读取的空洞可能触发设备非法地址异常，稀疏设备地址表应选择0。
 
-对输入点位集合：
+## 工作与内存准入
 
-1. **分组**：按 `functionCode` 分组（例如 Holding Registers 和 Input Registers 是物理隔离的区域，无法合并）。
-2. **排序**：组内按 `address` 升序排序。
-3. **贪婪合并**：从低地址开始扫描，尝试把相邻的点位“吸纳”进当前 Batch：
-   - **Gap 检查**：`(next_point.start - current_batch.end) <= maxGap*`
-   - **Span 检查**：`(next_point.end - current_batch.start) <= maxBatch*`
+`maxPlanningInputs` 限制原始字段数，`maxPlanningReferences` 限制 PDU 到字段的投影数量，`maxCollectionBytes` 限制完整原始逻辑值字节数；`maxPendingOperations` 限制实际连接/总线上正在运行及等待的操作，`maxPendingBytes` 同时限制原生计划/值预留字节数。过期或取消的排队操作不能取得发送权限。
 
-如果两个条件都满足，则合并，批次的 `end` 扩展到 `max(current_batch.end, next_point.end)`。
+数值标量布局使用固定栈缓冲；变长字段使用有界的完整组装缓冲。byte/word order 和一次 SDK Transform 都在组装完成后执行。任何 PDU 失败会使逻辑采集失败，缓冲区初始的 false/zero 不会发布为观测值。
 
-合并后，驱动会：
-- 发送一个读请求（起始地址 + quantity=span）。
-- 收到响应后，在内存中根据每个点位的 `address` 和 `quantity` 从大块数据中**零拷贝切片**（Slicing）并解码。
+## 连接生命周期
 
-## `maxGap*` / `maxBatch*` 如何设置
+每个 channel 持有一个原生 TCP 连接或 RTU 总线，整个逻辑分组独占该 owner。TCP 可以并发调度分组，但实际 wire 请求仍为单飞。RTU 在合法响应和下一请求之间等待 t3.5：波特率不高于19200时为3.5个配置字符，高于19200时为固定1.75ms。
 
-- **寄存器读**：`maxBatchRegisters`（单位：word）、`maxGapRegisters`（单位：word）
-  - 协议硬上限：一次读寄存器最多 **125 words**，驱动会对 `maxBatchRegisters` 做 clamp
-- **bit 读**：`maxBatchBits`（单位：bit）、`maxGapBits`（单位：bit）
-  - 协议硬上限：`maxBatchBits <= 2000`
+原始 host deadline 覆盖排队与所有 PDU，单 PDU read timeout 只能缩短它。每一次实际 write/flush poll 同时检查原始 deadline、调用方取消及 attempt 取消。正在执行的超时、取消、畸形响应或传输错误会在释放连接前同步销毁带缓冲的原生 context；控制不会自动重放。完整相关的异常响应可以保留干净连接。关闭会取消等待和运行中的操作，并等待原生描述符销毁。
 
-::: tip 一句话
-- `maxGap*` 控制“允许跨越多少空洞”
-- `maxBatch*` 控制“一次请求总 span 多大”。  
-:::
-
-### 1) 吞吐优先（地址密集、设备可靠）
-
-- **寄存器（0x03/0x04）**：
-  - **`maxGapRegisters`**：1~10
-  - **`maxBatchRegisters`**：100~125
-- **bit（0x01/0x02）**：
-  - **`maxGapBits`**：200~500
-  - **`maxBatchBits`**：512~2000
-
-**效果**：
-- 请求次数最少，总线利用率最高（减少了协议头开销）。
-- 适合 Modbus TCP 或波特率较高的 RS-485 环境。
-
-**风险**：
-- 如果设备中间有“非法地址”且正好落在 Gap 中，部分老旧设备可能会返回 Exception 导致整个 Batch 失败。
-- 单次响应包较大，对抗干扰能力稍弱。
-
-### 2) 稳定优先（链路抖动、设备偶发超时）
-
-- **寄存器（0x03/0x04）**：
-  - **`maxGapRegisters`**：0（禁止跨越空洞）
-  - **`maxBatchRegisters`**：40~80
-- **bit（0x01/0x02）**：
-  - **`maxGapBits`**：0（禁止跨越空洞）
-  - **`maxBatchBits`**：128~512
-
-**效果**：
-- 只有连续定义的点位才合并。
-- 单次失败影响范围小，重试成本低。
-- 适合长距离 RS-485 线、干扰严重的现场。
-
-### 3) RS-485 多从站（共享总线）
-
-RS-485 的瓶颈往往是总线时分与从站响应时间，而不是 CPU：
-
-- **不要盲目拉大 `maxBatch*`**：过大的包会占用总线过久，增加误码率。
-- **增大采集周期 (`period`)**：给总线“喘息”时间。
-- **配置 `connection_policy`**：
-  - `read_timeout_ms`: 至少设置为 `(预期传输时间 + 设备处理时间) * 1.5`。
-  - `backoff`: 设置退避策略，避免多个设备同时掉线后“惊群重试”彻底堵死总线。
-
-::: tip RTU 特别提醒
-在 RTU/RS-485 场景，驱动会强制单连接（单飞），因此 `tcpPoolSize` 不会带来并发收益。吞吐优化优先从 **批量规划** 与 **采集周期** 入手。
-:::
-
-## 常见问题排查
-
-### 1) “点位都超时/偶尔全失败”
-
-优先排查：
-- `read_timeout_ms` 太小（串口/设备响应慢）。
-- 从站实际 `slaveId` 与配置不一致。
-- RS-485 现场接线/终端电阻/偏置电阻/屏蔽接地问题。
-
-### 2) “吞吐低，请求太多”
-
-优先排查：
-- 点位 `functionCode` 分散（同一物理区尽量统一用寄存器区）。
-- 单点 `quantity` 太大导致合并被阻断（建议拆分）。
-- `maxGapRegisters/maxGapBits` 设为了 0，导致地址即使只差 1 也无法合并。
+根据设备地址表、响应延迟及串口实际传输时间调整批量参数。本软件调度策略不替代物理 UART/RS-485 时序和电气验收。

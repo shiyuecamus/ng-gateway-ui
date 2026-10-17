@@ -56,7 +56,7 @@ Recommend creating driver crate in independent repository, depending on `ng-gate
 ```toml
 [package]
 name = "ng-driver-yourproto"
-version = "0.1.0"
+version = "0.0.0-boot"
 edition = "2021"
 publish = false
 
@@ -64,7 +64,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ng-gateway-sdk = "0.1"
+ng-gateway-sdk = "=0.0.0-boot"
 tokio = { version = "1", features = ["full", "tracing"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -865,7 +865,7 @@ Repository already has `ng-gateway-bench` (Can refer to its Modbus bench entry):
    - See: [`Local Development`](/dev/local-dev)
 2) Start WebUI (Recommend dev server integration with backend)
 3) Complete **Driver Install → Probe → Enable** in WebUI
-   - Focus on: Version info, `api_version`/`sdk_version`, Architecture and Checksum match expectation
+   - Focus on: Version info, `boot_contract`/`sdk_version`, Architecture and Checksum match expectation
 4) Create and Configure **Channel/Device/Point/Action** in WebUI
    - Run through with minimal usable configuration first (Can connect, Can collect/Write back)
 5) Observe and Troubleshoot (Only look at "Low frequency, Aggregatable" key signals)
@@ -878,7 +878,7 @@ Repository already has `ng-gateway-bench` (Can refer to its Modbus bench entry):
 -   **Multi-platform Artifacts**: Linux/macOS/Windows extensions differ (`.so/.dylib/.dll`), and ensure target architecture matches
 -   **WebUI Probe Must Pass**: Ensure exported metadata readable, Type/Name/Version correct, and Probe info displayable
 -   **Custom Driver Upgrade Method**: Install overwrite via WebUI after releasing new version artifact, and confirm `version/checksum` updated in probe page (File persists in `drivers/custom`)
--   **ABI/API Version**: Loader validates `ng_driver_api_version` consistent with host
+-   **Boot Contract**: Loader validates `ng_driver_boot_contract` consistent with host
 -   **SDK Version**: Current policy is non-strict (Warn if inconsistent), but not recommended to cross major versions
 -   **Config Compatibility**: Schema path and config fields keep backward compatible; New fields must provide default values
 

@@ -1,89 +1,97 @@
 <script lang="ts" setup>
 import type { FormOpenData } from '@vben/constants';
-import type { IdType, Recordable } from '@vben/types';
+import type { IdType } from '@vben/types';
 
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 import { FormOpenType } from '@vben/constants';
-import { useRequestHandler } from '@vben/hooks';
+import { $t } from '@vben/locales';
+
+import { message } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
-import { getUserById } from '#/api/core';
+import { createUser, getUserById, updateUser } from '#/api/core/user';
 
 import { formSchema } from '../schemas';
 
-defineOptions({ name: 'UserForm' });
-
-const emit = defineEmits<{
-  submit: [type: FormOpenType, id: IdType, values: Recordable<any>];
-}>();
-
-const { handleRequest } = useRequestHandler();
-
-const type = ref(FormOpenType.CREATE);
-const recordId = ref<IdType>(undefined);
-const loading = ref(false);
-
-// 初始化表单
-const [Form, formApi] = useVbenForm({
-  handleSubmit: (record: Recordable<any>) => {
-    emit('submit', type.value, recordId.value, record);
-    modalApi.close();
-  },
+const emit = defineEmits<{ saved: [] }>();
+const mode = ref(FormOpenType.CREATE);
+const recordId = ref<IdType>();
+let epoch = 0;
+const [Form, form] = useVbenForm({
   schema: formSchema,
-  commonConfig: {
-    labelClass: 'text-[14px] w-1/6',
-  },
   showDefaultActions: false,
+  handleSubmit: async (values) => {
+    const current = epoch;
+    drawer.setState({ confirmLoading: true });
+    try {
+      await (mode.value === FormOpenType.CREATE
+        ? createUser({
+            username: String(values.username),
+            password: String(values.password),
+            nickname: String(values.nickname),
+            phone: values.phone || undefined,
+            email: values.email || undefined,
+          })
+        : updateUser({
+            id: recordId.value,
+            nickname: String(values.nickname),
+            phone: values.phone || null,
+            email: values.email || null,
+          }));
+      message.success($t('common.action.updateSuccess'));
+      emit('saved');
+      if (current === epoch) drawer.close();
+    } finally {
+      if (current === epoch) drawer.setState({ confirmLoading: false });
+    }
+  },
 });
-
-const [Modal, modalApi] = useVbenDrawer({
-  class: 'w-1/2',
+const [Drawer, drawer] = useVbenDrawer({
+  class: 'w-full max-w-lg',
   destroyOnClose: true,
-  onCancel() {
-    modalApi.close();
-  },
   onConfirm: async () => {
-    await formApi.validateAndSubmitForm();
-    // modalApi.close();
+    await form.validateAndSubmitForm();
   },
-  onOpenChange: async (isOpen: boolean) => {
-    if (!isOpen) return;
-    await nextTick();
-    await init();
+  onOpenChange: async (open) => {
+    const current = ++epoch;
+    if (!open) return;
+    const data = drawer.getData<FormOpenData>();
+    mode.value = data.type;
+    recordId.value = data.id;
+    await form.resetForm();
+    form.setState({
+      schema: formSchema
+        .filter(
+          (item) =>
+            mode.value === FormOpenType.CREATE || item.fieldName !== 'password',
+        )
+        .map((item) =>
+          item.fieldName === 'username'
+            ? {
+                ...item,
+                componentProps: {
+                  ...item.componentProps,
+                  disabled: mode.value !== FormOpenType.CREATE,
+                },
+              }
+            : item,
+        ),
+    });
+    if (mode.value === FormOpenType.EDIT) {
+      drawer.setState({ loading: true });
+      try {
+        const user = await getUserById(data.id);
+        if (current === epoch) await form.setValues(user);
+      } finally {
+        if (current === epoch) drawer.setState({ loading: false });
+      }
+    }
   },
 });
-
-async function init() {
-  const { type: t, id: i } = modalApi.getData<FormOpenData>();
-
-  type.value = t;
-  recordId.value = i;
-
-  if (t === FormOpenType.EDIT) {
-    await formApi.removeSchemaByFields(['password']);
-    loading.value = true;
-    await handleRequest(
-      () => getUserById(recordId.value as IdType),
-      (data) => {
-        formApi.setValues(data);
-        loading.value = false;
-      },
-      (error) => {
-        loading.value = false;
-        console.error(error);
-      },
-    );
-  }
-}
 </script>
 
 <template>
-  <Modal>
-    <Form />
-  </Modal>
+  <Drawer><Form /></Drawer>
 </template>
-
-<style scoped></style>
-

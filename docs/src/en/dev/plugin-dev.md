@@ -23,7 +23,7 @@ In NG Gateway, a "Northward Plugin" is not a simple HTTP/Kafka/MQTT client, but 
 
 -   **Gateway Side - Host Responsible for**:
     -   Dynamically loading plugin libraries: `./plugins/builtin` and `./plugins/custom`
-    -   Probe detection: OS/Arch, checksum, SDK/API version, static metadata (UI Schema)
+    -   Probe detection: OS/Arch, checksum, SDK boot contract, exact build identity, static metadata (UI Schema)
     -   Unified log bridging and dynamic log level governance (Global/Per-App override)
     -   Creating isolated runtime for each App (Queue, buffer, metrics, span), and delivering `NorthwardData` to plugin according to backpressure strategy
     -   Managing connection and retry (Unified governance by SDK supervision loop)
@@ -92,7 +92,7 @@ Recommend creating plugin crate in independent repository; if developing inside 
 ```toml
 [package]
 name = "ng-plugin-mqtt"
-version = "0.1.0"
+version = "0.0.0-boot"
 edition = "2021"
 publish = false
 
@@ -100,7 +100,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ng-gateway-sdk = "0.1"
+ng-gateway-sdk = "=0.0.0-boot"
 tokio = { version = "1", features = ["full", "tracing"] }
 async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }
@@ -1536,7 +1536,7 @@ Goal: Complete **Upload → Probe → Install → Bind App → Enable → Northw
 -   Probe page focus confirmation:
     -   OS/Arch, checksum
     -   `plugin_type`, `version`
-    -   `api_version` / `sdk_version`
+    -   `boot_contract` / `sdk_version`
     -   Whether static metadata (UI Schema) correctly renders configuration form
 
 3) **Install and Bind to App**
@@ -1560,7 +1560,7 @@ Goal: Complete **Upload → Probe → Install → Bind App → Enable → Northw
 ### 9.2 Release and Compatibility Checklist
 
 -   **Multi-platform Artifacts**: `.so/.dylib/.dll` and OS/Arch must match runtime environment
--   **ABI/API Version**: loader validates `ng_plugin_api_version()` consistent with host (Reject if inconsistent)
+-   **Boot Contract**: loader validates `ng_plugin_boot_contract()` consistent with host (Reject if inconsistent)
 -   **SDK Version**: Not recommended to mix across major versions; at least confirm `sdk_version` matches expectation in Probe page
 -   **Dynamic Dependency**: Confirm artifact does not depend on dynamic libraries missing in runtime environment (Especially TLS/openssl related)
 -   **Config Compatibility**:

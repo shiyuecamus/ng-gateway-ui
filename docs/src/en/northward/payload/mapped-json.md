@@ -37,7 +37,7 @@ MappedJson input view is stable, shape as follows:
 
 ```json
 {
-  "schema_version": 1,
+  "boot_contract": "boot",
   "event_kind": "telemetry",
   "ts_ms": 1734870900000,
   "app": { "id": 1, "name": "my-app", "plugin_type": "kafka" },
@@ -50,6 +50,8 @@ Explanation:
 
 -   `event_kind` comes from internal EnvelopeKind (Consistent with `event.kind` of `EnvelopeJson`)
 -   `data` is JSON representation of `NorthwardData` (Telemetry/Attributes/...)
+
+Telemetry and attributes are emitted as `{ "mapped": ..., "samples": ..., "sampleContract": "boot" }`. The `samples` field retains the gateway's complete value, quality, source time, and freshness evidence; mapping rules cannot replace it.
 
 ---
 

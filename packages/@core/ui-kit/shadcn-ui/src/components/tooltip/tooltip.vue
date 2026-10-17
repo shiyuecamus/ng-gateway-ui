@@ -5,6 +5,8 @@ import type { StyleValue } from 'vue';
 
 import type { ClassType } from '@vben-core/typings';
 
+import { ref } from 'vue';
+
 import {
   Tooltip,
   TooltipContent,
@@ -23,12 +25,14 @@ withDefaults(defineProps<Props>(), {
   delayDuration: 0,
   side: 'right',
 });
+
+const open = ref(false);
 </script>
 
 <template>
   <TooltipProvider :delay-duration="delayDuration">
-    <Tooltip>
-      <TooltipTrigger as-child tabindex="-1">
+    <Tooltip v-model:open="open">
+      <TooltipTrigger as-child tabindex="-1" @keydown.esc.stop="open = false">
         <slot name="trigger"></slot>
       </TooltipTrigger>
       <TooltipContent

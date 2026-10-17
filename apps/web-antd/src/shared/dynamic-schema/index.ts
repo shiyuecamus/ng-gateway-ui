@@ -7,7 +7,7 @@ import type { UiText } from './types';
 
 import { get, isEqual } from '@vben/utils';
 
-import { isNullOrUndefined } from '@vben-core/shared/utils';
+import { isNullOrUndefined, set } from '@vben-core/shared/utils';
 
 import { z } from '#/adapter/form';
 
@@ -19,6 +19,56 @@ export type DriverFormSchema = DynamicFormSchema;
 export type DriverFormSchemas = DynamicFormSchemas;
 export type DriverSchemas = DynamicSchemas;
 export type PluginConfigSchemas = Node[];
+
+/** Keep only fields in the selected schema branches before writing driverConfig. */
+export function projectActiveDriverConfig(
+  nodes: Node[],
+  values: Record<string, any>,
+): Record<string, any> {
+  const projected: Record<string, any> = {};
+  const visit = (items: Node[]) => {
+    for (const node of items) {
+      switch (node.kind) {
+        case 'Field': {
+          let active = true;
+          for (const condition of node.when ?? []) {
+            if (
+              !evalOperator(
+                condition.operator,
+                get(values, condition.target),
+                condition.value,
+              )
+            ) {
+              continue;
+            }
+            if (condition.effect === 'If') active = true;
+            if (condition.effect === 'IfNot') active = false;
+          }
+          const value = get(values, node.path);
+          if (active && value !== undefined) set(projected, node.path, value);
+          break;
+        }
+        case 'Group': {
+          visit(node.children);
+          break;
+        }
+        case 'Union': {
+          const selected = get(values, node.discriminator);
+          const branch = node.mapping.find((item) =>
+            isEqual(item.case_value, selected),
+          );
+          if (branch) {
+            set(projected, node.discriminator, selected);
+            visit(branch.children);
+          }
+          break;
+        }
+      }
+    }
+  };
+  visit(nodes);
+  return projected;
+}
 
 export interface DynamicSchemas {
   channel: Node[];
@@ -139,7 +189,7 @@ function getNodeOrder(node: Node): number {
  * Note: API payloads may omit arrays (e.g. `children`) in edge cases. This
  * function is deliberately defensive to avoid UI crashes.
  */
-export function sortNodes(nodes?: null | Node[]): Node[] {
+export function sortNodes(nodes?: Node[] | null): Node[] {
   const list = Array.isArray(nodes) ? nodes : [];
   return list
     .map((n) => sortNode(n))
@@ -343,7 +393,7 @@ function mapField(
     fieldName: node.path,
     label: resolveUiText(node.label),
     defaultValue: node.default_value ?? undefined,
-    formItemClass: `col-span-${colSpan}`,
+    formItemClass: colSpan === 1 ? 'col-span-2 md:col-span-1' : 'col-span-2',
     controlClass,
   };
 

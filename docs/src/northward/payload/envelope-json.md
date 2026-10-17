@@ -1,23 +1,23 @@
 ---
 title: 'EnvelopeJson（稳定包络）'
-description: '北向默认 payload：schema_version + event.kind + envelope(meta) + payload.data。适合长期演进与混合事件。'
+description: '北向默认 payload：boot_contract + event.kind + envelope(meta) + payload.data。适合唯一 boot 契约与混合事件。'
 ---
 
 ## 1. 设计目标
 
 EnvelopeJson 追求三件事：
 
-- **稳定**：wire format 有 `schema_version`，便于长期演进
+- **稳定**：wire format 必须声明 `boot_contract: "boot"`
 - **可路由**：`event.kind` 是稳定判别字段（混合 topic 场景必需）
 - **payload 不打 tag**：业务数据放在 `payload.data` 里，不再嵌套 enum tag，减少耦合
 
 ---
 
-## 2. JSON 形状（schema_version = 1）
+## 2. JSON 形状（boot_contract = "boot"）
 
 ```json
 {
-  "schema_version": 1,
+  "boot_contract": "boot",
   "event": { "kind": "telemetry" },
   "envelope": {
     "ts_ms": 1734870900000,

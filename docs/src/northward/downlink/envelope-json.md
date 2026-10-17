@@ -1,29 +1,33 @@
 ---
 title: '下行 EnvelopeJson'
-description: '推荐的下行协议：schema_version + event.kind + payload.data；支持混合 topic 与稳定演进。'
+description: '推荐的下行协议：boot_contract + event.kind + payload.data；支持混合 topic 与唯一 boot 契约。'
 ---
 
-## 1. 最小 JSON 形状（schema_version = 1）
+## 1. 最小 JSON 形状（boot_contract = "boot"）
 
 下行 EnvelopeJson 允许省略 `envelope` 元信息（可选）：
 
 ```json
 {
-  "schema_version": 1,
+  "boot_contract": "boot",
   "event": { "kind": "write_point" },
   "payload": {
     "data": {
-      "request_id": "req-123",
-      "point_id": 10001,
-      "value": 1,
+      "requestId": "req-123",
+      "idempotencyKey": "operator-intent-123",
+      "pointId": 10001,
+      "valueType": 0,
+      "value": true,
       "timestamp": "2026-01-19T00:00:00Z",
-      "timeout_ms": 5000
+      "timeoutMs": 5000
     }
   }
 }
 ```
 
 ::: tip
+`valueType: 0` 表示布尔值。`requestId` 只关联响应，`idempotencyKey` 标识一次物理控制意图；重复提交相同键只返回原操作，不再次发送控制。
+
 解析时会先用 `event.kind` 做路由匹配：
 - kind 不匹配 → 直接忽略（不当作错误）
 - kind 匹配但 payload shape 不对 → 才会视为“解码错误”
@@ -47,4 +51,3 @@ description: '推荐的下行协议：schema_version + event.kind + payload.data
 - 如果必须混合：EnvelopeJson 仍然可用，因为 `event.kind` 可路由
 
 更多策略见：[`下行总览`](/northward/downlink/overview)
-

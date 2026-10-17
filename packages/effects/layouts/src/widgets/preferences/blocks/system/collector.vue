@@ -5,9 +5,9 @@ import { computed, reactive, ref } from 'vue';
 
 import { $t } from '@vben/locales';
 
+import { useV1Api } from '../../api/v1';
 import NumberFieldItem from '../number-field-item.vue';
 import SwitchItem from '../switch-item.vue';
-import { useV1Api } from '../../api/v1';
 import CardShell from './card-shell.vue';
 import SourceBadge from './source-badge.vue';
 
@@ -23,7 +23,6 @@ type RetryPolicySettingsView = {
 type CollectorSettingsView = {
   collectionTimeoutMs: SettingField<number>;
   maxConcurrentCollections: SettingField<number>;
-  outboundQueueCapacity: SettingField<number>;
   retryPolicy: RetryPolicySettingsView;
 };
 
@@ -39,7 +38,6 @@ type PatchRetryPolicyRequest = Partial<{
 type PatchCollectorSettingsRequest = Partial<{
   collectionTimeoutMs: number;
   maxConcurrentCollections: number;
-  outboundQueueCapacity: number;
   retryPolicy: PatchRetryPolicyRequest;
 }>;
 
@@ -64,7 +62,6 @@ const view = ref<CollectorSettingsView | null>(null);
 const loaded = reactive({
   collectionTimeoutMs: 0,
   maxConcurrentCollections: 0,
-  outboundQueueCapacity: 0,
   maxAttemptsUnlimited: false,
   maxAttempts: 0,
   initialIntervalMs: 0,
@@ -82,7 +79,6 @@ function applyView(v: CollectorSettingsView) {
 
   loaded.collectionTimeoutMs = v.collectionTimeoutMs.value;
   loaded.maxConcurrentCollections = v.maxConcurrentCollections.value;
-  loaded.outboundQueueCapacity = v.outboundQueueCapacity.value;
 
   loaded.maxAttemptsUnlimited = v.retryPolicy.maxAttempts.value === null;
   loaded.maxAttempts = v.retryPolicy.maxAttempts.value ?? 0;
@@ -101,7 +97,6 @@ const dirty = computed(() => {
   return (
     draft.collectionTimeoutMs !== loaded.collectionTimeoutMs ||
     draft.maxConcurrentCollections !== loaded.maxConcurrentCollections ||
-    draft.outboundQueueCapacity !== loaded.outboundQueueCapacity ||
     draft.maxAttemptsUnlimited !== loaded.maxAttemptsUnlimited ||
     draft.maxAttempts !== loaded.maxAttempts ||
     draft.initialIntervalMs !== loaded.initialIntervalMs ||
@@ -156,12 +151,6 @@ async function apply() {
     draft.maxConcurrentCollections !== loaded.maxConcurrentCollections
   ) {
     patch.maxConcurrentCollections = draft.maxConcurrentCollections;
-  }
-  if (
-    !v.outboundQueueCapacity.envOverridden &&
-    draft.outboundQueueCapacity !== loaded.outboundQueueCapacity
-  ) {
-    patch.outboundQueueCapacity = draft.outboundQueueCapacity;
   }
 
   const rpPatch: PatchRetryPolicyRequest = {};
@@ -277,18 +266,6 @@ if (props.autoLoad && !props.initialView) {
         <span class="flex items-center gap-2">
           {{ $t('preferences.system.collector.maxConcurrentCollections') }}
           <SourceBadge :field="view.maxConcurrentCollections" />
-        </span>
-      </NumberFieldItem>
-
-      <NumberFieldItem
-        v-model="draft.outboundQueueCapacity"
-        :disabled="fieldDisabled(view.outboundQueueCapacity)"
-        :min="1"
-        :step="1"
-      >
-        <span class="flex items-center gap-2">
-          {{ $t('preferences.system.collector.outboundQueueCapacity') }}
-          <SourceBadge :field="view.outboundQueueCapacity" />
         </span>
       </NumberFieldItem>
 

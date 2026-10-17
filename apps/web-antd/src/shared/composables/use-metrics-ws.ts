@@ -8,7 +8,6 @@ import type {
   MetricsServerMessage,
   MetricsSnapshotMessage,
   MetricsSubscribeMessage,
-  MetricsUpdateMessage,
   NorthwardAppStatsSnapshot,
   TrendPoint,
 } from '@vben/types';
@@ -18,13 +17,12 @@ import { computed, ref, shallowRef } from 'vue';
 import { $t } from '@vben/locales';
 import { clamp } from '@vben/utils';
 
+import { requestId as newRequestId } from '../request-id';
 import { useGatewayWs } from './use-gateway-ws';
 
-type MetricsScopeId<S extends MetricsScope> = S extends 'global' ? undefined : number;
-
-type MetricsSnapshotOrUpdateMessage =
-  | MetricsSnapshotMessage
-  | MetricsUpdateMessage;
+type MetricsScopeId<S extends MetricsScope> = S extends 'global'
+  ? undefined
+  : number;
 
 function pushPoint(
   buf: TrendPoint[],
@@ -45,7 +43,7 @@ function pushPoint(
  * - `subscribeGlobal()` for dashboard (gateway overview)
  * - `subscribeDevice(channelId)` for southward channel per-device observability
  *
- * The server side protocol is implemented in `ng-gateway-web/src/api/v1/ws/metrics.rs`.
+ * The server side protocol is implemented in `ng-gateway-web/src/api/boot/ws/metrics.rs`.
  */
 export function useMetricsWs(options?: {
   intervalMs?: number;
@@ -54,33 +52,20 @@ export function useMetricsWs(options?: {
    * 60 = ~1 minute at 1s updates.
    */
   trendPoints?: number;
-  /**
-   * UI trigger throttle (ms).
-   * This does NOT change WS frame rate; it only controls how frequently Vue
-   * reactive refs are triggered to re-render.
-   */
-  uiTriggerMinIntervalMs?: number;
 }) {
   const intervalMs = clamp(options?.intervalMs ?? 1000, 200, 5000);
   const trendPoints = clamp(options?.trendPoints ?? 60, 30, 600);
   const trendWindowMs = 60_000;
-  const uiTriggerMinIntervalMs = clamp(
-    options?.uiTriggerMinIntervalMs ?? 0,
-    0,
-    2000,
-  );
-  // NOTE:
-  // We previously attempted to throttle UI updates via `triggerRef`, but since we already
-  // assign new values to refs on every WS message, that approach caused duplicate reactive
-  // notifications (set -> triggerRef), which in turn can duplicate chart points/tooltip rows.
-  // If we need throttling in the future, implement it by buffering data and committing to
-  // refs at a controlled cadence (instead of "set + triggerRef").
-
   // One connection can keep multiple active subscriptions (at most one per scope).
   const subscriptions = shallowRef<
-    Array<{ id?: number; intervalMs?: number; scope: MetricsScope }>
+    Array<{
+      id?: number;
+      intervalMs?: number;
+      requestId: string;
+      scope: MetricsScope;
+    }>
   >([]);
-  // Backward-compatible: last subscribed scope/id (useful for debugging).
+  // The most recent subscription selection is exposed for the current page.
   const subscribed = shallowRef<null | { id?: number; scope: MetricsScope }>(
     null,
   );
@@ -128,13 +113,13 @@ export function useMetricsWs(options?: {
     sendMessage,
     ping,
   } = useGatewayWs<MetricsServerMessage, MetricsClientMessage>({
-    endpoint: '/api/ws/metrics',
+    endpoint: 'metrics',
     onConnected() {
       // Re-subscribe all active subscriptions on reconnect.
       for (const sub of subscriptions.value) {
         const msg: MetricsSubscribeMessage = {
           type: 'subscribe',
-          requestId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          requestId: (sub.requestId = newRequestId()),
           scope: sub.scope,
           id: sub.id,
           intervalMs: sub.intervalMs ?? intervalMs,
@@ -142,51 +127,18 @@ export function useMetricsWs(options?: {
         sendMessage(msg);
       }
     },
+    onDisconnected() {
+      snapshot.value = null;
+      channelSnapshot.value = null;
+      appSnapshot.value = null;
+      rowsByDeviceId.value = new Map();
+      lastMessageTs.value = 0;
+      prevAt = null;
+    },
     onMessage(msg) {
-      handleServerMessageThrottled(msg);
+      handleServerMessage(msg);
     },
   });
-
-  // UI throttling: buffer snapshot/update per scope and commit at a controlled cadence.
-  const pendingByScope = new Map<MetricsScope, MetricsSnapshotOrUpdateMessage>();
-  let pendingTimer: null | ReturnType<typeof setTimeout> = null;
-  let lastUiCommitAt = 0;
-
-  function flushPending() {
-    pendingTimer = null;
-    lastUiCommitAt = Date.now();
-    // Apply in stable order to minimize flicker.
-    const order: MetricsScope[] = ['global', 'channel', 'device', 'app'];
-    for (const scope of order) {
-      const m = pendingByScope.get(scope);
-      if (!m) continue;
-      pendingByScope.delete(scope);
-      handleServerMessage(m);
-    }
-  }
-
-  function scheduleFlush() {
-    if (pendingTimer) return;
-    const now = Date.now();
-    const nextAt = lastUiCommitAt + uiTriggerMinIntervalMs;
-    const delay = Math.max(0, nextAt - now);
-    pendingTimer = setTimeout(flushPending, delay);
-  }
-
-  function handleServerMessageThrottled(msg: MetricsServerMessage) {
-    // Always apply non-snapshot data immediately (pong/error/subscribed).
-    if (msg.type !== 'snapshot' && msg.type !== 'update') {
-      handleServerMessage(msg);
-      return;
-    }
-    // Throttling disabled.
-    if (uiTriggerMinIntervalMs <= 0) {
-      handleServerMessage(msg);
-      return;
-    }
-    pendingByScope.set(msg.scope, msg);
-    scheduleFlush();
-  }
 
   function subscribe<S extends MetricsScope>(
     scope: S,
@@ -199,10 +151,19 @@ export function useMetricsWs(options?: {
     const next = [...subscriptions.value];
     const idx = next.findIndex((s) => s.scope === scope);
     const interval = intervalOverrideMs ?? intervalMs;
+    const requestId = newRequestId();
+    const previous = idx === -1 ? undefined : next[idx];
+    if (previous && previous.id !== id)
+      sendMessage({
+        type: 'unsubscribe',
+        scope: previous.scope,
+        id: previous.id,
+        requestId: newRequestId(),
+      });
     if (idx === -1) {
-      next.push({ scope, id, intervalMs: interval });
+      next.push({ scope, id, intervalMs: interval, requestId });
     } else {
-      next[idx] = { scope, id, intervalMs: interval };
+      next[idx] = { scope, id, intervalMs: interval, requestId };
     }
     subscriptions.value = next;
 
@@ -229,7 +190,7 @@ export function useMetricsWs(options?: {
 
     const msg: MetricsSubscribeMessage = {
       type: 'subscribe',
-      requestId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      requestId,
       scope,
       id,
       intervalMs: interval,
@@ -404,9 +365,9 @@ export function useMetricsWs(options?: {
     prevAt = now;
   }
 
-  function applyDeviceRows(msg: MetricsSnapshotMessage | MetricsUpdateMessage) {
+  function applyDeviceRows(msg: MetricsSnapshotMessage) {
     const rows = (msg.data as DeviceRowsPayload).rows ?? [];
-    // Backend now always sends full `rows` for both snapshot and update.
+    // Each accepted snapshot replaces the complete row set.
     // Rebuild the map to correctly reflect deletions/offlines.
     const next = new Map<number, DeviceStatsSnapshot>();
     for (const row of rows) next.set(row.deviceId, row);
@@ -427,8 +388,16 @@ export function useMetricsWs(options?: {
 
   function handleServerMessage(msg: MetricsServerMessage) {
     switch (msg.type) {
-      case 'snapshot':
-      case 'update': {
+      case 'snapshot': {
+        if (
+          !subscriptions.value.some(
+            (sub) =>
+              sub.scope === msg.scope &&
+              sub.id === ('id' in msg ? msg.id : undefined) &&
+              sub.requestId === msg.requestId,
+          )
+        )
+          return;
         if (msg.scope === 'global') {
           applyGlobalSnapshot(msg.ts, msg.data as GatewayStatusSnapshot);
           return;

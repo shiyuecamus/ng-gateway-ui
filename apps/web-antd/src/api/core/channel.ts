@@ -35,9 +35,7 @@ export namespace ChannelApi {
 
   /** channel page params */
   export interface ChannelPageParams
-    extends CommonPageRequest,
-      CommonTimeRangeRequest,
-      CommonSortRequest {
+    extends CommonPageRequest, CommonSortRequest, CommonTimeRangeRequest {
     name?: string;
     status?: (typeof CommonStatus)[keyof typeof CommonStatus];
   }
@@ -72,8 +70,11 @@ export async function fetchChannelPage(params: ChannelApi.ChannelPageParams) {
 /**
  * Fetch all channels (for selectors / monitoring).
  */
-export async function fetchChannelList(params?: CommonSortRequest) {
-  return requestClient.get<ChannelInfo[]>(ChannelApi.list, { params });
+export async function fetchChannelList(
+  params?: CommonSortRequest,
+  signal?: AbortSignal,
+) {
+  return requestClient.get<ChannelInfo[]>(ChannelApi.list, { params, signal });
 }
 
 /**
@@ -108,8 +109,8 @@ export async function deleteChannel(id: IdType) {
  * @param id - Channel ID
  * @returns Promise with channel response
  */
-export async function getChannelById(id: IdType) {
-  return requestClient.get<ChannelInfo>(ChannelApi.getById(id));
+export async function getChannelById(id: IdType, signal?: AbortSignal) {
+  return requestClient.get<ChannelInfo>(ChannelApi.getById(id), { signal });
 }
 
 /**
@@ -200,5 +201,18 @@ export async function importChannelDevicesPointsCommit(id: IdType, file: File) {
     ChannelApi.importDevicePointsCommit(id),
     fd,
     { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+}
+
+/** Reapply the exact persisted revision currently visible to the operator. */
+export async function activateChannel(
+  id: IdType,
+  expectedRevision: string,
+  signal?: AbortSignal,
+) {
+  return requestClient.post<NonNullable<ChannelInfo['configuration']>>(
+    `${ChannelApi.base}/${id}/activate`,
+    { expectedRevision },
+    { signal },
   );
 }

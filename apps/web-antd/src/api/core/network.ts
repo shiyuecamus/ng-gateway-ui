@@ -28,8 +28,7 @@ export namespace NetworkApi {
   export const wifiDisconnect = `${base}/wifi/disconnect`;
   export const wifiStatus = `${base}/wifi/status`;
   export const wifiSaved = `${base}/wifi/saved`;
-  export const wifiSavedDetail = (uuid: string) =>
-    `${base}/wifi/saved/${uuid}`;
+  export const wifiSavedDetail = (uuid: string) => `${base}/wifi/saved/${uuid}`;
   export const ap = `${base}/ap`;
 }
 

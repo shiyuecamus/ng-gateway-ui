@@ -1,7 +1,8 @@
 <script lang="ts" setup>
+import type { TreeProps } from 'ant-design-vue';
+
 import type { FormOpenData } from '@vben/constants';
 import type { AppSubInfo, ChannelDeviceTree, IdType } from '@vben/types';
-import type { TreeProps } from 'ant-design-vue';
 
 import { computed, nextTick, ref } from 'vue';
 
@@ -9,24 +10,23 @@ import { useVbenModal } from '@vben/common-ui';
 import { useRequestHandler } from '@vben/hooks';
 import { $t } from '@vben/locales';
 
-import { Spin, TreeSelect, message } from 'ant-design-vue';
+import { message, Spin, TreeSelect } from 'ant-design-vue';
 
+import { useVbenForm } from '#/adapter/form';
 import {
   createAppSub,
   fetchAppSubs,
   fetchDeviceTree,
   updateAppSub,
 } from '#/api';
-import { useVbenForm } from '#/adapter/form';
 
 import { useSubscriptionFormSchema } from '../schemas/form';
-
-const CHANNEL_KEY_PREFIX = 'channel-';
-const DEVICE_KEY_PREFIX = 'device-';
 
 const emit = defineEmits<{
   submitted: [];
 }>();
+const CHANNEL_KEY_PREFIX = 'channel-';
+const DEVICE_KEY_PREFIX = 'device-';
 
 const { handleRequest } = useRequestHandler();
 
@@ -40,7 +40,7 @@ const channelTree = ref<ChannelDeviceTree[]>([]);
 const [Form, formApi] = useVbenForm({
   schema: useSubscriptionFormSchema(),
   showDefaultActions: false,
-  handleSubmit: handleSubmit,
+  handleSubmit,
   submitButtonOptions: {
     show: false,
   },
@@ -48,12 +48,12 @@ const [Form, formApi] = useVbenForm({
     show: false,
   },
   handleValuesChange: async (values, fieldsChanged) => {
-    if (fieldsChanged.includes('allDevices')) {
-      if (values.allDevices) {
-        if (normalizeDeviceKeys(values.deviceIds).length > 0) {
-          await formApi.setFieldValue('deviceIds', []);
-        }
-      }
+    if (
+      fieldsChanged.includes('allDevices') &&
+      values.allDevices &&
+      normalizeDeviceKeys(values.deviceIds).length > 0
+    ) {
+      await formApi.setFieldValue('deviceIds', []);
     }
   },
 });
@@ -86,7 +86,7 @@ const treeData = computed<TreeProps['treeData']>(() => {
 
 function normalizeDeviceKeys(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
-  return value.map((item) => String(item));
+  return value.map(String);
 }
 
 function toChannelKey(id: IdType) {
@@ -239,11 +239,10 @@ async function handleSubmit(values: Record<string, any>) {
                 name: $t('page.northward.app.subscriptionForm.devices'),
               })
             "
-            :tree-node-filter-prop="'title'"
+            tree-node-filter-prop="title"
           />
         </template>
       </Form>
     </Spin>
   </Modal>
 </template>
-

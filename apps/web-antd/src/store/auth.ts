@@ -1,6 +1,6 @@
 import type { Recordable, UserInfo } from '@vben/types';
 
-import type { AuthApi } from '#/api';
+import type { AuthApi } from '#/api/core/auth';
 
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -12,8 +12,10 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { notification } from 'ant-design-vue';
 import { defineStore } from 'pinia';
 
-import { getUserInfoApi, loginApi, logoutApi } from '#/api';
+import { loginApi, logoutApi } from '#/api/core/auth';
+import { getUserInfoApi } from '#/api/core/user';
 import { $t } from '#/locales';
+import { requestId } from '#/shared/request-id';
 
 export const useAuthStore = defineStore('auth', () => {
   const accessStore = useAccessStore();
@@ -21,6 +23,10 @@ export const useAuthStore = defineStore('auth', () => {
   const router = useRouter();
 
   const loginLoading = ref(false);
+  const mustChangePassword = ref(false);
+  const sessionChecked = ref(false);
+  let pendingLogin: null | { id: string; password: string; username: string } =
+    null;
 
   /**
    * Performs the shared login workflow and stores the issued access token.
@@ -31,7 +37,21 @@ export const useAuthStore = defineStore('auth', () => {
     loginLoading.value = true;
 
     try {
-      const { token } = await loginApi(params);
+      const username = String(params.username ?? '');
+      const password = String(params.password ?? '');
+      if (
+        !pendingLogin ||
+        pendingLogin.username !== username ||
+        pendingLogin.password !== password
+      )
+        pendingLogin = { id: requestId(), username, password };
+      const { token, mustChangePassword: mustChange } = await loginApi({
+        username,
+        password,
+        requestId: pendingLogin.id,
+      });
+      pendingLogin = null;
+      mustChangePassword.value = mustChange;
 
       if (!token) {
         return null;
@@ -67,7 +87,10 @@ export const useAuthStore = defineStore('auth', () => {
     const userInfo = await performLogin(params);
 
     if (userInfo) {
-      if (accessStore.loginExpired) {
+      if (mustChangePassword.value) {
+        accessStore.setLoginExpired(false);
+        await router.replace('/auth/password');
+      } else if (accessStore.loginExpired) {
         accessStore.setLoginExpired(false);
       } else {
         onSuccess
@@ -81,53 +104,45 @@ export const useAuthStore = defineStore('auth', () => {
     };
   }
 
-  /**
-   * Authenticates with credentials provided by URL query parameters.
-   *
-   * Navigation is intentionally controlled by the route guard so this method
-   * only completes token persistence and user-info hydration.
-   */
-  async function urlAutoLogin(
-    params: AuthApi.LoginParams,
-  ): Promise<null | UserInfo> {
-    const userInfo = await performLogin(params);
-
-    if (!userInfo) {
-      throw new Error($t('authentication.urlAutoLoginFailedDesc'));
-    }
-
-    return userInfo;
-  }
-
-  async function logout(redirect: boolean = true) {
-    try {
-      await logoutApi();
-    } catch {
-      // 不做任何处理
-    }
+  async function clearSession(redirect: boolean = true) {
     resetAllStores();
     accessStore.setLoginExpired(false);
-
-    // 回登录页带上当前路由地址
     await router.replace({
       path: LOGIN_PATH,
-      query: redirect
-        ? {
-            redirect: encodeURIComponent(router.currentRoute.value.fullPath),
-          }
-        : {},
+      query:
+        redirect && !router.currentRoute.value.path.startsWith('/auth/')
+          ? { redirect: encodeURIComponent(router.currentRoute.value.fullPath) }
+          : {},
     });
   }
 
+  async function logout(redirect: boolean = true) {
+    const token = accessStore.accessToken;
+    try {
+      await logoutApi();
+    } catch (error) {
+      if (
+        (error as { response?: { status?: number } }).response?.status !== 401
+      )
+        throw error;
+    }
+    if (accessStore.accessToken && accessStore.accessToken !== token) return;
+    await clearSession(redirect);
+  }
+
   async function fetchUserInfo() {
-    let userInfo: null | UserInfo = null;
-    userInfo = await getUserInfoApi();
+    const userInfo = await getUserInfoApi();
+    mustChangePassword.value = userInfo.mustChangePassword;
+    sessionChecked.value = true;
     userStore.setUserInfo(userInfo);
     return userInfo;
   }
 
   function $reset() {
     loginLoading.value = false;
+    pendingLogin = null;
+    mustChangePassword.value = false;
+    sessionChecked.value = false;
   }
 
   return {
@@ -136,6 +151,8 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUserInfo,
     loginLoading,
     logout,
-    urlAutoLogin,
+    mustChangePassword,
+    sessionChecked,
+    clearSession,
   };
 });

@@ -59,7 +59,6 @@ description: 'NG Gateway 产品级配置管理文档：运行时调参（Collect
   - 太大：慢设备会占用并发槽位，拖慢整体吞吐
 - **maxConcurrentCollections**：最大并发采集数
   - 提升吞吐的主要杠杆，但会增加 CPU/网络/驱动并发压力
-- **outboundQueueCapacity**：Collector → Gateway 的有界队列容量
   - 太小：容易背压或 drops（视 drop 策略）
   - 太大：占用更多内存，且“堆积”会掩盖下游变慢
 - **retryPolicy**：重试与退避策略

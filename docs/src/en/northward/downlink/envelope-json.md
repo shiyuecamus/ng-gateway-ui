@@ -1,29 +1,33 @@
 ---
 title: 'Downlink EnvelopeJson'
-description: 'Recommended downlink protocol: schema_version + event.kind + payload.data; supports mixed topic and stable evolution.'
+description: 'Recommended downlink protocol: boot_contract + event.kind + payload.data; supports mixed topic and the exact boot contract.'
 ---
 
-## 1. Minimal JSON Shape (schema_version = 1)
+## 1. Minimal JSON Shape (boot_contract = "boot")
 
 Downlink EnvelopeJson allows omitting `envelope` meta information (Optional):
 
 ```json
 {
-  "schema_version": 1,
+  "boot_contract": "boot",
   "event": { "kind": "write_point" },
   "payload": {
     "data": {
-      "request_id": "req-123",
-      "point_id": 10001,
-      "value": 1,
+      "requestId": "req-123",
+      "idempotencyKey": "operator-intent-123",
+      "pointId": 10001,
+      "valueType": 0,
+      "value": true,
       "timestamp": "2026-01-19T00:00:00Z",
-      "timeout_ms": 5000
+      "timeoutMs": 5000
     }
   }
 }
 ```
 
 ::: tip
+`valueType: 0` declares a Boolean value. `requestId` correlates the reply; `idempotencyKey` identifies the physical control intent. Reusing the key returns the recorded operation and must not send a second control.
+
 Parsing will first use `event.kind` for routing matching:
 -   kind mismatch → Directly ignore (Not treated as error)
 -   kind match but payload shape incorrect → Treated as "Decoding Error"

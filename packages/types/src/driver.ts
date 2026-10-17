@@ -10,7 +10,7 @@ interface DriverInfo extends BaseEntity {
   driverType: string;
   source: (typeof DriverSource)[keyof typeof DriverSource];
   version: string;
-  apiVersion: number;
+  bootContract: string;
   sdkVersion: string;
   osType: (typeof OsType)[keyof typeof OsType];
   osArch: (typeof OsArch)[keyof typeof OsArch];
@@ -26,7 +26,7 @@ interface DriverProbeInfo {
   driverType: string;
   source: (typeof DriverSource)[keyof typeof DriverSource];
   version: string;
-  apiVersion: number;
+  bootContract: string;
   sdkVersion: string;
   osType: (typeof OsType)[keyof typeof OsType];
   osArch: (typeof OsArch)[keyof typeof OsArch];

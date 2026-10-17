@@ -211,7 +211,7 @@ NG Gateway 的北向架构不仅仅是“把数据发到云端”，而是一个
 
 目前北向插件以 **JSON** 载荷为主，并且提供多种“可预测的 JSON 形状”以平衡可读性与吞吐：
 
-- **EnvelopeJson（推荐默认）**：稳定协议包络（`schema_version` + `event.kind` + `payload.data`），适用于对接与长期演进
+- **EnvelopeJson（推荐默认）**：稳定协议包络（`boot_contract` + `event.kind` + `payload.data`），适用于对接与唯一 boot 契约
 - **Kv / TimeseriesRows**：更偏吞吐/TSDB 的扁平化形状（可选包含 meta）
 - **MappedJson**：声明式映射（把内部数据映射成你平台期望的字段结构）
 

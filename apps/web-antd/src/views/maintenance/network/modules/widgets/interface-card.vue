@@ -8,11 +8,7 @@ import { $t } from '@vben/locales';
 
 import { Badge, Card, Tag, Tooltip, Typography } from 'ant-design-vue';
 
-import {
-  formatBytes,
-  interfaceKindIcon,
-  linkStateColor,
-} from '../schemas';
+import { formatBytes, interfaceKindIcon, linkStateColor } from '../schemas';
 
 const props = defineProps<{
   iface: NetworkInterfaceSummary;
@@ -68,9 +64,9 @@ const badgeColor = computed(() => linkStateColor(props.iface.linkState));
       <div class="flex flex-col items-center gap-1">
         <Badge :color="badgeColor" :dot="true">
           <div
-            class="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg"
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"
           >
-            <IconifyIcon :icon="icon" class="text-primary size-5" />
+            <IconifyIcon :icon="icon" class="size-5 text-primary" />
           </div>
         </Badge>
       </div>
@@ -80,7 +76,11 @@ const badgeColor = computed(() => linkStateColor(props.iface.linkState));
           <Typography.Text strong class="truncate text-sm">
             {{ iface.displayName || iface.name }}
           </Typography.Text>
-          <Tag :color="iface.linkState === 'up' ? 'success' : 'default'" size="small" class="!m-0">
+          <Tag
+            :color="iface.linkState === 'up' ? 'success' : 'default'"
+            size="small"
+            class="!m-0"
+          >
             {{ stateLabel }}
           </Tag>
           <Tag size="small" class="!m-0">{{ kindLabel }}</Tag>

@@ -131,4 +131,3 @@ export function buildLineChartOption(args: {
     animationEasing: 'quadraticOut',
   };
 }
-

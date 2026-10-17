@@ -52,6 +52,7 @@ export const DataType = {
   Int32: 5,
   UInt32: 6,
   Int64: 7,
+  Int128: 14,
   UInt64: 8,
   Float32: 9,
   Float64: 10,

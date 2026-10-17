@@ -25,9 +25,9 @@ import {
 import { importPointCommit, importPointPreview } from '#/api/core/device';
 import { useImportFlow } from '#/shared/composables/use-import-flow';
 
-import PointForm from './point-form.vue';
 import { pointSearchFormSchema } from '../schemas/search-form';
 import { usePointColumns } from '../schemas/table-columns';
+import PointForm from './point-form.vue';
 
 defineOptions({ name: 'PointManager' });
 
@@ -38,7 +38,7 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 });
 
 const [Modal, modalApi] = useVbenModal({
-  class: 'w-4/5',
+  class: 'w-[1280px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   footer: false,
   onCancel() {
@@ -299,4 +299,3 @@ const handleFormSubmit = async (
     <FormDrawer @submit="handleFormSubmit" />
   </Modal>
 </template>
-

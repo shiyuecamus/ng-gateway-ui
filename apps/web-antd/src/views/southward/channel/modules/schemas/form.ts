@@ -341,6 +341,14 @@ export function useActionParameterBasicFormSchema(): FormSchema[] {
                 schema = (schema as any).max(Number(max));
               break;
             }
+            case DataType.Int128: {
+              schema = z.string().refine((value) => {
+                if (!/^-?\d+$/.test(value)) return false;
+                const integer = BigInt(value);
+                return integer >= -(1n << 127n) && integer < 1n << 127n;
+              });
+              break;
+            }
             case DataType.Timestamp: {
               // 时间戳按整数数值校验（毫秒/秒的粒度交由后端/业务解释）
               schema = z.number().int();

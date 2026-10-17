@@ -4,7 +4,7 @@ import type { PluginInfo } from '@vben/types';
 import type { OnActionClickFn } from '#/adapter/vxe-table';
 
 import { $t } from '@vben/locales';
-import { PluginSource, OsArch, OsType } from '@vben/types';
+import { OsArch, OsType, PluginSource } from '@vben/types';
 import {
   formatBytes,
   osArchColor,
@@ -37,8 +37,8 @@ export function useColumns(
       title: $t('page.northward.plugin.version'),
     },
     {
-      field: 'apiVersion',
-      title: $t('page.northward.plugin.apiVersion'),
+      field: 'bootContract',
+      title: $t('page.northward.plugin.bootContract'),
     },
     {
       field: 'sdkVersion',

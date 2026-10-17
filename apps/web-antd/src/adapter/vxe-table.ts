@@ -112,7 +112,10 @@ setupVbenVxeTable({
     // 单元格渲染：连接状态
     vxeUI.renderer.add('CellConnectionState', {
       renderTableDefault(_renderOpts, { column, row }) {
-        const raw = get(row, column.field) as { phase?: string } | null | undefined;
+        const raw = get(row, column.field) as
+          | null
+          | undefined
+          | { phase?: string };
         const stateStr = String(raw?.phase ?? 'Disconnected');
 
         let color: string;
@@ -128,11 +131,6 @@ setupVbenVxeTable({
             text = $t('ui.connectionState.connecting');
             break;
           }
-          case 'Initializing': {
-            color = 'processing';
-            text = $t('ui.connectionState.initializing');
-            break;
-          }
           case 'Disconnected': {
             color = 'default';
             text = $t('ui.connectionState.disconnected');
@@ -141,6 +139,11 @@ setupVbenVxeTable({
           case 'Failed': {
             color = 'error';
             text = $t('ui.connectionState.failed');
+            break;
+          }
+          case 'Initializing': {
+            color = 'processing';
+            text = $t('ui.connectionState.initializing');
             break;
           }
           case 'Reconnecting': {
@@ -213,10 +216,10 @@ setupVbenVxeTable({
           .map((opt) => {
             return isString(opt)
               ? {
-                code: opt,
-                text: $te(`common.${opt}`) ? $t(`common.${opt}`) : opt,
-                ...defaultProps,
-              }
+                  code: opt,
+                  text: $te(`common.${opt}`) ? $t(`common.${opt}`) : opt,
+                  ...defaultProps,
+                }
               : { ...defaultProps, ...opt };
           })
           .map((opt) => {
@@ -246,10 +249,10 @@ setupVbenVxeTable({
               icon: undefined,
               onClick: listen
                 ? () =>
-                  attrs?.onClick?.({
-                    code: opt.code,
-                    row,
-                  })
+                    attrs?.onClick?.({
+                      code: opt.code,
+                      row,
+                    })
                 : undefined,
             },
             { default: () => buttonContent },

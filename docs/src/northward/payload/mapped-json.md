@@ -37,7 +37,7 @@ MappedJson 的输入视图是稳定的，形状如下：
 
 ```json
 {
-  "schema_version": 1,
+  "boot_contract": "boot",
   "event_kind": "telemetry",
   "ts_ms": 1734870900000,
   "app": { "id": 1, "name": "my-app", "plugin_type": "kafka" },
@@ -50,6 +50,8 @@ MappedJson 的输入视图是稳定的，形状如下：
 
 - `event_kind` 来自内部 EnvelopeKind（与 `EnvelopeJson` 的 `event.kind` 一致）
 - `data` 是 `NorthwardData` 的 JSON 表示（Telemetry/Attributes/…）
+
+遥测与属性实际输出为 `{ "mapped": ..., "samples": ..., "sampleContract": "boot" }`。`samples` 保留网关原始值、质量、源时间和新鲜度证据，映射规则不能覆盖该字段。
 
 ---
 

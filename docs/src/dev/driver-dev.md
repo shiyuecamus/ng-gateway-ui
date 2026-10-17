@@ -56,7 +56,7 @@ cd ng-driver-yourproto
 ```toml
 [package]
 name = "ng-driver-yourproto"
-version = "0.1.0"
+version = "0.0.0-boot"
 edition = "2021"
 publish = false
 
@@ -64,7 +64,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ng-gateway-sdk = "0.1"
+ng-gateway-sdk = "=0.0.0-boot"
 tokio = { version = "1", features = ["full", "tracing"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -865,7 +865,7 @@ ng_driver_factory!(
    - 详见：[`本地开发`](/dev/local-dev)
 2) 启动 WebUI（推荐 dev server 联调后端）
 3) 在 WebUI 完成 **驱动安装 → 探测（probe）→ 启用**
-   - 重点关注：版本信息、`api_version`/`sdk_version`、架构与 checksum 是否符合预期
+   - 重点关注：版本信息、`boot_contract`/`sdk_version`、架构与 checksum 是否符合预期
 4) 在 WebUI 创建并配置 **Channel/Device/Point/Action**
    - 用最小可用配置先跑通（能连上、能采集/能写回）
 5) 观测与排障（只看“低频、可聚合”的关键信号）
@@ -878,7 +878,7 @@ ng_driver_factory!(
 - **多平台产物**：Linux/macOS/Windows 的扩展名不同（`.so/.dylib/.dll`），并确保目标架构匹配
 - **WebUI 探测（probe）必须通过**：确保导出元数据可读、类型/名称/版本正确，且能展示 Probe 信息
 - **自定义驱动升级方式**：发布新版本产物后通过 WebUI 安装覆盖，并在 probe 页确认 `version/checksum` 已更新（文件落盘在 `drivers/custom`）
-- **ABI/API 版本**：loader 会校验 `ng_driver_api_version` 与 host 一致
+- **boot 契约**：loader 会校验 `ng_driver_boot_contract` 与 host 一致
 - **SDK 版本**：当前策略为非严格（不一致会 warn），但不建议跨大版本
 - **配置兼容**：Schema path 与配置字段保持向后兼容；新增字段要提供默认值
 

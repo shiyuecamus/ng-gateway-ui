@@ -10,19 +10,20 @@ description: 'Modbus address 的 0/1 基、40001/30001 逻辑地址换算，以�
 ### 1) 0 基 vs 1 基
 
 如果设备手册写：
+
 - “保持寄存器 40001 表示第 1 个寄存器”
 
 那么 Modbus PDU 里通常要填：
+
 - `address = 0` (因为 40001 是逻辑映射，偏移量为 0)
 
 如果手册写：
+
 - “寄存器地址从 0 开始”
 
 那就直接按手册填。
 
-::: tip 实践建议
-用一个“值固定且可验证”的寄存器先校准（比如序列号/型号/固件版本），确认 address 体系无误后再批量建点。
-:::
+::: tip 实践建议用一个“值固定且可验证”的寄存器先校准（比如序列号/型号/固件版本），确认 address 体系无误后再批量建点。:::
 
 ### 2) 4xxxx / 3xxxx / 1xxxx / 0xxxx 的换算
 
@@ -35,49 +36,25 @@ description: 'Modbus address 的 0/1 基、40001/30001 逻辑地址换算，以�
 
 > 这只是“人类可读分区”，并非协议层字段。驱动里分区由 `functionCode` 决定，`address` 只填偏移。
 
-## Quantity (数量)
+## Quantity（数量）
 
-`quantity` 决定了驱动读取多少个基本单位的数据。
+`address`、`quantity` 必须显式配置为无符号整数。缺少 quantity、quantity=0、小数以及 `address + quantity > 65536` 均在 I/O 前拒绝。
 
-### 1) 读线圈/离散输入 (0x01/0x02)
+线圈/离散输入点位是单个 Boolean bit，`quantity=1`。寄存器单位为完整的 16-bit word；wire 类型决定标量的精确宽度：
 
-`quantity` 单位是 **bit（线圈数量）**。
-- 单个 bool：`quantity = 1`
+| wire `dataType`                   |   精确寄存器数量 |
+| --------------------------------- | ---------------: |
+| Boolean、Int16、UInt16            |                1 |
+| Int32、UInt32、Float32            |                2 |
+| Int64、UInt64、Float64、Timestamp |                4 |
+| String、Binary                    | 显式完整字段长度 |
 
-### 2) 读寄存器 (0x03/0x04)
+Timestamp 为有符号 64 位毫秒时间戳。UInt8/Int8 的 wire 字节槽及 Int128 wire 字段未准入；需要逻辑类型转换时，显式选择 16/32/64 位 wire 类型与 `transformDataType`。宽度不符不会截取前缀或自动提升。
 
-`quantity` 单位是 **word（16-bit 寄存器数）**。
+String 在去除末尾零填充后严格按 UTF-8 解码；Binary 保留全部字节。变长字段可以跨多个读取 PDU，完整组装后才应用整个字段的 word order。单 PDU 最多 125 个寄存器或 2000 个 bit；完整原始字段可更大，但必须满足地址和内存预算。
 
-推荐按 `data_type` 计算，但也支持 **Smart Cast**（读少转多或读多转少）：
+## 写入
 
-| DataType | 标准 quantity (word) | 兼容性处理 |
-| --- | ---: | --- |
-| **Int16 / UInt16** | 1 | - |
-| **Int32 / UInt32** | 2 | 若 quantity=1，自动读取 16 位并提升为 32 位 |
-| **Float32** | 2 | 若 quantity=1，自动读取 16 位整数并转为浮点 |
-| **Float64** | 4 | 若 quantity=2，自动读取 32 位浮点并转为双精度 |
-| **Int64 / UInt64** | 4 | 若 quantity=2，自动读取 32 位整数并提升为 64 位 |
-| **Timestamp** | **2 或 4** | **2 words**: 视作秒级 (u32 * 1000)<br>**4 words**: 视作毫秒级 (i64) |
-| **String / Binary** | N | 必须指定足够覆盖数据的长度 |
+可写保持寄存器点位在一个 word 时使用 06H，多个 word 时使用 10H；可写线圈点位使用 05H。输入寄存器和离散输入只读。Action 显式选择 05H/06H/0FH/10H：单写 quantity 必须为1，多线圈写最多1968 bit，多寄存器写最多123 word。Boolean action 值作用于声明范围内的每个线圈。
 
-::: warning 
-String/Binary 的 length 不是“字符数”的通用概念 `String/Binary` 的 `quantity` 本质是“读多少个寄存器（word）”，至于这段寄存器里如何编码字符串（UTF-8/ASCII/UTF-16、是否 `\\0` 结束、是否 0 填充、字节序/字序），取决于设备/上位机约定。
-
-为了保证短字符串（如 `"a"` / `"shiyue"`）也能稳定读到“干净”的值，强烈建议设备侧采用**定长块全量覆盖 + `0x00` 填充**；否则可能读到包含 `\\0` 的中间脏数据。详见 [Modbus](./index.md) 文档中 `String` 的 warning。
-:::
-
-### 3) 写寄存器/线圈 (0x05/0x06/0x0F/0x10)
-
-Action/WritePoint 写入同样使用 `address + quantity`。
-
-**自动推断机制**：
-对于北向单点写入（`write_point`），驱动会根据 `quantity` 自动选择功能码：
-- 如果定义是 `ReadHoldingRegisters` (0x03)：
-  - `quantity=1` -> 自动转为 `WriteSingleRegister` (0x06)
-  - `quantity>1` -> 自动转为 `WriteMultipleRegisters` (0x10)
-
-- 如果定义是 `ReadCoils` (0x01)：
-  - `quantity=1` -> 自动转为 `WriteSingleCoil` (0x05)
-  - `quantity>1` -> 自动转为 `WriteMultipleCoils` (0x0F)
-
-这大大简化了配置，通常你只需要配置读属性，写入会自动适配。
+String/Binary 写入先对整个字段补零，再应用 word order；超长值直接拒绝。回包必须完整回显原始地址、值或 quantity。确认回包表示服务接受，不推断现场执行完成。

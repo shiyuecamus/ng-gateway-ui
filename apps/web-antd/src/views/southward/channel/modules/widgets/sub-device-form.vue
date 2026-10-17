@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { DeviceInfo, IdType, Recordable } from '@vben/types';
 
+import type { DriverSchemas } from '#/shared/dynamic-schema';
+
 import { nextTick, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
@@ -15,12 +17,11 @@ import { Card } from 'ant-design-vue';
 import { useVbenForm } from '#/adapter/form';
 import { getDeviceById } from '#/api';
 import { fetchDriverSchemasById } from '#/api/core/driver';
-
 import {
   mapDeviceSchemasToForm,
   sortDriverSchemas,
-  type DriverSchemas,
 } from '#/shared/dynamic-schema';
+
 import { useSubDeviceBasicFormSchema } from '../schemas/form';
 
 defineOptions({ name: 'SubDeviceForm' });
@@ -60,7 +61,7 @@ const [DriverForm, driverFormApi] = useVbenForm({
 
 // 抽屉
 const [Modal, modalApi] = useVbenDrawer({
-  class: 'w-1/2',
+  class: 'w-[920px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   showConfirmButton: true,
   onCancel() {
@@ -173,4 +174,3 @@ async function init() {
     </div>
   </Modal>
 </template>
-

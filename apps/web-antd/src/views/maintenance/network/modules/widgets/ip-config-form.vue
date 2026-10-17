@@ -20,8 +20,8 @@ import {
 import { configureNetworkInterface } from '#/api/core';
 
 const props = defineProps<{
-  interfaceName: string | null;
   currentIpv4: Ipv4Config | null | undefined;
+  interfaceName: null | string;
   isMobile: boolean;
 }>();
 
@@ -79,9 +79,7 @@ async function applyConfig() {
   confirmOpen.value = false;
   if (!props.interfaceName) return;
   if (isStatic.value && (!form.value.ipAddress || !form.value.prefixLength)) {
-    message.warning(
-      $t('page.maintenance.network.wiredConfig.staticRequired'),
-    );
+    message.warning($t('page.maintenance.network.wiredConfig.staticRequired'));
     return;
   }
 
@@ -110,9 +108,7 @@ async function applyConfig() {
         ipConfig,
       }),
     () => {
-      message.success(
-        $t('page.maintenance.network.wiredConfig.applySuccess'),
-      );
+      message.success($t('page.maintenance.network.wiredConfig.applySuccess'));
       emit('applied');
     },
   );
@@ -164,9 +160,7 @@ function requestApply() {
           inputmode="numeric"
         />
       </Form.Item>
-      <Form.Item
-        :label="$t('page.maintenance.network.wiredConfig.gateway')"
-      >
+      <Form.Item :label="$t('page.maintenance.network.wiredConfig.gateway')">
         <Input
           v-model:value="form.gateway"
           placeholder="192.168.1.1"
@@ -176,9 +170,7 @@ function requestApply() {
       </Form.Item>
     </template>
 
-    <Form.Item
-      :label="$t('page.maintenance.network.wiredConfig.dnsServers')"
-    >
+    <Form.Item :label="$t('page.maintenance.network.wiredConfig.dnsServers')">
       <Input.TextArea
         v-model:value="form.dns"
         :rows="2"
@@ -221,12 +213,7 @@ function requestApply() {
       <Button block @click="confirmOpen = false">
         {{ $t('page.maintenance.network.confirmCancel') }}
       </Button>
-      <Button
-        type="primary"
-        block
-        :loading="applying"
-        @click="applyConfig"
-      >
+      <Button type="primary" block :loading="applying" @click="applyConfig">
         {{ $t('page.maintenance.network.confirmAction') }}
       </Button>
     </div>

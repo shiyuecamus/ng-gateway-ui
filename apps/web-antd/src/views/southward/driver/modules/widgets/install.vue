@@ -120,7 +120,7 @@ async function handleInstallClick() {
 }
 
 const [Modal, modalApi] = useVbenModal({
-  class: 'w-2/3',
+  class: 'w-[1040px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   fullscreenButton: false,
   title: $t('page.southward.driver.install.title'),
@@ -184,7 +184,11 @@ function osArchLabel(value: number) {
 
       <div v-show="currentTab === 1" class="space-y-4">
         <Card>
-          <Descriptions :column="2" size="middle" :bordered="true">
+          <Descriptions
+            :column="{ xs: 1, md: 2 }"
+            size="middle"
+            :bordered="true"
+          >
             <Descriptions.Item :label="$t('page.southward.driver.name')">
               <Tag color="volcano">
                 {{ probeInfo?.name }}
@@ -200,9 +204,11 @@ function osArchLabel(value: number) {
                 {{ probeInfo?.version }}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item :label="$t('page.southward.driver.apiVersion')">
+            <Descriptions.Item
+              :label="$t('page.southward.driver.bootContract')"
+            >
               <Tag color="purple">
-                {{ probeInfo?.apiVersion }}
+                {{ probeInfo?.bootContract }}
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item :label="$t('page.southward.driver.sdkVersion')">
@@ -210,12 +216,16 @@ function osArchLabel(value: number) {
                 {{ probeInfo?.sdkVersion }}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item :label="$t('page.southward.driver.osType.title')">
+            <Descriptions.Item
+              :label="$t('page.southward.driver.osType.title')"
+            >
               <Tag :color="osTypeColor(probeInfo?.osType ?? OsType.Unknown)">
                 {{ osTypeLabel(probeInfo?.osType ?? OsType.Unknown) }}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item :label="$t('page.southward.driver.osArch.title')">
+            <Descriptions.Item
+              :label="$t('page.southward.driver.osArch.title')"
+            >
               <Tag :color="osArchColor(probeInfo?.osArch ?? OsArch.Unknown)">
                 {{ osArchLabel(probeInfo?.osArch ?? OsArch.Unknown) }}
               </Tag>
@@ -293,4 +303,3 @@ function osArchLabel(value: number) {
 </template>
 
 <style scoped></style>
-

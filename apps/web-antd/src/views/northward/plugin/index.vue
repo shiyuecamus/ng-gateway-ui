@@ -14,8 +14,8 @@ import { Button, message } from 'ant-design-vue';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { fetchPluginPage, uninstallPlugin } from '#/api';
 
-import InstallPlugin from './modules/widgets/install.vue';
 import { searchFormSchema, useColumns } from './modules/schemas/index';
+import InstallPlugin from './modules/widgets/install.vue';
 
 const { handleRequest } = useRequestHandler();
 

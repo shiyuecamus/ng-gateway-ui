@@ -32,4 +32,3 @@ const [Modal, modalApi] = useVbenModal({
 </template>
 
 <style scoped></style>
-

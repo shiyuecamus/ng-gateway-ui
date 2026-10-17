@@ -40,8 +40,8 @@ export function useColumns(
       title: $t('page.southward.driver.version'),
     },
     {
-      field: 'apiVersion',
-      title: $t('page.southward.driver.apiVersion'),
+      field: 'bootContract',
+      title: $t('page.southward.driver.bootContract'),
     },
     {
       field: 'sdkVersion',

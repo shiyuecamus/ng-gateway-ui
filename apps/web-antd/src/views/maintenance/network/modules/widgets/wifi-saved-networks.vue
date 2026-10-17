@@ -33,7 +33,7 @@ const { handleRequest } = useRequestHandler();
 
 const savedConnections = ref<SavedWifiConnection[]>([]);
 const loading = ref(false);
-const forgetting = ref<string | null>(null);
+const forgetting = ref<null | string>(null);
 
 async function loadSavedConnections() {
   loading.value = true;
@@ -51,9 +51,7 @@ async function doForget(uuid: string) {
   await handleRequest(
     () => forgetWifi(uuid),
     () => {
-      message.success(
-        $t('page.maintenance.network.wifiConfig.forgetSuccess'),
-      );
+      message.success($t('page.maintenance.network.wifiConfig.forgetSuccess'));
       savedConnections.value = savedConnections.value.filter(
         (s) => s.uuid !== uuid,
       );
@@ -89,19 +87,13 @@ onMounted(() => {
           })
         "
       >
-        <List
-          size="small"
-          :data-source="savedConnections"
-          :loading="loading"
-        >
+        <List size="small" :data-source="savedConnections" :loading="loading">
           <template #renderItem="{ item: saved }">
             <List.Item class="!px-3">
               <div class="flex w-full items-center gap-3">
                 <IconifyIcon
                   icon="mdi:wifi"
-                  :class="
-                    saved.isActive ? 'text-green-500' : 'text-gray-400'
-                  "
+                  :class="saved.isActive ? 'text-green-500' : 'text-gray-400'"
                   class="size-5 shrink-0"
                 />
 
@@ -116,21 +108,11 @@ onMounted(() => {
                       size="small"
                       class="!m-0"
                     >
-                      {{
-                        $t(
-                          'page.maintenance.network.wifiConfig.connected',
-                        )
-                      }}
+                      {{ $t('page.maintenance.network.wifiConfig.connected') }}
                     </Tag>
-                    <Tag
-                      v-if="!saved.autoconnect"
-                      size="small"
-                      class="!m-0"
-                    >
+                    <Tag v-if="!saved.autoconnect" size="small" class="!m-0">
                       {{
-                        $t(
-                          'page.maintenance.network.wifiConfig.autoconnectOff',
-                        )
+                        $t('page.maintenance.network.wifiConfig.autoconnectOff')
                       }}
                     </Tag>
                   </div>
@@ -138,26 +120,19 @@ onMounted(() => {
                     {{ securityShortLabel(saved.security) || 'Open' }}
                     <span class="mx-1">&middot;</span>
                     {{
-                      saved.ipConfig.method === 'static'
-                        ? 'Static IP'
-                        : 'DHCP'
+                      saved.ipConfig.method === 'static' ? 'Static IP' : 'DHCP'
                     }}
                   </div>
                 </div>
 
                 <Popconfirm
                   :title="
-                    $t(
-                      'page.maintenance.network.wifiConfig.forgetConfirm',
-                      { ssid: saved.ssid },
-                    )
+                    $t('page.maintenance.network.wifiConfig.forgetConfirm', {
+                      ssid: saved.ssid,
+                    })
                   "
-                  :ok-text="
-                    $t('page.maintenance.network.confirmAction')
-                  "
-                  :cancel-text="
-                    $t('page.maintenance.network.confirmCancel')
-                  "
+                  :ok-text="$t('page.maintenance.network.confirmAction')"
+                  :cancel-text="$t('page.maintenance.network.confirmCancel')"
                   @confirm="doForget(saved.uuid)"
                 >
                   <Button
@@ -165,9 +140,7 @@ onMounted(() => {
                     danger
                     :loading="forgetting === saved.uuid"
                   >
-                    {{
-                      $t('page.maintenance.network.wifiConfig.forget')
-                    }}
+                    {{ $t('page.maintenance.network.wifiConfig.forget') }}
                   </Button>
                 </Popconfirm>
               </div>

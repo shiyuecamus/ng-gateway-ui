@@ -31,10 +31,10 @@ import {
 } from '#/api/core/channel';
 import { useImportFlow } from '#/shared/composables/use-import-flow';
 
-import ActionManager from './action-manager.vue';
-import PointManager from './point-manager.vue';
 import { deviceSearchFormSchema } from '../schemas/search-form';
 import { useDeviceColumns } from '../schemas/table-columns';
+import ActionManager from './action-manager.vue';
+import PointManager from './point-manager.vue';
 import SubDeviceForm from './sub-device-form.vue';
 
 type ImportType = 'device' | 'device-points';
@@ -57,7 +57,7 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 });
 
 const [Modal, modalApi] = useVbenModal({
-  class: 'w-4/5',
+  class: 'w-[1280px] max-w-[calc(100vw-2rem)]',
   destroyOnClose: true,
   footer: false,
   onCancel() {
@@ -449,4 +449,3 @@ const handleFormSubmit = async (
   margin-left: 0.35rem;
 }
 </style>
-
