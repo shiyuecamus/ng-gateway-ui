@@ -12,6 +12,8 @@ dist.war
 *-dist.war
 coverage
 *.local
+# Playwright last-run metadata written at the repo root
+test-results/
 **/.vitepress/cache
 .cache
 .turbo
