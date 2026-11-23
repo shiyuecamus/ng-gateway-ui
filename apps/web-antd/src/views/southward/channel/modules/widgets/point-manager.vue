@@ -103,7 +103,6 @@ const gridOptions: VxeGridProps<PointInfo> = {
       });
       await runImport(file as File, {
         title: $t('page.southward.point.importTitle') as string,
-        allowCommitWithErrors: true,
         onDone: async () => {
           await gridApi.query();
         },

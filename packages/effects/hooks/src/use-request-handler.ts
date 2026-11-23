@@ -1,15 +1,15 @@
 export function useRequestHandler() {
   const handleRequest = async <T>(
     requestFn: () => Promise<T>,
-    successCallback?: (res: T) => void,
-    errorCallback?: (error: any) => void,
+    successCallback?: (res: T) => Promise<void> | void,
+    errorCallback?: (error: any) => Promise<void> | void,
   ): Promise<null | T> => {
     try {
       const result: T = await requestFn();
-      successCallback && successCallback(result);
+      await successCallback?.(result);
       return result;
     } catch (error: any) {
-      errorCallback && errorCallback(error);
+      await errorCallback?.(error);
       return null;
     }
   };

@@ -155,9 +155,15 @@ const retryFields = computed(
       'maxIntervalMs',
       'randomizationFactor',
       'multiplier',
-      'maxAttempts',
     ] as const,
 );
+// An empty numeric control represents the API's explicit unlimited retry value.
+const maxAttemptsInput = computed({
+  get: () => connectionPolicy.backoff.maxAttempts ?? undefined,
+  set: (value: null | number | undefined) => {
+    connectionPolicy.backoff.maxAttempts = value ?? null;
+  },
+});
 const source = reactive({
   id: '',
   publisher: '',
@@ -1055,6 +1061,18 @@ onBeforeUnmount(() => {
                   class="!w-full"
                   :id="`${formId}-${field}`"
                   v-model:value="connectionPolicy.backoff[field]"
+                  :min="0"
+                />
+              </FormItem>
+              <FormItem
+                :colon="false"
+                :label="$t(`${key}.policyFields.maxAttempts`)"
+                :html-for="`${formId}-maxAttempts`"
+              >
+                <InputNumber
+                  class="!w-full"
+                  :id="`${formId}-maxAttempts`"
+                  v-model:value="maxAttemptsInput"
                   :min="0"
                 />
               </FormItem>

@@ -9,12 +9,12 @@
  * Connection lifecycle phase.
  */
 export type ConnectionPhase =
-  | 'Disconnected'
-  | 'Connecting'
-  | 'Initializing'
   | 'Connected'
-  | 'Reconnecting'
-  | 'Failed';
+  | 'Connecting'
+  | 'Disconnected'
+  | 'Failed'
+  | 'Initializing'
+  | 'Reconnecting';
 
 /**
  * Failure phase classification (where the failure happened).
@@ -24,13 +24,13 @@ export type FailurePhase = 'Connect' | 'Init' | 'Run';
 /**
  * Failure kind classification (how the supervisor should treat it).
  */
-export type FailureKind = 'Retryable' | 'Fatal' | 'Stop';
+export type FailureKind = 'Fatal' | 'Retryable' | 'ShutdownIncomplete' | 'Stop';
 
 export interface FailureReport {
   phase: FailurePhase;
   kind: FailureKind;
   summary: string;
-  code?: null | string;
+  code: null | string;
 }
 
 /**
@@ -43,16 +43,15 @@ export interface Duration {
 
 export interface RetryBudgetSnapshot {
   exhausted: boolean;
-  remainingHint?: null | number;
+  remaining_hint: null | number;
 }
 
 export interface ConnectionState {
   phase: ConnectionPhase;
   attempt: number;
-  emittedAtUnixMs: number;
-  phaseEnteredAtUnixMs: number;
-  backoff?: null | Duration;
-  lastFailure?: null | FailureReport;
+  emitted_at_unix_ms: number;
+  phase_entered_at_unix_ms: number;
+  backoff: Duration | null;
+  last_failure: FailureReport | null;
   budget: RetryBudgetSnapshot;
 }
-

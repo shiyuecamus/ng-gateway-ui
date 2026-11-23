@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ChannelInfo, DriverInfo } from '@vben/types';
 
+import type { EngineeringDiagnostic } from './engineering-evidence';
+
 import type {
   BrowseDeclaration,
   FieldTarget,
@@ -60,7 +62,11 @@ import {
 } from '#/api/core/engineering';
 
 import { resolveDataTypeLabel } from '../schemas/options';
-import { describeFailure } from './engineering-evidence';
+import {
+  engineeringFailure,
+  EngineeringValidationError,
+  renderEngineeringDiagnostic,
+} from './engineering-evidence';
 import IedContractEvidence from './ied-contract-evidence.vue';
 import IedContractEditor from './ied-contract.vue';
 
@@ -152,7 +158,7 @@ const channel = reactive({
 });
 const compiled = ref<null | PublicationPreview>(null);
 const receipt = ref<null | PublicationReceipt>(null);
-const error = ref('');
+const error = ref<EngineeringDiagnostic>('');
 const previewing = ref(false);
 const publishing = ref(false);
 const refreshing = ref(false);
@@ -204,7 +210,7 @@ async function loadTargets() {
     );
   } catch (error_) {
     if (alive && !controller.signal.aborted && targetsController === controller)
-      error.value = describeFailure(error_, $t(`${key}.failed`));
+      error.value = engineeringFailure(error_, `${key}.failed`);
   }
 }
 onMounted(async () => {
@@ -243,7 +249,7 @@ async function refreshTarget() {
       (record?.publication.desiredRevision ?? null) !==
       (selected.engineeringPublication?.desiredRevision ?? null)
     )
-      throw new Error($t(`${key}.refreshRequired`));
+      throw new EngineeringValidationError(`${key}.refreshRequired`);
     if (record) initialContract.value = record.contract;
     current.value = selected;
     channel.name = selected.name;
@@ -275,7 +281,7 @@ async function refreshTarget() {
       : '';
   } catch (error_) {
     if (alive && !controller.signal.aborted && currentController === controller)
-      error.value = describeFailure(error_, $t(`${key}.failed`));
+      error.value = engineeringFailure(error_, `${key}.failed`);
   } finally {
     if (alive && currentController === controller) refreshing.value = false;
   }
@@ -385,7 +391,7 @@ function bindMember(
     report.dataSet.logicalNode !== owner.logicalNode ||
     report.dataSet.name !== owner.dataSet
   ) {
-    error.value = $t(`${key}.wrongSet`);
+    error.value = { key: `${key}.wrongSet` };
     return;
   }
   let binding = report.bindings.find(
@@ -431,9 +437,10 @@ function setDeadline(
 }
 function proposal(): PublicationRequest {
   if (target.value !== 'create' && !current.value?.configuration)
-    throw new Error($t(`${key}.refreshRequired`));
+    throw new EngineeringValidationError(`${key}.refreshRequired`);
   const mappedReports: ReportMapping[] = reports.value.map((report) => {
-    if (!report.reservation) throw new Error($t(`${key}.reservationRequired`));
+    if (!report.reservation)
+      throw new EngineeringValidationError(`${key}.reservationRequired`);
     return {
       domain: report.owner.domain,
       logicalNode: report.owner.logicalNode,
@@ -445,12 +452,13 @@ function proposal(): PublicationRequest {
           : { kind: report.reservation },
       points: report.bindings.map((binding) => {
         if (binding.valueMember === null)
-          throw new Error($t(`${key}.memberRequired`));
+          throw new EngineeringValidationError(`${key}.memberRequired`);
         return { ...binding, valueMember: binding.valueMember };
       }),
     };
   });
-  if (!channel.transport) throw new Error($t(`${key}.transportRequired`));
+  if (!channel.transport)
+    throw new EngineeringValidationError(`${key}.transportRequired`);
   const transport: Record<string, unknown> = {
     kind: channel.transport,
     host: channel.host,
@@ -473,7 +481,8 @@ function proposal(): PublicationRequest {
           channelId: Number(target.value),
           baseRevision: current.value?.configuration?.desiredRevision ?? '',
         };
-  if (!contractEditor.value) throw new Error($t(`${key}.refreshRequired`));
+  if (!contractEditor.value)
+    throw new EngineeringValidationError(`${key}.refreshRequired`);
   return {
     target: publicationTarget,
     channel: {
@@ -522,7 +531,7 @@ async function preview() {
     snapshot.value = request;
   } catch (error_) {
     if (alive && !controller.signal.aborted && previewController === controller)
-      error.value = describeFailure(error_, $t(`${key}.failed`));
+      error.value = engineeringFailure(error_, `${key}.failed`);
   } finally {
     if (alive && previewController === controller) previewing.value = false;
   }
@@ -553,7 +562,7 @@ async function publish() {
       !controller.signal.aborted &&
       publishController === controller
     ) {
-      error.value = describeFailure(error_, $t(`${key}.failed`));
+      error.value = engineeringFailure(error_, `${key}.failed`);
       invalidate();
     }
   } finally {
@@ -578,7 +587,7 @@ async function retry() {
     await refreshTarget();
   } catch (error_) {
     if (alive && !controller.signal.aborted && publishController === controller)
-      error.value = describeFailure(error_, $t(`${key}.failed`));
+      error.value = engineeringFailure(error_, `${key}.failed`);
   } finally {
     if (alive && publishController === controller) publishing.value = false;
   }
@@ -594,7 +603,12 @@ async function retry() {
     :body-style="{ padding: '16px' }"
   >
     <div class="space-y-4">
-      <Alert v-if="error" type="error" :message="error" show-icon />
+      <Alert
+        v-if="error"
+        type="error"
+        :message="renderEngineeringDiagnostic(error)"
+        show-icon
+      />
       <Alert
         v-if="drivers.length === 0"
         type="info"

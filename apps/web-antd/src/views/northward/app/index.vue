@@ -2,6 +2,8 @@
 import type { VbenFormProps } from '@vben/common-ui';
 import type { AppInfo, IdType, PluginInfo, Recordable } from '@vben/types';
 
+import type { AppFormResult } from './modules/configuration';
+
 import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
@@ -23,9 +25,11 @@ import {
   downloadOpcuaServerPoints,
   fetchAllPlugins,
   fetchAppPage,
+  getAppById,
   updateApp,
 } from '#/api';
 
+import { matchesFailedAppRevision } from './modules/configuration';
 import { createSearchFormSchema, useColumns } from './modules/schemas';
 import OpcuaServerCertificateModal from './modules/widgets/certificate.vue';
 import AppForm from './modules/widgets/form.vue';
@@ -292,28 +296,41 @@ async function handleFormSubmit(
   type: FormOpenType,
   id: IdType,
   values: Recordable<any>,
-) {
+): Promise<AppFormResult> {
+  const encoded = JSON.stringify({ id, ...values });
+  const draft: AppInfo = JSON.parse(encoded);
+  let outcome: AppFormResult = { kind: 'unconfirmed' };
   await (type === FormOpenType.CREATE
     ? handleRequest(
-        () => createApp(values as AppInfo),
+        () => createApp(draft),
         async () => {
+          outcome = { kind: 'applied' };
           formDrawerApi.close();
           message.success($t('common.action.createSuccess'));
           await gridApi.query();
         },
+        async () => {
+          await gridApi.query();
+        },
       )
     : handleRequest(
-        () =>
-          updateApp({
-            id,
-            ...values,
-          } as AppInfo),
+        () => updateApp(draft),
         async () => {
+          outcome = { kind: 'applied' };
           formDrawerApi.close();
           message.success($t('common.action.updateSuccess'));
           await gridApi.query();
         },
+        async (error) => {
+          await gridApi.query();
+          if (error?.response?.status === 409) return;
+          const current = await handleRequest(() => getAppById(id));
+          if (current && matchesFailedAppRevision(draft, current)) {
+            outcome = { kind: 'persisted-failed', configuration: current };
+          }
+        },
       ));
+  return outcome;
 }
 
 /**
@@ -410,7 +427,7 @@ onMounted(() => {
         </Button>
       </template>
     </Grid>
-    <FormDrawer @submit="handleFormSubmit" />
+    <FormDrawer :submit="handleFormSubmit" />
     <SubModal @submitted="handleSubscriptionSubmit" />
     <AppLogLevelModalRef />
     <CertificateModal />

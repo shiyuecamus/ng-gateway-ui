@@ -2,6 +2,8 @@
 import type { FormOpenData } from '@vben/constants';
 import type { AppInfo, IdType, PluginInfo, Recordable } from '@vben/types';
 
+import type { AppFormResult } from '../configuration';
+
 import type { CertificatePreview } from '#/api/core/certificate';
 import type { PluginConfigSchemas } from '#/shared/dynamic-schema';
 
@@ -33,6 +35,7 @@ import { previewCertificate } from '#/api/core/certificate';
 import { fetchPluginSchemasById } from '#/api/core/plugin';
 import {
   mapPluginConfigSchemasToForm,
+  projectActiveConfig,
   sortNodes,
 } from '#/shared/dynamic-schema';
 
@@ -44,8 +47,12 @@ import {
 
 defineOptions({ name: 'AppForm' });
 
-const emit = defineEmits<{
-  submit: [type: FormOpenType, id: IdType, values: Recordable<any>];
+const props = defineProps<{
+  submit: (
+    type: FormOpenType,
+    id: IdType,
+    values: Recordable<any>,
+  ) => Promise<AppFormResult>;
 }>();
 
 const { handleRequest } = useRequestHandler();
@@ -55,7 +62,12 @@ const type = ref(FormOpenType.CREATE);
 const recordId = ref<IdType>(undefined);
 const expectedRevision = ref<string | undefined>(undefined);
 const loading = ref(false);
+const submitting = ref(false);
+const needsReload = ref(false);
+const persistedFailure = ref<AppInfo | null>(null);
+const submissionFeedback = ref<HTMLElement | null>(null);
 const plugins = ref<PluginInfo[]>([]);
+const pluginNodes = ref<PluginConfigSchemas>([]);
 const opcuaSelected = ref(false);
 const certificateInput = ref<HTMLInputElement | null>(null);
 const lastCertificate = ref<CertificatePreview | null>(null);
@@ -80,7 +92,7 @@ const [BasicForm, basicFormApi] = useVbenForm({
 // Step 2: Retry policy form
 const [RetryPolicyForm, retryPolicyFormApi] = useVbenForm({
   handleSubmit: async () => {
-    currentTab.value = 2;
+    currentTab.value = type.value === FormOpenType.CREATE ? 2 : 3;
   },
   schema: useRetryPolicyFormSchema(),
   commonConfig: {
@@ -120,24 +132,66 @@ const [QueuePolicyForm, queuePolicyFormApi] = useVbenForm({
 // Step 4: Plugin config form (dynamic)
 const [PluginConfigForm, pluginConfigFormApi] = useVbenForm({
   handleSubmit: async (pluginConfig: Recordable<any>) => {
-    const basic = await basicFormApi
-      .merge(retryPolicyFormApi)
-      .merge(queuePolicyFormApi)
-      .submitAllForm(true);
-    emit('submit', type.value, recordId.value, {
-      ...basic,
-      config: pluginConfig,
-      ...(type.value === FormOpenType.EDIT
-        ? { expectedRevision: expectedRevision.value }
-        : {}),
-    });
+    if (submitting.value || needsReload.value) return;
+    const forms = basicFormApi.merge(retryPolicyFormApi);
+    const basic = await (
+      type.value === FormOpenType.CREATE
+        ? forms.merge(queuePolicyFormApi)
+        : forms
+    ).submitAllForm(true);
+    submitting.value = true;
+    pluginConfigFormApi.setState({ submitButtonOptions: { disabled: true } });
+    try {
+      const outcome = await props.submit(type.value, recordId.value, {
+        ...basic,
+        config: projectActiveConfig(pluginNodes.value, pluginConfig),
+        ...(type.value === FormOpenType.EDIT
+          ? { expectedRevision: expectedRevision.value }
+          : {}),
+      });
+      switch (outcome.kind) {
+        case 'applied': {
+          persistedFailure.value = null;
+          needsReload.value = false;
+
+          break;
+        }
+        case 'persisted-failed': {
+          expectedRevision.value = outcome.configuration.desiredRevision;
+          persistedFailure.value = outcome.configuration;
+          needsReload.value = false;
+
+          break;
+        }
+        case 'unconfirmed': {
+          persistedFailure.value = null;
+          needsReload.value = true;
+
+          break;
+        }
+        // No default
+      }
+    } catch {
+      persistedFailure.value = null;
+      needsReload.value = true;
+    } finally {
+      submitting.value = false;
+      pluginConfigFormApi.setState({
+        submitButtonOptions: { disabled: needsReload.value },
+      });
+      if (persistedFailure.value || needsReload.value) {
+        await nextTick();
+        submissionFeedback.value?.scrollIntoView({ block: 'start' });
+        submissionFeedback.value?.focus({ preventScroll: true });
+      }
+    }
   },
   schema: [],
   commonConfig: {
     labelClass: 'text-[14px] w-1/6',
   },
   handleReset: () => {
-    currentTab.value = 2;
+    currentTab.value = type.value === FormOpenType.CREATE ? 2 : 1;
   },
   resetButtonOptions: {
     content: $t('common.previous'),
@@ -167,6 +221,10 @@ async function init() {
   type.value = t;
   recordId.value = i;
   expectedRevision.value = undefined;
+  persistedFailure.value = null;
+  needsReload.value = false;
+  currentTab.value = 0;
+  pluginConfigFormApi.setState({ submitButtonOptions: { disabled: false } });
 
   await handleRequest(
     () => fetchAllPlugins(),
@@ -189,7 +247,7 @@ async function init() {
       () => getAppById(recordId.value as IdType),
       async (data: AppInfo) => {
         expectedRevision.value = data.desiredRevision;
-        await onPluginIdChange(data.pluginId, false);
+        await onPluginIdChange(data.pluginId);
         basicFormApi.setValues({
           name: data.name,
           pluginId: data.pluginId,
@@ -199,15 +257,14 @@ async function init() {
         retryPolicyFormApi.setValues({
           retryPolicy: data.retryPolicy,
         });
-        queuePolicyFormApi.setValues({
-          queuePolicy: data.queuePolicy,
-        });
         pluginConfigFormApi.setValues(data.config);
         loading.value = false;
       },
       (error) => {
         loading.value = false;
-        console.error(error);
+        console.error(
+          error?.response?.data?.message ?? error?.message ?? 'Request failed',
+        );
       },
     );
   }
@@ -220,7 +277,7 @@ function filterOption(
   return option?.label?.toLowerCase().includes(input.toLowerCase()) ?? false;
 }
 
-async function onPluginIdChange(selection: unknown, resetForm = true) {
+async function onPluginIdChange(selection: unknown) {
   const id =
     typeof selection === 'number' || typeof selection === 'string'
       ? selection
@@ -230,6 +287,7 @@ async function onPluginIdChange(selection: unknown, resetForm = true) {
     'opcua-server';
   lastCertificate.value = null;
   if (id === undefined || id === null) {
+    pluginNodes.value = [];
     pluginConfigFormApi.updateSchema([]);
     return;
   }
@@ -238,20 +296,32 @@ async function onPluginIdChange(selection: unknown, resetForm = true) {
     async (schemas: PluginConfigSchemas) => {
       await nextTick();
       const sorted = sortNodes(schemas);
+      pluginNodes.value = sorted;
       const formSchemas = mapPluginConfigSchemasToForm(sorted);
       // Update dynamic schema first, then apply defaults
       pluginConfigFormApi.setState({ schema: formSchemas });
-      if (resetForm) {
-        const defaults: Record<string, any> = {};
-        for (const item of formSchemas) {
-          if (item && item.fieldName && item.defaultValue !== undefined) {
-            set(defaults, item.fieldName, item.defaultValue);
-          }
+      const defaults: Record<string, any> = {};
+      for (const item of formSchemas) {
+        if (item && item.fieldName && item.defaultValue !== undefined) {
+          set(defaults, item.fieldName, item.defaultValue);
         }
-        await pluginConfigFormApi.resetForm({ values: defaults });
       }
+      await pluginConfigFormApi.resetForm({ values: defaults });
     },
   );
+}
+
+/** Reload only after the operator chooses to replace the current unsaved draft. */
+async function reloadSavedConfiguration() {
+  const approved = await confirm({
+    title: $t('page.northward.app.configuration.reload'),
+    content: $t('page.northward.app.configuration.reloadConfirm'),
+    icon: 'warning',
+  }).then(
+    () => true,
+    () => false,
+  );
+  if (approved) await init();
 }
 
 async function onCertificateSelected(event: Event) {
@@ -303,13 +373,49 @@ async function onCertificateSelected(event: Event) {
 
 <template>
   <Modal>
-    <Steps :current="currentTab" class="steps">
+    <div
+      v-if="persistedFailure || needsReload"
+      ref="submissionFeedback"
+      tabindex="-1"
+    >
+      <Alert
+        v-if="persistedFailure"
+        type="warning"
+        show-icon
+        :message="$t('page.northward.app.configuration.savedNotApplied')"
+        :description="`${$t('page.northward.app.configuration.revision', { desired: persistedFailure.desiredRevision, applied: persistedFailure.appliedRevision ?? '—' })}；${persistedFailure.activationError ?? ''}`"
+        class="m-4"
+      />
+      <Alert
+        v-else-if="needsReload"
+        type="warning"
+        show-icon
+        :message="$t('page.northward.app.configuration.unconfirmed')"
+        class="m-4"
+      >
+        <template #action>
+          <Button
+            v-if="type === FormOpenType.EDIT"
+            @click="reloadSavedConfiguration"
+          >
+            {{ $t('page.northward.app.configuration.reload') }}
+          </Button>
+        </template>
+      </Alert>
+    </div>
+    <Steps
+      :current="type === FormOpenType.EDIT && currentTab === 3 ? 2 : currentTab"
+      class="steps"
+    >
       <Step :title="$t('page.northward.app.form.step1')" />
       <Step :title="$t('page.northward.app.form.step2')" />
-      <Step :title="$t('page.northward.app.form.step3')" />
+      <Step
+        v-if="type === FormOpenType.CREATE"
+        :title="$t('page.northward.app.form.step3')"
+      />
       <Step :title="$t('page.northward.app.form.step4')" />
     </Steps>
-    <div class="p-4">
+    <div class="p-4" :inert="submitting || loading || undefined">
       <Card v-show="currentTab === 0">
         <BasicForm>
           <template #pluginId="slotProps">
@@ -351,13 +457,25 @@ async function onCertificateSelected(event: Event) {
         </Card>
       </div>
 
-      <div v-show="currentTab === 2" class="space-y-4">
+      <div
+        v-if="type === FormOpenType.CREATE"
+        v-show="currentTab === 2"
+        class="space-y-4"
+      >
         <Card>
           <QueuePolicyForm />
         </Card>
       </div>
 
       <div v-show="currentTab === 3" class="space-y-4">
+        <Alert
+          v-if="type === FormOpenType.EDIT"
+          type="info"
+          show-icon
+          :message="
+            $t('page.maintenance.resourceQuotas.apps.editor.appFormNote')
+          "
+        />
         <Card>
           <div v-if="opcuaSelected" class="mb-4 space-y-3">
             <Alert

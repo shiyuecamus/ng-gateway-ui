@@ -34,7 +34,7 @@ import { previewCertificate } from '#/api/core/certificate';
 import { fetchDriverSchemasById } from '#/api/core/driver';
 import {
   mapChannelSchemasToForm,
-  projectActiveDriverConfig,
+  projectActiveConfig,
   sortDriverSchemas,
 } from '#/shared/dynamic-schema';
 
@@ -111,7 +111,7 @@ const [DriverForm, driverFormApi] = useVbenForm({
         config.collectionType === CollectionType.Collection
           ? config.period
           : null,
-      driverConfig: projectActiveDriverConfig(driverNodes.value, driverConfig),
+      driverConfig: projectActiveConfig(driverNodes.value, driverConfig),
     });
   },
   schema: [],
@@ -174,7 +174,9 @@ async function init() {
       },
       (error) => {
         loading.value = false;
-        console.error(error);
+        console.error(
+          error?.response?.data?.message ?? error?.message ?? 'Request failed',
+        );
       },
     );
   }

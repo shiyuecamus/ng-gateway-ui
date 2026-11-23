@@ -62,7 +62,7 @@ kubectl get svc -n ng
 # HTTP（本机 8978 -> 集群 service 8978）
 kubectl -n ng port-forward svc/ng-gateway-service 8978:8978
 
-# HTTPS（可选；仅当你开启了 web.ssl.enabled）
+# HTTPS（可选；仅当你开启了 web.tls.mode）
 kubectl -n ng port-forward svc/ng-gateway-service 8979:8979
 ```
 
@@ -78,7 +78,7 @@ curl -fsS "http://127.0.0.1:8978/health" && echo
 
 ::: warning 注意事项
 - `port-forward` 默认只监听 `127.0.0.1`；如果你确实需要从局域网其他机器访问，可加 `--address 0.0.0.0`（请评估安全风险）。
-- 如果你修改了 Chart 的 `gateway.config.web.port` / `gateway.config.web.ssl.port`，请同步修改上面命令右侧的目标端口（例如 `8978:<web.port>`）。
+- 如果你修改了 Chart 的 `gateway.config.web.port` / `gateway.config.web.tls.port`，请同步修改上面命令右侧的目标端口（例如 `8978:<web.port>`）。
 :::
 
 ### 3.2 查看日志

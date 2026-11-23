@@ -69,6 +69,7 @@ const roleKeys: DocumentRole[] = [
 ];
 const identity = reactive({ manufacturer: '', model: '', firmware: '' });
 const documents = ref<IedContract['documents']>([]);
+const sourceKinds = reactive(new Map<string, 'document' | 'nsd'>());
 type SubstitutionDraft = Omit<
   IedContract['substitution'][number],
   'support'
@@ -151,6 +152,7 @@ watch(
       ...item,
       roles: [...item.roles],
     }));
+    sourceKinds.clear();
     substitution.value = initial.substitution.map((item) => ({
       ...item,
       objects: item.objects.map((object) => ({
@@ -199,27 +201,13 @@ function popupContainer(trigger: HTMLElement) {
 function remove(digest: string) {
   if (props.disabled || busy.value) return;
   documents.value = documents.value.filter((item) => item.digest !== digest);
+  sourceKinds.delete(digest);
   for (const declaration of parts.value)
     declaration.sources = declaration.sources.filter(
       (source) => source !== digest,
     );
 }
-async function attach(file: File | null) {
-  if (props.disabled || busy.value || documents.value.length >= 32) return;
-  if (
-    file &&
-    (!status.value?.documentImportAvailable ||
-      file.size === 0 ||
-      file.size > status.value.maxInputBytes)
-  ) {
-    error.value = $t(`${key}.fileBounds`);
-    return;
-  }
-  const digest = existing.value.trim();
-  if (!file && !/^[0-9a-f]{64}$/.test(digest)) {
-    error.value = $t(`${key}.digestRequired`);
-    return;
-  }
+async function loadReference(digest: string, file: File | null) {
   const controller = new AbortController();
   request = controller;
   const version = generation;
@@ -236,20 +224,15 @@ async function attach(file: File | null) {
       controller.signal.aborted
     )
       return;
-    if (info.source.kind !== 'document')
+    if (!file && info.digest !== digest)
+      throw new Error($t(`${key}.referenceIdentity`));
+    if (info.source.kind !== 'document' && info.source.kind !== 'nsd')
       throw new Error($t(`${key}.sourceRole`));
-    if (documents.value.some((item) => item.digest === info.digest))
-      throw new Error($t(`${key}.duplicate`));
-    documents.value.push({
-      digest: info.digest,
-      roles: [],
-      label: file?.name ?? '',
-      locator: null,
-    });
-    existing.value = '';
+    return { digest: info.digest, source: info.source };
   } catch (error_) {
     if (alive && version === generation && !controller.signal.aborted)
       error.value = describeFailure(error_, $t(`${key}.failed`));
+    return;
   } finally {
     if (alive && version === generation && request === controller) {
       busy.value = false;
@@ -257,6 +240,61 @@ async function attach(file: File | null) {
     }
   }
 }
+
+async function attach(file: File | null) {
+  if (props.disabled || busy.value || documents.value.length >= 32) return;
+  if (
+    file &&
+    (!status.value?.documentImportAvailable ||
+      file.size === 0 ||
+      file.size > status.value.maxInputBytes)
+  ) {
+    error.value = $t(`${key}.fileBounds`);
+    return;
+  }
+  const digest = existing.value.trim();
+  if (!file && !/^[0-9a-f]{64}$/.test(digest)) {
+    error.value = $t(`${key}.digestRequired`);
+    return;
+  }
+  const version = generation;
+  const reference = await loadReference(digest, file);
+  if (!reference || !alive || version !== generation) return;
+  if (documents.value.some((item) => item.digest === reference.digest)) {
+    error.value = $t(`${key}.duplicate`);
+    return;
+  }
+  const source = reference.source;
+  sourceKinds.set(reference.digest, source.kind);
+  documents.value.push({
+    digest: reference.digest,
+    roles: source.kind === 'nsd' ? ['standardReference'] : [],
+    label:
+      source.kind === 'nsd'
+        ? ('namespace' in source.identity && source.identity.namespace) ||
+          $t(`${key}.nsdReference`)
+        : (file?.name ?? ''),
+    locator: null,
+  });
+  existing.value = '';
+}
+
+function needsSourceKind(document: IedContract['documents'][number]): boolean {
+  return (
+    !sourceKinds.has(document.digest) &&
+    document.roles.length === 1 &&
+    document.roles[0] === 'standardReference'
+  );
+}
+
+async function verifySourceKind(digest: string) {
+  if (props.disabled || busy.value) return;
+  const version = generation;
+  const reference = await loadReference(digest, null);
+  if (reference && alive && version === generation)
+    sourceKinds.set(digest, reference.source.kind);
+}
+
 async function selectFile(file: File) {
   await attach(file);
   return false;
@@ -446,9 +484,31 @@ defineExpose({ proposal });
             </FormItem>
             <FormItem
               :label="$t(`${key}.documentRoles`)"
-              :html-for="`ied-roles-${document.digest}`"
+              :html-for="
+                sourceKinds.get(document.digest) === 'nsd'
+                  ? undefined
+                  : `ied-roles-${document.digest}`
+              "
             >
+              <Tag
+                v-if="sourceKinds.get(document.digest) === 'nsd'"
+                color="purple"
+              >
+                {{ $t(`${key}.nsdReference`) }} ·
+                {{ $t(`${key}.roles.standardReference`) }}
+              </Tag>
+              <Button
+                v-else-if="needsSourceKind(document)"
+                :id="`ied-roles-${document.digest}`"
+                :aria-label="$t(`${key}.verifyReferenceKind`)"
+                :disabled="disabled || busy"
+                @click="verifySourceKind(document.digest)"
+              >
+                {{ $t(`${key}.roles.standardReference`) }} ·
+                {{ $t(`${key}.verifyReferenceKind`) }}
+              </Button>
               <Select
+                v-else
                 v-model:value="document.roles"
                 :id="`ied-roles-${document.digest}`"
                 :aria-label="$t(`${key}.documentRoles`)"

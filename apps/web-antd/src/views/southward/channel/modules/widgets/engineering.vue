@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { EngineeringDiagnostic } from './engineering-evidence';
+
 import type {
   ArrayDimension,
   AssetPreview,
@@ -14,6 +16,7 @@ import type {
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
+import { LanguageToggle } from '@vben/layouts';
 import { $t } from '@vben/locales';
 
 import {
@@ -44,7 +47,11 @@ import {
 import EvidenceDigest from '#/shared/components/evidence-digest.vue';
 
 import EngineeringComparison from './engineering-comparison.vue';
-import { describeAccess, describeFailure } from './engineering-evidence';
+import {
+  describeAccess,
+  engineeringFailure,
+  renderEngineeringDiagnostic,
+} from './engineering-evidence';
 import EngineeringGoose from './engineering-goose.vue';
 import EngineeringMapping from './engineering-mapping.vue';
 import EngineeringNsd from './engineering-nsd.vue';
@@ -59,7 +66,7 @@ const gooseEditor = ref<InstanceType<typeof EngineeringGoose> | null>(null);
 const nsdEditor = ref<InstanceType<typeof EngineeringNsd> | null>(null);
 
 interface Frame {
-  label: string;
+  name?: string;
   location: BrowseLocation;
   offset: number;
 }
@@ -76,7 +83,7 @@ const sourceLoading = ref(false);
 const browseLoading = ref(false);
 const downloadLoading = ref(false);
 const sourcePanels = ref<string[]>(['source']);
-const error = ref('');
+const error = ref<EngineeringDiagnostic>('');
 const constraintChoices = ref<Record<string, string>>({});
 const modelColumns = computed(() => [
   { key: 'name', title: $t(`${key}.name`), width: 116 },
@@ -174,7 +181,7 @@ const [Modal, modalApi] = useVbenModal({
       }
     } catch (error_) {
       if (!controller.signal.aborted && statusRequest === controller)
-        error.value = describeFailure(error_, $t(`${key}.loadFailed`));
+        error.value = engineeringFailure(error_, `${key}.loadFailed`);
     }
   },
 });
@@ -190,9 +197,10 @@ onBeforeUnmount(() => {
 async function selectFile(file: File) {
   if (!canImport.value || !status.value) return false;
   if (file.size === 0 || file.size > status.value.maxInputBytes) {
-    error.value = $t(`${key}.sizeRejected`, {
-      bytes: status.value.maxInputBytes,
-    });
+    error.value = {
+      key: `${key}.sizeRejected`,
+      values: { bytes: status.value.maxInputBytes },
+    };
     return false;
   }
   await loadSource(async (signal) => {
@@ -232,7 +240,7 @@ async function loadSource(
     digestInput.value = digest;
   } catch (error_) {
     if (current === generation && !controller.signal.aborted)
-      error.value = describeFailure(error_, $t(`${key}.loadFailed`));
+      error.value = engineeringFailure(error_, `${key}.loadFailed`);
   } finally {
     if (current === generation && sourceRequest === controller)
       sourceLoading.value = false;
@@ -269,7 +277,7 @@ async function serverPage(offset: number) {
       sourceRequest === controller &&
       !controller.signal.aborted
     )
-      error.value = describeFailure(error_, $t(`${key}.loadFailed`));
+      error.value = engineeringFailure(error_, `${key}.loadFailed`);
   } finally {
     if (current === generation && sourceRequest === controller)
       sourceLoading.value = false;
@@ -287,7 +295,6 @@ async function root(kind: 'accessPoints' | 'logicalDevices') {
   if (!server.value) return;
   await navigate([
     {
-      label: $t(`${key}.${kind}`),
       location: { kind, server: server.value.index },
       offset: 0,
     },
@@ -300,8 +307,13 @@ async function descend(node: BrowseNode) {
     selectedAccessPoint.value = node.name;
   await navigate([
     ...frames.value,
-    { label: node.name, location: node.target, offset: 0 },
+    { name: node.name, location: node.target, offset: 0 },
   ]);
+}
+
+function frameLabel({ location, name }: Frame): string {
+  const kind = location.kind === 'reportControls' ? 'reports' : location.kind;
+  return name ?? $t(`${key}.${kind}`);
 }
 
 async function navigate(nextFrames: Frame[]) {
@@ -338,7 +350,7 @@ async function navigate(nextFrames: Frame[]) {
       navigationRequest === controller &&
       !controller.signal.aborted
     )
-      error.value = describeFailure(error_, $t(`${key}.loadFailed`));
+      error.value = engineeringFailure(error_, `${key}.loadFailed`);
   } finally {
     if (current === generation && navigationRequest === controller)
       browseLoading.value = false;
@@ -409,7 +421,6 @@ async function catalogue(kind: 'dataSets' | 'reportControls') {
   await navigate([
     ...frames.value,
     {
-      label: $t(`${key}.${kind === 'dataSets' ? 'dataSets' : 'reports'}`),
       offset: 0,
       location: {
         kind,
@@ -487,7 +498,7 @@ async function download() {
     // Keep this one URL alive until replacement/close, without a guessed download timer.
   } catch (error_) {
     if (current === generation && !controller.signal.aborted)
-      error.value = describeFailure(error_, $t(`${key}.downloadFailed`));
+      error.value = engineeringFailure(error_, `${key}.downloadFailed`);
   } finally {
     if (current === generation && downloadRequest === controller)
       downloadLoading.value = false;
@@ -589,13 +600,21 @@ function describe(declaration: BrowseDeclaration): string {
 <template>
   <Modal :title="$t(`${key}.title`)">
     <div class="space-y-5">
+      <div class="flex justify-end">
+        <LanguageToggle />
+      </div>
       <Alert
         v-if="status && !status.storeAvailable"
         type="error"
         show-icon
         :message="status.unavailableReason ?? $t(`${key}.unavailable`)"
       />
-      <Alert v-if="error" type="error" show-icon :message="error" />
+      <Alert
+        v-if="error"
+        type="error"
+        show-icon
+        :message="renderEngineeringDiagnostic(error)"
+      />
       <EngineeringNsd ref="nsdEditor" :status="status" />
       <div class="flex flex-col items-start gap-3 sm:flex-row">
         <Collapse
@@ -846,7 +865,7 @@ function describe(declaration: BrowseDeclaration): string {
                   class="h-auto whitespace-normal p-0 text-left"
                   @click="navigate(frames.slice(0, index + 1))"
                 >
-                  {{ frame.label }}
+                  {{ frameLabel(frame) }}
                 </Button>
               </BreadcrumbItem>
             </Breadcrumb>

@@ -62,7 +62,7 @@ When the default release name is `ng-gateway`, the Service is usually:
 # HTTP (Local 8978 -> Cluster service 8978)
 kubectl -n ng port-forward svc/ng-gateway-service 8978:8978
 
-# HTTPS (Optional; only if you enabled web.ssl.enabled)
+# HTTPS (Optional; only if you enabled web.tls.mode)
 kubectl -n ng port-forward svc/ng-gateway-service 8979:8979
 ```
 
@@ -78,7 +78,7 @@ curl -fsS "http://127.0.0.1:8978/health" && echo
 
 ::: warning Precautions
 -   `port-forward` defaults to listening only on `127.0.0.1`; if you really need access from other machines in the LAN, you can add `--address 0.0.0.0` (please evaluate security risks).
--   If you modified `gateway.config.web.port` / `gateway.config.web.ssl.port` in the Chart, please synchronize the target port on the right side of the command above (e.g., `8978:<web.port>`).
+-   If you modified `gateway.config.web.port` / `gateway.config.web.tls.port` in the Chart, please synchronize the target port on the right side of the command above (e.g., `8978:<web.port>`).
 :::
 
 ### 3.2 View Logs

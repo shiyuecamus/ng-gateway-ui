@@ -194,6 +194,63 @@ describe('unresolved operation verification ownership', () => {
     view.unmount();
   });
 
+  it('keeps the same verification request and its journal readback across a manual refresh', async () => {
+    const open = details('A');
+    let finishRead: (() => void) | undefined;
+    let finishVerification: (() => void) | undefined;
+    api.get
+      .mockResolvedValueOnce(open)
+      .mockImplementationOnce(
+        () =>
+          new Promise<typeof open>((resolve) => {
+            finishRead = () => resolve(open);
+          }),
+      )
+      .mockResolvedValue({
+        ...open,
+        operation: { ...open.operation, state: 'resolvedByOperator' },
+      });
+    api.reconcile.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishVerification = resolve;
+        }),
+    );
+    const view = mount(Operation, {
+      props: { operationId: 'A', canReconcile: true },
+    });
+    await flushPromises();
+    await view
+      .get('input[placeholder="page.control.reason"]')
+      .setValue('A verified');
+    await view
+      .get('input[placeholder="page.control.evidence"]')
+      .setValue('Independent readback A');
+    await view.get('input[type="checkbox"]').setValue(true);
+    const buttons = view.findAll('button');
+    const verify = buttons.find(
+      (button) => button.text() === 'page.control.recordVerification',
+    );
+    const refresh = buttons.find(
+      (button) => button.text() === 'page.control.refresh',
+    );
+    if (!verify || !refresh)
+      throw new Error('Expected verification and refresh controls');
+    await verify.trigger('click');
+    await refresh.trigger('click');
+    if (!finishVerification || !finishRead)
+      throw new Error('Expected both requests to start');
+    finishVerification();
+    await flushPromises();
+    expect(view.text()).toContain('page.control.states.resolvedByOperator');
+    expect(api.reconcile).toHaveBeenCalledTimes(1);
+    expect(api.get.mock.calls[1]?.[1]?.aborted).toBe(true);
+    finishRead();
+    await flushPromises();
+    expect(view.text()).toContain('page.control.states.resolvedByOperator');
+    view.unmount();
+  });
+
   it('labels the cancellation intent separately from the retained dispatch phase', async () => {
     api.get.mockResolvedValue({
       ...details('A'),

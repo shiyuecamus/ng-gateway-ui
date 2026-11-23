@@ -59,6 +59,47 @@ describe('requestClient', () => {
     }
   });
 
+  it('preserves the original conflict error and its native response contract', async () => {
+    const body = {
+      error: 'Conflict',
+      message: 'expected revision 1, actual 2',
+    };
+    mock
+      .onPut('/test/conflict')
+      .reply(409, body, { 'x-request-id': 'owned-revision' });
+    let intercepted: unknown;
+    requestClient.addResponseInterceptor({
+      rejected: (error) => {
+        intercepted = error;
+        return Promise.reject(error);
+      },
+    });
+    let received: unknown;
+    try {
+      await requestClient.put('/test/conflict', { expectedRevision: '1' });
+    } catch (error) {
+      received = error;
+    }
+    expect(received).toBe(intercepted);
+    expect(received).toMatchObject({
+      isAxiosError: true,
+      response: {
+        status: 409,
+        data: body,
+        headers: { 'x-request-id': 'owned-revision' },
+      },
+    });
+  });
+
+  it('retains resource refusal status and Retry-After instead of exposing only the body', async () => {
+    const body = { message: 'Too many requests' };
+    mock.onPost('/test/refused').reply(429, body, { 'Retry-After': '1' });
+    await expect(requestClient.post('/test/refused')).rejects.toMatchObject({
+      isAxiosError: true,
+      response: { status: 429, data: body, headers: { 'Retry-After': '1' } },
+    });
+  });
+
   it('should handle timeout', async () => {
     mock.onGet('/test/timeout').timeout();
     try {

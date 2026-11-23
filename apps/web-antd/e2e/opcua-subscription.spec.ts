@@ -17,6 +17,7 @@ for (const mode of [
   'rejected',
   'delayed',
   'uncorrelated',
+  'malformedAckResults',
   'healthy',
   'polling',
 ] as const) {
@@ -217,6 +218,102 @@ for (const mode of [
         id: channel.id,
         status: 0,
       });
+      if (mode === 'malformedAckResults') {
+        await expect
+          .poll(
+            () =>
+              records().some(
+                (record) =>
+                  record.event === 'publishAcknowledgements' &&
+                  record.expectedResultCount > 0 &&
+                  record.results.length === 0,
+              ),
+            { timeout: 20_000 },
+          )
+          .toBe(true);
+        await expect
+          .poll(
+            async () => {
+              const detail = await api(
+                request,
+                gateway,
+                token,
+                'GET',
+                `/channel/detail/${channel.id}`,
+              );
+              return detail.connectionState?.phase;
+            },
+            { timeout: 20_000 },
+          )
+          .toBe('Failed');
+
+        const failed = await api(
+          request,
+          gateway,
+          token,
+          'GET',
+          `/channel/detail/${channel.id}`,
+        );
+        expect(failed.connectionState.last_failure.summary).toContain(
+          'BadUnexpectedError',
+        );
+
+        const snapshots: Array<{
+          telemetry: Record<string, { freshness: string; value: unknown }>;
+        }> = [];
+        page.on('websocket', (socket) =>
+          socket.on('framereceived', (frame) => {
+            const payload =
+              typeof frame.payload === 'string'
+                ? frame.payload
+                : frame.payload.toString();
+            const batch = JSON.parse(payload) as {
+              messages?: typeof snapshots;
+            };
+            for (const message of batch.messages ?? []) {
+              if (message.telemetry) {
+                if (snapshots.length >= 128)
+                  throw new Error('Monitor failure evidence bound exceeded');
+                snapshots.push(message);
+              }
+            }
+          }),
+        );
+        await page.goto(`${gateway.origin}/#/auth/login`);
+        await page
+          .getByPlaceholder('请输入用户名', { exact: true })
+          .fill('system_admin');
+        await page.getByPlaceholder('密码', { exact: true }).fill(password);
+        await page.getByRole('button', { name: 'login', exact: true }).click();
+        await expect(page).toHaveURL(/\/home/);
+        await page.goto(`${gateway.origin}/#/maintenance/monitor`);
+        await page.getByRole('combobox').nth(0).press('ArrowDown');
+        await page
+          .locator('.ant-select-dropdown:visible')
+          .getByText(`opcua-${mode}`, { exact: true })
+          .click();
+        await page.getByRole('combobox').nth(1).press('ArrowDown');
+        await page
+          .locator('.ant-select-dropdown:visible')
+          .getByText('Independent OPC UA memory', { exact: true })
+          .click();
+        await page.getByRole('combobox').nth(1).press('Escape');
+        await expect
+          .poll(() => snapshots.at(-1)?.telemetry.first?.freshness)
+          .toBe('stale');
+        expect(snapshots.at(-1)?.telemetry.first?.value).toBe(7);
+        expect(
+          Object.values(snapshots.at(-1)?.telemetry ?? {}).every(
+            (point) => point.freshness !== 'current',
+          ),
+        ).toBe(true);
+        await writeFile(
+          testInfo.outputPath('malformed-ack-retired-snapshots.json'),
+          JSON.stringify(snapshots, null, 2),
+        );
+        expect(errors).toEqual([]);
+        return;
+      }
       if (mode === 'healthy' || mode === 'polling') {
         const connected = async () => {
           const detail = await api(
@@ -505,6 +602,16 @@ for (const mode of [
           (record) => record.event === 'publishQueue',
         );
         if (mode === 'healthy') {
+          const acknowledged = records().filter(
+            (record) =>
+              record.event === 'publishAcknowledgements' &&
+              record.expectedResultCount > 0,
+          );
+          expect(acknowledged.length).toBeGreaterThan(0);
+          for (const acknowledgement of acknowledged)
+            expect(acknowledgement.results).toHaveLength(
+              acknowledgement.expectedResultCount,
+            );
           expect(publishQueue.length).toBeGreaterThan(0);
           const sizes = publishQueue.map((record) => Number(record.queued));
           expect(Math.max(...sizes)).toBeGreaterThan(0);

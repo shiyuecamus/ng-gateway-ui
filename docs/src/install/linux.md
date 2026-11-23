@@ -11,15 +11,11 @@ description: Linux 环境下安装与运维 NG Gateway：deb/rpm + systemd（推
 
 请在[发布页](https://github.com/shiyuecamus/ng-gateway/releases)下载与你的发行版与架构匹配的 `.deb` / `.rpm`：
 
-::: tip
-如果你不确定目标机架构，可以用 `uname -m`（例如 `x86_64` / `aarch64`）快速确认。
-:::
+::: tip如果你不确定目标机架构，可以用 `uname -m`（例如 `x86_64` / `aarch64`）快速确认。:::
 
 ### 1.2 安装
 
-::: warning 说明
-不同发行版包管理命令略有差异；包文件名以实际发布为准。
-:::
+::: warning 说明不同发行版包管理命令略有差异；包文件名以实际发布为准。:::
 
 **Debian/Ubuntu（.deb）**：
 
@@ -74,8 +70,7 @@ sudo rpm -e ng-gateway
 
 > 注意：卸载包一般不会自动删除 `/var/lib/ng-gateway/` 下的数据，以避免误删生产数据。
 
-::: warning 彻底卸载
-Linux 包安装遵循“卸载程序不自动删除数据目录”的最佳实践，因此如果你确认要清理运行目录与数据，请手动执行以下步骤。
+::: warning 彻底卸载Linux 包安装遵循“卸载程序不自动删除数据目录”的最佳实践，因此如果你确认要清理运行目录与数据，请手动执行以下步骤。
 
 ```bash
 # 1) 停止并禁用服务（如果你不再需要它）
@@ -93,13 +88,12 @@ sudo rpm -e ng-gateway
 sudo rm -rf /var/lib/ng-gateway
 
 ```
+
 :::
 
 ## 3. 运行时目录
 
-::: tip
-Linux 打包遵循“只读安装区 + 独立配置 + 独立可写运行目录”的标准布局
-:::
+::: tip Linux 打包遵循“只读安装区 + 独立配置 + 独立可写运行目录”的标准布局 :::
 
 - **安装区**：`/opt/ng-gateway/`
   - `bin/ng-gateway-bin`
@@ -115,14 +109,13 @@ Linux 打包遵循“只读安装区 + 独立配置 + 独立可写运行目录�
 - **HTTP**：`8978`
 - **HTTPS**：`8979`
 - **API 前缀**：`/api`
-- **UI 模式**：`embedded_zip`
+- **UI 模式**：`embedded`
 
-::: tip 为什么必须有稳定 WorkingDirectory？
-网关会把 driver/plugin 的路径以“运行根目录相对路径”的方式写入 SQLite（例如 `./drivers/builtin/libng_driver_modbus.so`）。  
-因此 systemd unit 固定 `WorkingDirectory=/var/lib/ng-gateway`，以保证路径长期可用、易于迁移与备份。
-:::
+::: tip 为什么必须有稳定 WorkingDirectory？网关会把 driver/plugin 的路径以“运行根目录相对路径”的方式写入 SQLite（例如 `./drivers/builtin/libng_driver_modbus.so`）。
+因此 systemd unit 固定 `WorkingDirectory=/var/lib/ng-gateway`，以保证路径长期可用、易于迁移与备份。:::
 
 ## 4. 修改配置
+
 修改 `/etc/ng-gateway/gateway.toml` 后，重启服务使配置生效：
 
 ```bash
@@ -157,6 +150,6 @@ curl -fsS "http://127.0.0.1:8978/health" && echo
 - **API**：`http://<host-ip>:8978/api`
 
 ::: tip
+
 - 默认账号: system_admin
-- 默认密码: system_admin
-:::
+- 默认密码: system_admin :::

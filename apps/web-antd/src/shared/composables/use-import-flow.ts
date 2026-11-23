@@ -14,8 +14,6 @@ import {
 import { $t } from '#/locales';
 
 type ImportFlowOptions = {
-  /** Allow commit even when preview has errors; defaults to true */
-  allowCommitWithErrors?: boolean;
   /** Callback executed after successful commit */
   onDone?: () => Promise<void> | void;
   /** Title displayed in the preview modal */
@@ -118,11 +116,10 @@ export function useImportFlow({
     loading.value = true;
     try {
       const preview = await previewRequest(file);
-      const allowCommit =
-        opts.allowCommitWithErrors === undefined
-          ? true
-          : !!opts.allowCommitWithErrors;
-      const canCommit = preview.valid > 0 && allowCommit;
+      const canCommit =
+        preview.valid > 0 &&
+        preview.invalid === 0 &&
+        preview.valid === preview.totalRows;
 
       return await new Promise<void>((resolve, reject) => {
         const modal = Modal.confirm({
@@ -149,7 +146,9 @@ export function useImportFlow({
               resolve();
             } catch (error: any) {
               message.error(
-                error?.message || $t('import.message.commitFailed'),
+                error?.response?.data?.message ||
+                  error?.message ||
+                  $t('import.message.commitFailed'),
               );
               reject(error);
             } finally {

@@ -35,6 +35,10 @@ export enum EntityType {
    */
   ACTION = 'ACTION',
   /**
+   * 应用
+   */
+  APP = 'APP',
+  /**
    * 通道
    */
   CHANNEL = 'CHANNEL',
@@ -51,6 +55,10 @@ export enum EntityType {
    */
   MENU = 'MENU',
   /**
+   * 插件
+   */
+  PLUGIN = 'PLUGIN',
+  /**
    * 点
    */
   POINT = 'POINT',
@@ -62,14 +70,6 @@ export enum EntityType {
    * 用户
    */
   USER = 'USER',
-  /**
-   * 插件
-   */
-  PLUGIN = 'PLUGIN',
-  /**
-   * 应用
-   */
-  APP = 'APP',
 }
 
 interface BaseEntity {
@@ -127,18 +127,18 @@ interface AdditionalInfo {
 }
 
 interface RetryPolicy {
-  maxAttempts?: number;
+  maxAttempts?: null | number;
   initialIntervalMs: number;
   maxIntervalMs: number;
   randomizationFactor: number;
   multiplier: number;
-  maxElapsedTimeMs?: number;
+  maxElapsedTimeMs?: null | number;
 }
 
 export type {
   AdditionalInfo,
   BaseEntity,
   ContactInfo,
-  StatusInfo,
   RetryPolicy,
+  StatusInfo,
 };

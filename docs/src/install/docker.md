@@ -27,7 +27,6 @@ docker run -d --name ng-gateway \
   --privileged=true \
   --restart unless-stopped \
   -p 8978:5678 \
-  -p 8979:5679 \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
@@ -39,10 +38,10 @@ docker run -d --name ng-gateway \
 | 参数 | 说明 |
 | :-- | :-- |
 | `-p 8978:5678` | 映射 Web UI/API 端口（HTTP） |
-| `-p 8979:5679` | 映射 HTTPS 端口 |
 | `-v gateway-data:/app/data` | **重要**：持久化核心数据（SQLite 数据库、配置等） |
 | `-v gateway-drivers:/app/drivers/custom` | 持久化自定义驱动 |
 | `-v gateway-plugins:/app/plugins/custom` | 持久化自定义插件 |
+
 :::
 
 ## 3. 升级 / 卸载
@@ -58,7 +57,6 @@ docker run -d --name ng-gateway \
   --privileged=true \
   --restart unless-stopped \
   -p 8978:5678 \
-  -p 8979:5679 \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
@@ -71,10 +69,7 @@ docker run -d --name ng-gateway \
 docker rm -f ng-gateway
 ```
 
-::: warning 注意
-上述卸载不会删除 `gateway-data` 等 volumes；如果你要“彻底清空数据”，需要额外删除对应 volume（务必确认后再做）。
-:::
-
+::: warning 注意上述卸载不会删除 `gateway-data` 等 volumes；如果你要“彻底清空数据”，需要额外删除对应 volume（务必确认后再做）。:::
 
 ## 4. 运行时目录
 
@@ -86,18 +81,23 @@ docker rm -f ng-gateway
 
 > 在容器场景，**推荐使用环境变量覆盖配置**：使用 `NG__...`（适合 K8s / Compose / 自动化运维）
 
+镜像默认只监听 HTTP；启用 HTTPS 必须显式选择 `web.tls` 身份。`managed` 示例把 store 放在命名数据卷 `/app/data/pki/web`，升级时复用同一卷与真实 DNS/IP 名称，不能换成临时容器层。已有身份选择 `provided`，用 `NG__WEB__TLS__CERTIFICATE` 与 `NG__WEB__TLS__PRIVATE_KEY` 指向原常规文件；私钥需属于进程用户并禁止 group/other 访问。旧 `NG__WEB__SSL__*` 直接拒绝，没有兼容别名。HTTP 监听配置独立保留。
+
 ### 5.1 示例：使用环境变量覆盖端口与日志级别
 
 ```bash
 docker run -d --name ng-gateway \
   -e NG__WEB__PORT=5678 \
-  -e NG__WEB__SSL__PORT=5679 \
+  -p 8979:5679 \
+  -e NG__WEB__TLS__MODE=managed \
+  -e NG__WEB__TLS__PORT=5679 \
+  -e NG__WEB__TLS__STORE=/app/data/pki/web \
+  -e NG__WEB__TLS__DNS_NAMES=gateway.example.com \
   -e RUST_LOG=info \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
   -p 8978:5678 \
-  -p 8979:5679 \
   shiyuecamus/ng-gateway:latest
 ```
 
@@ -108,7 +108,10 @@ docker run -d --name ng-gateway \
 ```bash
 cat > .env <<'EOF'
 NG__WEB__PORT=5678
-NG__WEB__SSL__PORT=5679
+NG__WEB__TLS__MODE=managed
+NG__WEB__TLS__PORT=5679
+NG__WEB__TLS__STORE=/app/data/pki/web
+NG__WEB__TLS__DNS_NAMES=gateway.example.com
 RUST_LOG=info
 EOF
 ```
@@ -118,17 +121,15 @@ EOF
 ```bash
 docker run -d --name ng-gateway \
   --env-file ./.env \
+  -p 8979:5679 \
   -v gateway-data:/app/data \
   -v gateway-drivers:/app/drivers/custom \
   -v gateway-plugins:/app/plugins/custom \
   -p 8978:5678 \
-  -p 8979:5679 \
   shiyuecamus/ng-gateway:latest
 ```
 
-::: warning 注意
-生产环境务必持久化 `/app/data`（`gateway-data` volume），否则容器重建会丢失配置与数据库。
-:::
+::: warning 注意生产环境务必持久化 `/app/data`（`gateway-data` volume），否则容器重建会丢失配置与数据库。:::
 
 ## 6. 查看日志
 
@@ -150,9 +151,9 @@ curl -fsS "http://127.0.0.1:8978/health" && echo
 - **API**：`http://<host-ip>:8978/api`
 
 ::: tip
+
 - 默认账号: system_admin
-- 默认密码: system_admin
-:::
+- 默认密码: system_admin :::
 
 ## 9. 使用 Docker Compose（可选）
 

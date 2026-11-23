@@ -103,7 +103,6 @@ const gridOptions: VxeGridProps<ActionInfo> = {
       });
       await runImport(file as File, {
         title: $t('page.southward.action.importTitle') as string,
-        allowCommitWithErrors: true,
         onDone: async () => {
           await gridApi.query();
         },

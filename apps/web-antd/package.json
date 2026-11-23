@@ -20,7 +20,7 @@
     "build:analyze": "pnpm vite build --mode analyze",
     "dev": "pnpm vite --mode development",
     "preview": "vite preview",
-    "test:e2e": "pnpm typecheck:e2e && pnpm build && cargo build --manifest-path ../../../Cargo.toml --locked --release -p ng-gateway-bin -p ng-driver-modbus -p ng-driver-opcua -p ng-plugin-opcua-server && playwright test",
+    "test:e2e": "pnpm typecheck:e2e && pnpm build && (receipt_dir=$(mktemp -d) && trap 'rm -rf \"$receipt_dir\"' EXIT && cargo run --locked --manifest-path ../../../Cargo.toml --target-dir ../../../target/e2e -p ng-gateway-xtask -- build --profile release --no-deploy --ui-dist-dir ng-gateway-ui/apps/web-antd/dist --ui-out-dir target/e2e-ui --cohort-path-file \"$receipt_dir/cohort\" -- --locked --target-dir target/e2e && IFS= read -r cohort < \"$receipt_dir/cohort\" && NG_TEST_NATIVE_ARTIFACT_DIR=\"${NG_TEST_NATIVE_ARTIFACT_DIR-$cohort}\" playwright test)",
     "typecheck:e2e": "tsc --project tsconfig.e2e.json --noEmit",
     "typecheck": "vue-tsc --noEmit --skipLibCheck"
   },

@@ -14,6 +14,11 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { test as base, expect } from '@playwright/test';
 
+const workspaceRoot = resolve(import.meta.dirname, '../../../..');
+const uiStore = resolve(
+  process.env.NG_UI_ARTIFACT_STORE ?? resolve(workspaceRoot, 'target/e2e-ui'),
+);
+
 /** A fresh real binary, SQLite database and production UI for each journey. */
 export interface Gateway {
   origin: string;
@@ -22,23 +27,21 @@ export interface Gateway {
   restart: () => Promise<void>;
 }
 
-async function nativeArtifact(name: string) {
-  const root = resolve(import.meta.dirname, '../../../..');
-  const suffix = process.platform === 'darwin' ? 'dylib' : 'so';
-  const artifacts =
-    process.env.NG_TEST_NATIVE_ARTIFACT_DIR ?? resolve(root, 'target/release');
-  for (const path of [
-    resolve(artifacts, `lib${name}.${suffix}`),
-    resolve(artifacts, 'deps', `lib${name}.${suffix}`),
-  ]) {
-    try {
-      await access(path);
-      return path;
-    } catch {
-      continue;
-    }
+function nativeArtifactDirectory() {
+  const directory = process.env.NG_TEST_NATIVE_ARTIFACT_DIR;
+  if (!directory) {
+    throw new Error(
+      'Set NG_TEST_NATIVE_ARTIFACT_DIR to a published xtask cohort or run pnpm test:e2e',
+    );
   }
-  throw new Error(`Missing release image for ${name}`);
+  return resolve(directory);
+}
+
+async function nativeArtifact(name: string) {
+  const suffix = process.platform === 'darwin' ? 'dylib' : 'so';
+  const file = resolve(nativeArtifactDirectory(), `lib${name}.${suffix}`);
+  await access(file);
+  return file;
 }
 
 export async function initializeAdmin(
@@ -124,19 +127,22 @@ export const test = base.extend<{
 }>({
   controlLimits: [undefined, { option: true }],
   gateway: async ({ request, controlLimits }, use) => {
-    const root = resolve(import.meta.dirname, '../../../..');
-    const binary = resolve(
-      process.env.NG_TEST_NATIVE_ARTIFACT_DIR ??
-        resolve(root, 'target/release'),
-      'ng-gateway-bin',
-    );
+    const binary = resolve(nativeArtifactDirectory(), 'ng-gateway-bin');
     await access(binary);
+    const architecture = process.arch === 'arm64' ? 'aarch64' : 'x86_64';
+    const platform =
+      process.platform === 'darwin' ? 'apple-darwin' : 'unknown-linux-gnu';
     const validator = resolve(
       process.env.NG__GENERAL__ENGINEERING__VALIDATOR_PATH ??
-        resolve(root, 'target/release/libexec/xmllint'),
+        resolve(
+          workspaceRoot,
+          'target/xsd-validator',
+          `${architecture}-${platform}`,
+          'xmllint',
+        ),
     );
     await access(validator);
-    await access(resolve(root, 'ng-gateway-ui/apps/web-antd/dist/index.html'));
+    await access(resolve(uiStore, 'CURRENT'));
     const directory = await mkdtemp(resolve(tmpdir(), 'ng-auth-browser-'));
     const listener = createServer();
     listener.listen(0, '127.0.0.1');
@@ -170,7 +176,7 @@ workers = 2
 [web.ui]
 enabled = true
 mode = "filesystem"
-filesystem_root = ${JSON.stringify(resolve(root, 'ng-gateway-ui/apps/web-antd/dist'))}
+filesystem_root = ${JSON.stringify(uiStore)}
 [web.authentication]
 request_timeout_ms = 15000
 login_account_burst = 64
@@ -199,7 +205,7 @@ login_burst = 128
       await expect
         .poll(
           async () => {
-            if (child.exitCode !== null)
+            if (child.exitCode !== null || child.signalCode !== null)
               throw new Error(`Gateway failed; log: ${directory}/gateway.log`);
             try {
               const response = await request.get(
@@ -244,14 +250,27 @@ login_burst = 128
       });
       completed = true;
     } finally {
+      let shutdownConfirmed = false;
       try {
-        await stop(child);
+        if (
+          completed ||
+          (child.exitCode === null && child.signalCode === null)
+        ) {
+          await stop(child);
+          shutdownConfirmed = true;
+        }
       } finally {
         log.end();
+        if (
+          completed &&
+          shutdownConfirmed &&
+          test.info().status === test.info().expectedStatus
+        ) {
+          await rm(directory, { recursive: true });
+        } else {
+          console.warn(`Isolated gateway evidence retained in ${directory}`);
+        }
       }
-      if (completed && test.info().status === test.info().expectedStatus)
-        await rm(directory, { recursive: true });
-      else console.warn(`Isolated gateway evidence retained in ${directory}`);
     }
   },
 });

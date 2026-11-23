@@ -125,3 +125,22 @@ it('preserves server diagnostics and keeps unsupported failures explicit', () =>
     expect(describeFailure(cause, 'fallback')).toBe('fallback');
   }
 });
+
+it('prefers the actual engineering refusal over the HTTP transport message', () => {
+  const message =
+    'UnprocessableEntity: `engineering selection does not identify a model node`';
+  const refusal = Object.assign(
+    new Error('Request failed with status code 422'),
+    { response: { data: { error: 'Unprocessable Entity', message } } },
+  );
+  expect(describeFailure(refusal, 'fallback')).toBe(message);
+  expect(
+    describeFailure(
+      {
+        message: 'request was cancelled',
+        response: { data: { message: ' ' } },
+      },
+      'fallback',
+    ),
+  ).toBe('request was cancelled');
+});

@@ -20,8 +20,8 @@ export type DriverFormSchemas = DynamicFormSchemas;
 export type DriverSchemas = DynamicSchemas;
 export type PluginConfigSchemas = Node[];
 
-/** Keep only fields in the selected schema branches before writing driverConfig. */
-export function projectActiveDriverConfig(
+/** Keep only fields in the selected schema branches before writing configuration. */
+export function projectActiveConfig(
   nodes: Node[],
   values: Record<string, any>,
 ): Record<string, any> {
@@ -30,20 +30,7 @@ export function projectActiveDriverConfig(
     for (const node of items) {
       switch (node.kind) {
         case 'Field': {
-          let active = true;
-          for (const condition of node.when ?? []) {
-            if (
-              !evalOperator(
-                condition.operator,
-                get(values, condition.target),
-                condition.value,
-              )
-            ) {
-              continue;
-            }
-            if (condition.effect === 'If') active = true;
-            if (condition.effect === 'IfNot') active = false;
-          }
+          const active = isStructurallyActive(values, [], node.when);
           const value = get(values, node.path);
           if (active && value !== undefined) set(projected, node.path, value);
           break;
@@ -78,6 +65,31 @@ export interface DynamicSchemas {
 }
 
 export type Node = FieldNode | GroupNode | UnionNode;
+
+type Discriminator = { equals: unknown; field: string };
+
+/** Every ancestor branch and structural condition must hold before mounting or submission. */
+function isStructurallyActive(
+  values: Record<string, any>,
+  discriminators: readonly Discriminator[],
+  when?: null | readonly When[],
+): boolean {
+  return (
+    discriminators.every(({ field, equals }) =>
+      isEqual(get(values, field), equals),
+    ) &&
+    (when ?? []).every((condition) => {
+      if (condition.effect !== 'If' && condition.effect !== 'IfNot')
+        return true;
+      const matched = evalOperator(
+        condition.operator,
+        get(values, condition.target),
+        condition.value,
+      );
+      return condition.effect === 'If' ? matched : !matched;
+    })
+  );
+}
 
 export interface FieldNode {
   kind: 'Field';
@@ -236,7 +248,7 @@ export const sortDriverSchemas = sortDynamicSchemas;
 export function mapChannelSchemasToForm(schemas: DynamicSchemas): FormSchema[] {
   const result: FormSchema[] = [];
   for (const item of schemas.channel) {
-    result.push(...mapNode(item, undefined));
+    result.push(...mapNode(item));
   }
   return result;
 }
@@ -244,7 +256,7 @@ export function mapChannelSchemasToForm(schemas: DynamicSchemas): FormSchema[] {
 export function mapDeviceSchemasToForm(schemas: DynamicSchemas): FormSchema[] {
   const result: FormSchema[] = [];
   for (const item of schemas.device) {
-    result.push(...mapNode(item, undefined));
+    result.push(...mapNode(item));
   }
   return result;
 }
@@ -252,7 +264,7 @@ export function mapDeviceSchemasToForm(schemas: DynamicSchemas): FormSchema[] {
 export function mapPointSchemasToForm(schemas: DynamicSchemas): FormSchema[] {
   const result: FormSchema[] = [];
   for (const item of schemas.point) {
-    result.push(...mapNode(item, undefined));
+    result.push(...mapNode(item));
   }
   return result;
 }
@@ -260,7 +272,7 @@ export function mapPointSchemasToForm(schemas: DynamicSchemas): FormSchema[] {
 export function mapActionSchemasToForm(schemas: DynamicSchemas): FormSchema[] {
   const result: FormSchema[] = [];
   for (const item of schemas.action) {
-    result.push(...mapNode(item, undefined));
+    result.push(...mapNode(item));
   }
   return result;
 }
@@ -274,18 +286,18 @@ export function mapPluginConfigSchemasToForm(
 ): FormSchema[] {
   const result: FormSchema[] = [];
   for (const item of schemas) {
-    result.push(...mapNode(item, undefined));
+    result.push(...mapNode(item));
   }
   return result;
 }
 
 function mapNode(
   node: Node,
-  discriminator?: { equals: any; field: string },
+  discriminators: readonly Discriminator[] = [],
 ): FormSchema[] {
   switch (node.kind) {
     case 'Field': {
-      return [mapField(node, discriminator)];
+      return [mapField(node, discriminators)];
     }
     case 'Group': {
       const divider: FormSchema = {
@@ -308,10 +320,10 @@ function mapNode(
           : undefined;
       const controllerWhen =
         controller && controller.kind === 'Field' ? controller.when : undefined;
-      const dividerDeps = buildDependencies(controllerWhen, discriminator);
+      const dividerDeps = buildDependencies(controllerWhen, discriminators);
       if (dividerDeps) divider.dependencies = dividerDeps;
 
-      const children = node.children.flatMap((n) => mapNode(n, discriminator));
+      const children = node.children.flatMap((n) => mapNode(n, discriminators));
       return [divider, ...children];
     }
     case 'Union': {
@@ -321,7 +333,11 @@ function mapNode(
           field: node.discriminator,
           equals: c.case_value,
         };
-        acc.push(...c.children.flatMap((n) => mapNode(n, nextDiscriminator)));
+        acc.push(
+          ...c.children.flatMap((n) =>
+            mapNode(n, [...discriminators, nextDiscriminator]),
+          ),
+        );
       }
       return acc;
     }
@@ -330,7 +346,7 @@ function mapNode(
 
 function buildDependencies(
   when?: null | When[],
-  discriminator?: { equals: any; field: string },
+  discriminators: readonly Discriminator[] = [],
 ):
   | undefined
   | {
@@ -338,27 +354,15 @@ function buildDependencies(
       show?: (values: Record<string, any>) => boolean;
       triggerFields: string[];
     } {
-  if ((!when || when.length === 0) && !discriminator) return undefined;
+  if ((!when || when.length === 0) && discriminators.length === 0)
+    return undefined;
 
   const targets = new Set<string>();
-  if (discriminator) targets.add(discriminator.field);
+  for (const discriminator of discriminators) targets.add(discriminator.field);
   for (const w of when || []) targets.add(w.target);
 
-  const computeIf = (values: Record<string, any>): boolean => {
-    let render = true;
-    if (discriminator) {
-      render = isEqual(get(values, discriminator.field), discriminator.equals);
-    }
-    if (when) {
-      for (const w of when) {
-        const val = get(values, w.target);
-        if (!evalOperator(w.operator, val, w.value)) continue;
-        if (w.effect === 'If') render = true;
-        if (w.effect === 'IfNot') render = false;
-      }
-    }
-    return render;
-  };
+  const computeIf = (values: Record<string, any>): boolean =>
+    isStructurallyActive(values, discriminators, when);
 
   const computeShow = (values: Record<string, any>): boolean => {
     let show = true;
@@ -383,7 +387,7 @@ function buildDependencies(
 
 function mapField(
   node: FieldNode,
-  discriminator?: { equals: any; field: string },
+  discriminators: readonly Discriminator[] = [],
 ): FormSchema {
   const component = resolveComponent(node);
   const colSpan = node.ui?.col_span ?? 2;
@@ -433,12 +437,8 @@ function mapField(
     base.componentProps = cp;
   }
 
-  if (node.data_type.kind === 'String') {
-    const cp: any = { ...((base.componentProps ?? {}) as any) };
-    const rvMaxLen = extractRuleValue<number>(node.rules?.max_length);
-    if (!isNullOrUndefined(rvMaxLen.value)) cp.maxLength = rvMaxLen.value;
-    base.componentProps = cp;
-  }
+  // Preserve the original text for validation. A DOM maxLength would silently
+  // crop pasted endpoints or credentials into a different value before validation.
 
   if (node.data_type.kind === 'Enum') {
     const prev = (base.componentProps ?? {}) as Record<string, any>;
@@ -484,31 +484,16 @@ function mapField(
 
   base.rules = buildRuleForNode(node);
 
-  if ((node.when && node.when.length > 0) || discriminator) {
+  if ((node.when && node.when.length > 0) || discriminators.length > 0) {
     base.dependencies = base.dependencies || ({ triggerFields: [] } as any);
     const dep: any = base.dependencies;
     const targets = new Set<string>();
-    if (discriminator) targets.add(discriminator.field);
+    for (const discriminator of discriminators)
+      targets.add(discriminator.field);
     for (const w of node.when || []) targets.add(w.target);
     dep.triggerFields = [...targets];
-    const computeIf = (values: Record<string, any>) => {
-      let render = true;
-      if (discriminator) {
-        render = isEqual(
-          get(values, discriminator.field),
-          discriminator.equals,
-        );
-      }
-      if (node.when) {
-        for (const w of node.when) {
-          const val = get(values, w.target);
-          if (!evalOperator(w.operator, val, w.value)) continue;
-          if (w.effect === 'If') render = true;
-          if (w.effect === 'IfNot') render = false;
-        }
-      }
-      return render;
-    };
+    const computeIf = (values: Record<string, any>) =>
+      isStructurallyActive(values, discriminators, node.when);
 
     const computeShow = (values: Record<string, any>) => {
       let show = true;

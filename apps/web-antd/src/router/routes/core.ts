@@ -7,6 +7,10 @@ import { $t } from '#/locales';
 
 const BasicLayout = () => import('#/layouts/basic.vue');
 const AuthPageLayout = () => import('#/layouts/auth.vue');
+
+const RESOURCE_QUOTAS_PATH = '/maintenance/resource-quotas';
+const RESOURCE_QUOTA_RECOVERY_PATH = '/maintenance/resource-quotas/recovery';
+
 /** 全局404页面 */
 const fallbackNotFoundRoute: RouteRecordRaw = {
   component: () => import('#/views/_core/fallback/not-found.vue'),
@@ -64,6 +68,22 @@ const coreRoutes: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    component: () => import('#/views/maintenance/resource-quotas/recovery.vue'),
+    meta: {
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+      hideInTab: true,
+      title: 'page.maintenance.resourceQuotas.recovery.mode',
+    },
+    name: 'MaintenanceResourceQuotaRecovery',
+    path: RESOURCE_QUOTA_RECOVERY_PATH,
+  },
 ];
 
-export { coreRoutes, fallbackNotFoundRoute };
+export {
+  coreRoutes,
+  fallbackNotFoundRoute,
+  RESOURCE_QUOTA_RECOVERY_PATH,
+  RESOURCE_QUOTAS_PATH,
+};

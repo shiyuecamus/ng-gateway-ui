@@ -2,7 +2,7 @@
 import type { NotificationItem } from '@vben/layouts';
 
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
 import { VBEN_DOC_URL, VBEN_GITHUB_URL } from '@vben/constants';
@@ -75,6 +75,7 @@ const notifications = ref<NotificationItem[]>([
   },
 ]);
 
+const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const authStore = useAuthStore();
@@ -175,7 +176,12 @@ watch(
 </script>
 
 <template>
-  <BasicLayout @clear-preferences-and-logout="handleLogout">
+  <BasicLayout
+    :preserve-page-on-locale-change="
+      route.matched.at(-1)?.path === '/southward/channel'
+    "
+    @clear-preferences-and-logout="handleLogout"
+  >
     <template #user-dropdown>
       <UserDropdown
         :avatar

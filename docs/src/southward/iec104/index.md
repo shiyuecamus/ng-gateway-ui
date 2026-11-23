@@ -1,127 +1,109 @@
 ---
 title: 'IEC 60870-5-104'
-description: 'NG Gateway IEC 60870-5-104 南向驱动：链路/会话参数、CA/IOA/TypeID 建模、上送解析与写命令最佳实践。'
+description: 'IEC104 通道、完整 CA/IOA、协议单位、Direct/SBO 控制、只读 GI/CI 与原操作恢复。'
 ---
 
-## 1. 协议介绍
+## 1. 运行模型与服务边界
 
-IEC 60870-5-104（简称 IEC104）是电力自动化领域常见的远动规约，基于 TCP（默认端口 2404）。它以 ASDU（Application Service Data Unit）承载遥信/遥测/累计量/事件等信息对象，并支持遥控/遥调/总召/对时等命令。
+IEC104 使用 TCP（默认端口 2404）传输 ASDU。NG Gateway 每个 Channel 维护一个受监督的 TCP 关联；一个通道可配置多个 Device/CA。监视数据按实际收到的 ASDU 推入 Core，再按北向配置转发。
 
-NG Gateway IEC104 驱动以 **单 Channel 单 TCP 会话** 的方式运行，核心数据路径是`Driver Push`：
+| 运行入口 | 当前范围 |
+| --- | --- |
+| 点位监视 | metadata 声明的 25 种点位监视布局，包括单点、双点、步进、位串、测量和累计量；按配置的 CA、TypeID、完整 IOA 匹配 |
+| WritePoint / Action input | 14 种过程命令；直接执行，或对具备 SE 的类型选择后执行 |
+| 启动、周期及操作员只读召唤 | GI 当前信息、CI 已存计数量；不冻结或复位计数器 |
+| 其他原生监视、系统、参数、文件与安全布局 | 原生结构的识别、原始字段保留或编码能力不等于运行服务已经开放；当前没有相应的参数加载、文件传输或认证操作入口 |
 
-- 上送（遥测/遥信/累计量等）：驱动接收 ASDU 并通过 publisher 推送到北向链路
-- 下行（遥控/设点/比特串等）：通过 WritePoint 或 Action 触发命令发送
+原生内核还能编解码保护事件和打包状态等 7 种监视布局，但当前驱动没有对应点位投影。只配置当前驱动 metadata 提供的类型。构造未声明 TypeID 的 Action input 不会得到额外的协议服务。
+
+配置准入会拒绝没有运行入口的 TypeID，并回滚本次变更，不推进配置 revision 或替换现有连接。只读点位使用上述 25 种监视类型；可写点位仍可直接使用 14 种过程命令 TypeID，Action input 也仅接受这 14 种命令。升级前误存的其他原生 TypeID 不能激活；请先改为受支持的点位/命令类型，再重新激活通道。
+
+配置的 Device CA 必须为 `1..65535`，队列数量与待发字节容量还须分别满足当前构建的原生范围（当前下界为 `1` 项与 `12` 字节）。升级前误存的 `CA=0` 或超限容量不能激活；请修正后重新激活通道，不能靠重连保留这些无效值。
 
 ## 2. 配置模型
 
-### 2.1 Channel（通道）配置
+### 2.1 Channel
 
-#### 2.1.1 基础连接
+连接字段为 `host` 和 `port`，支持 IP 字面量及有界 ASCII hostname。`t0Ms` 与连接策略的建立期限取较小值，并由地址解析和全部候选 TCP 连接共享，`t1Ms` 限制 I/U 链路确认，`t2Ms` 聚合接收确认，`t3Ms` 触发空闲链路测试。`kWindow`、`wThreshold` 和出站队列/字节配置见[链路与背压](./link-timers.md)。链路 ACK 与应用确认是不同结果。
 
-- **`host`**：远端站 IP/hostname
-- **`port`**：端口，默认 2404
+启动和周期读取使用以下字段：
 
-#### 2.1.2 高级链路参数（t0/t1/t2/t3/k/w）
+| 字段 | 默认值 | 含义 |
+| --- | --- | --- |
+| `autoStartupGeneralInterrogation` | `true` | 关联激活后发起 GI |
+| `autoStartupCounterInterrogation` | `true` | 关联激活后发起只读 CI |
+| `interrogationQoi` | `20` | `20` 为全站，`21..36` 为信息组 |
+| `counterGroup` | `5` | `5` 为全部计数器，`1..4` 为计数器组；不接收 FRZ 位 |
+| `interrogationParallelism` | `4` | 启动/周期读取的并发数，范围 `1..64`，且不能大于发送队列容量 |
+| `periodicGiIntervalSecs` | `600` | 周期 GI 间隔；`0` 关闭 |
+| `periodicCiIntervalSecs` | `1800` | 周期 CI 间隔；`0` 关闭 |
+| `dataSilenceTimeoutSecs` | `1800` | 长时间没有过程信息时请求重连；`0` 关闭 |
 
-IEC104 的稳定性与吞吐很大程度取决于链路层的定时器与窗口：
+旧 `startupQoi`、`startupQcc` 不属于当前配置。即使关闭自动召唤，QOI/计数器组等字段仍必须合法。链路测试帧或 S-ACK 不能代替过程信息观测。
 
-- **`t0Ms`**：连接建立/确认超时
-- **`t1Ms`**：I 帧确认超时（未收到确认的等待时间）
-- **`t2Ms`**：S 帧确认聚合超时（ack 发送延迟窗口）
-- **`t3Ms`**：空闲测试帧间隔（保持链路活性）
-- **`kWindow`**：最大未确认 I 帧窗口
-- **`wThreshold`**：确认阈值（达到阈值触发确认）
+`sourceTime` 显式选择源时间解释：未知（`kind: unknown`）、UTC（`kind: utc` 与 `century`），或固定偏移（`kind: fixed`、`century`、`standardOffsetMinutes`，以及需要时的 `summerOffsetMinutes`）。未配置解释时保留原始时间事实，不推断 UTC。CP24 缺少日期/小时锚点，不能据此制造完整源时刻。带 CP56 的下行命令要求显式有效的源时间解释。
 
-此外还有一组“队列与背压”参数：
+主机展示值统一限制为 1～254 个 ASCII 字节（包括 IPv6 方括号/作用域或 DNS 末尾根点）。DNS 标签最多 63 字节，去掉末尾根点后的主机名最多 253 字节；IP 地址语法由服务端精确校验。表单只做字符/长度预筛选，提交的配置仍须通过服务端准入。
 
-- **`sendQueueCapacity`**：发送队列容量
-- **`maxPendingAsduBytes`**：待处理 ASDU 字节上限（背压/内存预算）
-- **`discardLowPriorityWhenWindowFull`**：窗口满时丢弃低优先级
-- **`mergeLowPriority`**：低优先级合并（只保留最后值）
-- **`lowPrioFlushMaxAgeMs`**：低优先级刷新最大延迟
-- **`tcpNodelay`**：禁用 Nagle（降低小包延迟）
+一次解析最多接收 16 个候选地址，超出时明确拒绝。失败候选不续期，成功流沿用原计量。超时或取消后，尚未完成的系统解析仍占用原工作位置；重试不能叠加同一连接器的解析，关闭要等待实际完成。
 
-> 进阶解释与调参建议见 `./link-timers.md`。
+### 2.2 Device 与地址
 
-#### 2.1.3 启动总召参数
+- `ca` 是 Device 配置，metadata 范围为 `1..65535`。需要唯一响应者的治理控制和 GI/CI 请求只接受单播 `1..65534`；`65535` 不是这类请求的有效站址。
+- `ioa` 是完整 24-bit 信息对象地址，Point 和 Action input 均为 `0..16777215`（`0xFFFFFF`），不能截成 16 位。
+- 同一 TCP 关联上的多个 CA 可建多个 Device。设备站址、TypeID、IOA 都须与现场映射一致；相同 IOA 的不同监视 TypeID 分别匹配。
 
-- **`startupQoi`**：启动总召 QOI（默认 20）
-- **`startupQcc`**：启动电能总召 QCC（默认 5）
+### 2.3 Point 与 Action input
 
-### 2.2 Device（设备）配置
+Point 使用 `typeId`、`ioa` 和 `controlMode`。写点时，支持的监视 TypeID 映射到对应过程命令；直接配置命令 TypeID 则保留该命令身份。
 
-IEC104 中 CA（Common Address）用于区分站/间隔（按现场定义）。NG Gateway 将 **CA 建模为 Device 级配置**：
+Action 是操作集合；每个 `inputs(Parameter)` 自己配置 `driver_config.typeId`、`driver_config.ioa` 和 `driver_config.controlMode`，不能把目标放在 Action 的任意 JSON 字段中。
 
-- **`ca`**：公共地址（1..65535）
+`controlMode` 为 `direct`（默认）或 `selectBeforeOperate`。该字段属于 Point/Action input，不是通道自动召唤模式。位串命令没有 SE，配置为选择后执行会在发送前被拒绝。
 
-::: tip 建模建议
-- 如果一个 TCP 连接下承载多个 CA（常见于站端/集控侧），建议每个 CA 建一个 Device，便于北向分组与权限隔离。
-- 同一 CA 下不同 IOA/TypeID 建模为不同 Point。
-:::
+## 3. 协议值与类型
 
-### 2.3 Point（点位）配置
+| 上送类型 | 保留的协议值域 | 推荐 DataType |
+| --- | --- | --- |
+| M*SP*\* | Boolean 状态，质量独立 | Boolean |
+| M*DP*\* | `0` 中间态、`1` OFF、`2` ON、`3` 不确定 | UInt8 |
+| M*ST*\* | 有符号 `-64..63`，transient 独立 | Int16 |
+| M*BO*\* | 完整无符号 32-bit 位模式 | UInt32 |
+| M_ME_NA/ND 及相应带时标格式 | 归一化协议单位 `raw / 32768` | Float32 / Float64 |
+| M_ME_NB 及相应带时标格式 | 有符号 16-bit 标度值 | Int16 / Float64 |
+| M_ME_NC 及相应带时标格式 | IEEE754 短浮点 | Float32 / Float64 |
+| M*IT*\* | 有符号 32-bit 计数，SQ/CY/CA/IV 独立 | Int32 / Int64 |
 
-Point 驱动配置字段：
+品质、Test、原始时间有效性与值分别观察。不要把双点保留状态变成 Boolean、把负累计量转成无符号量，或把缺失/无效源时间当成本次有效观测。更详细的类型选择见[点位与 TypeID](./typeid.md)。
 
-- **`ioa`**：信息对象地址（0..65535）
-- **`typeId`**：ASDU TypeID（UI 以枚举选择）
+## 4. 过程控制
 
-> 关键：驱动用 `(typeId, ioa)` 作为索引匹配上送数据，只有完全匹配才会落到点位上。
+| 命令（无/有 CP56 时标） | 必须提供的协议值 | 推荐 DataType |
+| --- | --- | --- |
+| C_SC_NA_1 / C_SC_TA_1 | Boolean，或精确数值 `0/1` | Boolean |
+| C_DC_NA_1 / C_DC_TA_1 | 精确 `1` OFF / `2` ON | UInt8 |
+| C_RC_NA_1 / C_RC_TA_1 | 精确 `1` LOWER / `2` HIGHER | UInt8 |
+| C_SE_NA_1 / C_SE_TA_1 | 有限归一化值 `[-1, 32767/32768]`，按 `1/32768` 网格量化 | Float64 |
+| C_SE_NB_1 / C_SE_TB_1 | 精确整数 `-32768..32767` | Int16 |
+| C_SE_NC_1 / C_SE_TC_1 | 可表示为有限短浮点的数值 | Float32 / Float64 |
+| C_BO_NA_1 / C_BO_TA_1 | 精确无符号整数 `0..4294967295` | UInt32 |
 
-### 2.4 Action（动作）配置
+归一化设点使用协议单位，例如 `0.5`，而不是 raw count `16384`。Core 对业务值执行一次配置的逆变换，驱动不再重复缩放。分数不能通过取整变成双命令/步进命令，Boolean 仅适用于单命令；超范围、NaN/Inf 或错误类型在发送前拒绝。
 
-Action 用于封装一组“下行命令”的操作；**Action 本身不承载协议细节配置**。
+直接执行也要求原操作的持久授权。选择后执行只适用于单/双/步进及三类设点命令（各含有/无时标格式）；选择得到正确认后，仍需单独授予 Operate。包含 SBO 的批次不能重复操作同一个 CA/IOA，混合批次须先完成全部选择确认。
 
-- **关键语义**：IEC104 的下行命令目标 `(typeId, ioa)` 必须配置在 **Action 的 `inputs(Parameter)` 上**，即每个参数都通过 `Parameter.driver_config.typeId` 与 `Parameter.driver_config.ioa` 指定要下发的命令类型与 IOA。
-- **为什么这样设计**：一个 Action 往往需要下发多个 IOA（例如一次下发多个遥控/设点），Action 只是“操作集合”的抽象；协议字段必须落在 Parameter 本体上。
+发送入队或链路 ACK 不代表应用接受。执行的 ACT_CON 是接受，相关 ACT_TERM 才是协议终结；协议成功仍不等于现场设备已经达到目标状态。独立采集的状态/质量另外展示。
 
-参数级驱动配置字段（每个 input parameter）：
+## 5. 只读 GI/CI
 
-- **`ioa`**：信息对象地址（0..65535）
-- **`typeId`**：命令类 TypeID（例如 C_SC/C_DC/C_SE/...）
+在通道页面打开 **IEC104 只读召唤**，选择已配置站点、信息类型与范围，再发起读取。需要通道读取权限及可用的当前关联；站点和配置版本来自当前通道。
 
-## 3. 数据类型映射表
+GI 的范围为全站 `20` 或组 `21..36`；CI 的范围为全部 `5` 或组 `1..4`。入口不接受冻结/复位、广播站址或旧配置字段。不要建立 dummy Action/input 来触发 GI/CI。
 
-驱动接收 ASDU 后，会按 TypeID 解码，并用 `ValueCodec` 将原始值强制转换为 Point 声明的 `data_type`（同时应用 `scale`）。
+回执区分本地发送、应用接受和相关终结。只读召唤结束不保证所有信息都已进入 Core、不代表原子快照，也不代表现场状态改变；在监视页面分别检查接收时间、值、质量和丢弃诊断。
 
-| 上送 TypeID（点位 typeId） | 原始值来源 | 原始值类型 | 推荐 DataType |
-| --- | --- | --- | --- |
-| M_SP_*（单点） | `siq.spi()` | bool | Boolean |
-| M_DP_*（双点） | `diq.spi().value()` | u8（0..3） | UInt8/UInt16（或按现场约定映射） |
-| M_BO_*（32bit 串） | `bsi` | u32 | UInt32 |
-| M_ST_*（步进） | `vti.value()` | i8/i16（按实现） | Int16 |
-| M_ME_NA/ND（归一化） | `value()` | f64 | Float32/Float64 |
-| M_ME_NB（标度化） | `sva` | i16 | Int16/Float32 |
-| M_ME_NC（短浮点） | `r` | f32 | Float32 |
-| M_IT_*（累计量） | `bcr.value` | i32/i64 | Int64/UInt64 |
+## 6. 取消、未知结果与恢复
 
-## 4. 写入/下行命令
-- **C_SC_NA_1 / C_SC_TA_1**：Single Command（值应可转为 bool）
-- **C_DC_NA_1 / C_DC_TA_1**：Double Command（值应可转为 u8）
-- **C_RC_NA_1 / C_RC_TA_1**：Step Command（值应可转为 u8）
-- **C_SE_NA_1 / C_SE_TA_1**：Set Point Normal（值应可转为 i16）
-- **C_SE_NB_1 / C_SE_TB_1**：Set Point Scaled（值应可转为 i16）
-- **C_SE_NC_1 / C_SE_TC_1**：Set Point Float（值应可转为 f32）
-- **C_BO_NA_1 / C_BO_TA_1**：Bits String 32 Command（值应可转为 i32）
+在动作调试/原操作记录中查询原操作 ID，核对目标并确认指纹，填写理由后请求取消。取消针对原操作，沿用原截止时间；HTTP 接受意图不代表远端释放选择，必须等待相关取消确认。
 
-总召类（可建模为 Action，无需输入值）：
-
-- **C_IC_NA_1**：General Interrogation（使用 `startupQoi`）
-- **C_CI_NA_1**：Counter Interrogation（使用 `startupQcc`）
-
-### 4.1 WritePoint / Action Parameter 的 DataType 推荐表（命令类 TypeID → DataType）
-::: tip
-IEC104 写入侧会对 value 做严格类型转换，因此 **Point/Parameter 的 `data_type` 应尽量与命令期望类型一致**，避免隐式转换失败。
-:::
-
-| 命令 TypeID | 推荐 DataType | value 是否使用 | 说明 |
-| --- | --- | --- | --- |
-| C_SC_NA_1 / C_SC_TA_1 | Boolean | ✅ | Single Command（bool） |
-| C_DC_NA_1 / C_DC_TA_1 | UInt8 | ✅ | Double Command（u8，取值范围按现场约定） |
-| C_RC_NA_1 / C_RC_TA_1 | UInt8 | ✅ | Step Command（u8） |
-| C_SE_NA_1 / C_SE_TA_1 | Int16 | ✅ | Set Point Normal（i16） |
-| C_SE_NB_1 / C_SE_TB_1 | Int16 | ✅ | Set Point Scaled（i16） |
-| C_SE_NC_1 / C_SE_TC_1 | Float32 | ✅ | Set Point Float（f32） |
-| C_BO_NA_1 / C_BO_TA_1 | Int32 | ✅ | Bits String 32（i32） |
-| C_IC_NA_1 | UInt8（任意） | ❌ | General Interrogation：value 会被忽略，但为了触发命令，建议仍定义一个 dummy 参数（ioa 可填 0） |
-| C_CI_NA_1 | UInt8（任意） | ❌ | Counter Interrogation：同上（ioa 可填 0） |
+超时、断链或不完整确认可能留下结果未知及未释放选择。未知操作保留原身份和证据，不因重连或同库重启自动重发；相同业务意图复用原操作 ID。未决物理目标的冲突新意图会被拒绝。迟到的正选择只补充原证据，不重新授权执行；迟到的确定负确认可结清原操作。现场读回相同值不能单独证明这次操作成功。

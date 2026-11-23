@@ -9,6 +9,10 @@ import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
 import { generateAccess } from './access';
+import {
+  RESOURCE_QUOTA_RECOVERY_PATH,
+  RESOURCE_QUOTAS_PATH,
+} from './routes/core';
 
 /**
  * 通用守卫配置
@@ -50,83 +54,109 @@ function setupAccessGuard(router: Router) {
     const userStore = useUserStore();
     const authStore = useAuthStore();
 
-    if (accessStore.accessToken && !authStore.sessionChecked)
-      await authStore.fetchUserInfo();
-    if (
-      accessStore.accessToken &&
-      authStore.mustChangePassword &&
-      to.path !== '/auth/password'
-    )
-      return '/auth/password';
-    if (to.path === '/auth/password')
-      return accessStore.accessToken ? true : LOGIN_PATH;
-
-    // 基本路由，这些路由不需要进入权限拦截
-    if (coreRouteNames.includes(to.name as string)) {
-      if (to.path === LOGIN_PATH && accessStore.accessToken) {
-        return decodeURIComponent(
-          (to.query?.redirect as string) ||
-            userStore.userInfo?.homePath ||
-            preferences.app.defaultHomePath,
-        );
-      }
-      return true;
-    }
-
-    // accessToken 检查
-    if (!accessStore.accessToken) {
-      // 明确声明忽略权限访问权限，则可以访问
-      if (to.meta.ignoreAccess) {
-        return true;
-      }
-
-      // 没有访问权限，跳转登录页面
-      if (to.fullPath !== LOGIN_PATH) {
+    if (to.path === RESOURCE_QUOTA_RECOVERY_PATH) {
+      if (!accessStore.accessToken) {
         return {
           path: LOGIN_PATH,
-          // 如不需要，直接删除 query
-          query:
-            to.fullPath === preferences.app.defaultHomePath
-              ? {}
-              : { redirect: encodeURIComponent(to.fullPath) },
-          // 携带当前跳转的页面，登录后重新跳转该页面
+          query: { redirect: encodeURIComponent(to.fullPath) },
           replace: true,
         };
       }
-      return to;
-    }
-
-    // 是否已经生成过动态路由
-    if (accessStore.isAccessChecked) {
+      if (authStore.mustChangePassword) return '/auth/password';
+      // The independent quota endpoint validates the current session and its read grant.
       return true;
     }
 
-    // 生成路由表
-    // 当前登录用户拥有的角色标识列表
-    const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
-    const userRoles = userInfo.roles ?? [];
+    try {
+      if (accessStore.accessToken && !authStore.sessionChecked)
+        await authStore.fetchUserInfo();
+      if (
+        accessStore.accessToken &&
+        authStore.mustChangePassword &&
+        to.path !== '/auth/password'
+      )
+        return '/auth/password';
+      if (to.path === '/auth/password')
+        return accessStore.accessToken ? true : LOGIN_PATH;
 
-    // 生成菜单和路由
-    const { accessibleMenus, accessibleRoutes } = await generateAccess({
-      roles: userRoles.map((item) => item.code),
-      router,
-      // 则会在菜单中显示，但是访问会被重定向到403
-      routes: accessRoutes,
-    });
+      // 基本路由，这些路由不需要进入权限拦截
+      if (coreRouteNames.includes(to.name as string)) {
+        if (to.path === LOGIN_PATH && accessStore.accessToken) {
+          return decodeURIComponent(
+            (to.query?.redirect as string) ||
+              userStore.userInfo?.homePath ||
+              preferences.app.defaultHomePath,
+          );
+        }
+        return true;
+      }
 
-    // 保存菜单信息和路由信息
-    accessStore.setAccessMenus(accessibleMenus);
-    accessStore.setAccessRoutes(accessibleRoutes);
-    accessStore.setIsAccessChecked(true);
-    const redirectPath = (from.query.redirect ??
-      (to.path === preferences.app.defaultHomePath
-        ? preferences.app.defaultHomePath
-        : to.fullPath)) as string;
+      // accessToken 检查
+      if (!accessStore.accessToken) {
+        // 明确声明忽略权限访问权限，则可以访问
+        if (to.meta.ignoreAccess) {
+          return true;
+        }
 
-    return {
-      ...router.resolve(decodeURIComponent(redirectPath)),
-      replace: true,
-    };
+        // 没有访问权限，跳转登录页面
+        if (to.fullPath !== LOGIN_PATH) {
+          return {
+            path: LOGIN_PATH,
+            // 如不需要，直接删除 query
+            query:
+              to.fullPath === preferences.app.defaultHomePath
+                ? {}
+                : { redirect: encodeURIComponent(to.fullPath) },
+            // 携带当前跳转的页面，登录后重新跳转该页面
+            replace: true,
+          };
+        }
+        return to;
+      }
+
+      // 是否已经生成过动态路由
+      if (accessStore.isAccessChecked) {
+        return true;
+      }
+
+      // 生成路由表
+      // 当前登录用户拥有的角色标识列表
+      const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
+      const userRoles = userInfo.roles ?? [];
+
+      // 生成菜单和路由
+      const { accessibleMenus, accessibleRoutes } = await generateAccess({
+        roles: userRoles.map((item) => item.code),
+        router,
+        // 则会在菜单中显示，但是访问会被重定向到403
+        routes: accessRoutes,
+      });
+
+      // 保存菜单信息和路由信息
+      accessStore.setAccessMenus(accessibleMenus);
+      accessStore.setAccessRoutes(accessibleRoutes);
+      accessStore.setIsAccessChecked(true);
+      const redirectPath = (from.query.redirect ??
+        (to.path === preferences.app.defaultHomePath
+          ? preferences.app.defaultHomePath
+          : to.fullPath)) as string;
+
+      return {
+        ...router.resolve(decodeURIComponent(redirectPath)),
+        replace: true,
+      };
+    } catch (error) {
+      const status = (error as { response?: { status?: number } })?.response
+        ?.status;
+      if (
+        status === 429 &&
+        to.path === RESOURCE_QUOTAS_PATH &&
+        accessStore.accessToken
+      ) {
+        return { path: RESOURCE_QUOTA_RECOVERY_PATH, replace: true };
+      }
+      throw error;
+    }
   });
 }
 

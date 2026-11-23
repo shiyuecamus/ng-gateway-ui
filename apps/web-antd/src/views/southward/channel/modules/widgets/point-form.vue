@@ -19,7 +19,7 @@ import { fetchDriverSchemasById } from '#/api/core/driver';
 import { getPointById } from '#/api/core/point';
 import {
   mapPointSchemasToForm,
-  projectActiveDriverConfig,
+  projectActiveConfig,
   sortDriverSchemas,
 } from '#/shared/dynamic-schema';
 
@@ -72,7 +72,7 @@ const [Modal, modalApi] = useVbenDrawer({
     emit('submit', type.value, recordId.value, {
       deviceId: deviceId.value as IdType,
       ...base,
-      driverConfig: projectActiveDriverConfig(
+      driverConfig: projectActiveConfig(
         pointSchemas.value,
         driverConfig as Record<string, any>,
       ) as Recordable<any>,

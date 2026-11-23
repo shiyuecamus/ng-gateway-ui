@@ -10,6 +10,7 @@ from asyncua import Server, ua
 from asyncua.server.internal_session import InternalSession
 from asyncua.server.binary_server_asyncio import OPCUAProtocol
 from asyncua.server.uaprocessor import UaProcessor
+from asyncua.ua.ua_binary import struct_from_binary
 
 
 async def main():
@@ -34,10 +35,54 @@ async def main():
             return original_send(processor, requesthandle, seqhdr, response, msgtype)
 
         UaProcessor.send_response = send
-    if mode in ["healthy", "polling"]:
+    if mode in ["healthy", "polling", "malformedAckResults"]:
         original_process = UaProcessor._process_message
+        original_response = UaProcessor.send_response
+
+        def send_publish_response(processor, requesthandle, seqhdr, response,
+                                  msgtype=ua.MessageType.SecureMessage):
+            if isinstance(response, ua.PublishResponse):
+                pending = getattr(processor, "_ng_publish_acknowledgements", {})
+                acknowledgements = pending.pop(requesthandle, None)
+                if acknowledgements is None:
+                    raise RuntimeError("Publish response has no original acknowledgement request")
+                if mode != "malformedAckResults":
+                    # asyncua 1.1.5 applies ACKs but omits their Results. Derive
+                    # each outcome from its actual pre-call retransmission queue;
+                    # the ordinary service still performs every ACK side effect.
+                    response.Parameters.Results = [ua.StatusCode(status)
+                                                   for _, _, status in acknowledgements]
+                    for subscription, sequence, status in acknowledgements:
+                        if status == ua.StatusCodes.Good:
+                            sub = processor.session.subscription_service.subscriptions.get(subscription)
+                            if sub is not None and sequence in sub._not_acknowledged_results:
+                                raise RuntimeError("Ordinary server failed to retire its acknowledged result")
+                print(json.dumps({"event": "publishAcknowledgements",
+                                  "requestHandle": requesthandle,
+                                  "expectedResultCount": len(acknowledgements),
+                                  "results": [status.value for status in response.Parameters.Results],
+                                  "stockMalformedResults": mode == "malformedAckResults"}), flush=True)
+            return original_response(processor, requesthandle, seqhdr, response, msgtype)
 
         async def process(processor, typeid, requesthdr, seqhdr, body):
+            if typeid == ua.NodeId(ua.ObjectIds.PublishRequest_Encoding_DefaultBinary) and processor.session:
+                params = struct_from_binary(ua.PublishParameters, body.copy())
+                pending = getattr(processor, "_ng_publish_acknowledgements", None)
+                if pending is None:
+                    pending = {}
+                    processor._ng_publish_acknowledgements = pending
+                if len(pending) >= 64 or requesthdr.RequestHandle in pending:
+                    raise RuntimeError("Original Publish acknowledgement request bound exceeded")
+                if len(params.SubscriptionAcknowledgements) > 64:
+                    raise RuntimeError("Original Publish acknowledgement operation bound exceeded")
+                outcomes = []
+                for ack in params.SubscriptionAcknowledgements:
+                    sub = processor.session.subscription_service.subscriptions.get(ack.SubscriptionId)
+                    status = (ua.StatusCodes.BadSubscriptionIdInvalid if sub is None
+                              else ua.StatusCodes.Good if ack.SequenceNumber in sub._not_acknowledged_results
+                              else ua.StatusCodes.BadSequenceNumberUnknown)
+                    outcomes.append((ack.SubscriptionId, ack.SequenceNumber, status))
+                pending[requesthdr.RequestHandle] = outcomes
             result = await original_process(processor, typeid, requesthdr, seqhdr, body)
             if typeid == ua.NodeId(ua.ObjectIds.PublishRequest_Encoding_DefaultBinary):
                 print(json.dumps({"event": "publishQueue", "connection": id(processor),
@@ -45,6 +90,7 @@ async def main():
             return result
 
         UaProcessor._process_message = process
+        UaProcessor.send_response = send_publish_response
     stopped = asyncio.Event()
     reindex = asyncio.Event()
     subscription_fault = asyncio.Event()
@@ -162,12 +208,11 @@ async def main():
                         task.cancel()
                     await asyncio.gather(*tasks, return_exceptions=True)
             values.update({name: await node.read_value() for name, node in nodes.items()})
-            # Close the owned listener before joining processors, so a reconnecting
-            # client cannot replenish BinaryServer.stop's closing-task queue.
+            # Stop accepting new clients before asyncua drains the existing ones.
+            # The context exit closes their transports before waiting for the listener.
             if server.bserver is None or server.bserver._server is None:
                 raise RuntimeError("The owned OPC UA listener is unavailable")
             server.bserver._server.close()
-            await server.bserver._server.wait_closed()
         reordered = True
         reindex.clear()
 

@@ -70,9 +70,13 @@ export namespace AppApi {
  * Fetch a paginated northward app list.
  * @param params - Pagination and filter parameters.
  */
-export async function fetchAppPage(params: AppApi.AppPageParams) {
+export async function fetchAppPage(
+  params: AppApi.AppPageParams,
+  signal?: AbortSignal,
+) {
   return requestClient.get<CommonPageResponse<AppInfo>>(AppApi.page, {
     params,
+    signal,
   });
 }
 
@@ -95,7 +99,17 @@ export async function createApp(payload: AppInfo) {
  * Update an existing northward app.
  * @param payload - App update payload.
  */
-export async function updateApp(payload: AppInfo) {
+export async function updateApp(
+  payload: Pick<
+    AppInfo,
+    | 'config'
+    | 'description'
+    | 'expectedRevision'
+    | 'id'
+    | 'name'
+    | 'retryPolicy'
+  >,
+) {
   return requestClient.put<boolean>(AppApi.base, payload);
 }
 

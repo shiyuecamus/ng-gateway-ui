@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { EngineeringDiagnostic } from './engineering-evidence';
+
 import type {
   AssetInfo,
   EngineeringStatus,
@@ -24,7 +26,10 @@ import {
 import { getEngineeringAsset, uploadNsd } from '#/api/core/engineering';
 import EvidenceDigest from '#/shared/components/evidence-digest.vue';
 
-import { describeFailure } from './engineering-evidence';
+import {
+  engineeringFailure,
+  renderEngineeringDiagnostic,
+} from './engineering-evidence';
 
 const props = defineProps<{ status: EngineeringStatus | null }>();
 const key = 'page.southward.channel.engineering.nsd';
@@ -33,7 +38,7 @@ const asset = ref<AssetInfo | null>(null);
 const role = ref<NsdRole>();
 const roleId = useId();
 const loading = ref(false);
-const error = ref('');
+const error = ref<EngineeringDiagnostic>('');
 const available = computed(
   () => props.status?.nsdImportAvailable && !loading.value,
 );
@@ -68,7 +73,7 @@ async function load(operation: (signal: AbortSignal) => Promise<AssetInfo>) {
     const result = await operation(controller.signal);
     if (request !== controller || controller.signal.aborted) return;
     if (result.source.kind !== 'nsd') {
-      error.value = $t(`${key}.wrongRole`);
+      error.value = { key: `${key}.wrongRole` };
       return;
     }
     asset.value = result;
@@ -76,7 +81,7 @@ async function load(operation: (signal: AbortSignal) => Promise<AssetInfo>) {
     digest.value = result.digest;
   } catch (error_) {
     if (request === controller && !controller.signal.aborted)
-      error.value = describeFailure(error_, $t(`${key}.failed`));
+      error.value = engineeringFailure(error_, `${key}.failed`);
   } finally {
     if (request === controller) loading.value = false;
   }
@@ -85,9 +90,10 @@ async function load(operation: (signal: AbortSignal) => Promise<AssetInfo>) {
 async function selectFile(file: File) {
   if (!available.value || !props.status || !role.value) return false;
   if (file.size === 0 || file.size > props.status.maxInputBytes) {
-    error.value = $t('page.southward.channel.engineering.sizeRejected', {
-      bytes: props.status.maxInputBytes,
-    });
+    error.value = {
+      key: 'page.southward.channel.engineering.sizeRejected',
+      values: { bytes: props.status.maxInputBytes },
+    };
     return false;
   }
   const selectedRole = role.value;
@@ -121,7 +127,12 @@ defineExpose({ reset });
       <p class="text-sm text-muted-foreground">
         {{ $t(`${key}.description`) }}
       </p>
-      <Alert v-if="error" type="error" show-icon :message="error" />
+      <Alert
+        v-if="error"
+        type="error"
+        show-icon
+        :message="renderEngineeringDiagnostic(error)"
+      />
       <div class="flex flex-wrap items-center gap-2">
         <label :for="roleId" class="sr-only">{{ $t(`${key}.role`) }}</label>
         <Select

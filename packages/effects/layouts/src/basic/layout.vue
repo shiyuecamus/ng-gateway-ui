@@ -36,6 +36,7 @@ import { LayoutTabbar } from './tabbar';
 
 defineOptions({ name: 'BasicLayout' });
 
+const props = defineProps<{ preservePageOnLocaleChange?: boolean }>();
 const emit = defineEmits<{ clearPreferencesAndLogout: []; clickLogo: [] }>();
 
 const {
@@ -195,9 +196,20 @@ function refreshAll() {
   refresh();
 }
 
-// 语言更新后，刷新页面
-// i18n.global.locale会在preference.app.locale变更之后才会更新，因此watchpreference.app.locale是不合适的，刷新页面时可能语言配置尚未完全加载完成
-watch(i18n.global.locale, refreshAll, { flush: 'post' });
+watch(
+  i18n.global.locale,
+  () => {
+    if (props.preservePageOnLocaleChange) {
+      // Keep the live editor mounted while invalidating other cached pages.
+      for (const name of tabbarStore.cachedTabs) {
+        if (name !== route.name) tabbarStore.cachedTabs.delete(name);
+      }
+      return;
+    }
+    refreshAll();
+  },
+  { flush: 'post' },
+);
 
 // 时区更新后，刷新页面
 watch(() => timezoneStore.timezone, refreshAll, { flush: 'post' });

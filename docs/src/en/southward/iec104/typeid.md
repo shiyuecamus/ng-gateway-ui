@@ -1,82 +1,47 @@
 ---
-title: 'IEC104 TypeID & Point Modeling Best Practices'
-description: 'How to choose Point typeId/IOA, how to handle Single Point/Double Point/Telemetry/Integrated Totals, and value type requirements for Write Commands (C_*).'
+title: 'IEC104 TypeID and point modeling'
+description: 'Full CA/TypeID/IOA identity, original status and quality, signed values and downlink protocol units.'
 ---
 
-## 1) How Driver Maps Uplink ASDU to Point
+## 1. Complete point identity
 
-NG Gateway IEC104 driver internally uses `(typeId, ioa)` as key to match points:
+A Channel can carry multiple CAs. Device configuration supplies `ca`; a Point supplies `typeId` and the full 24-bit `ioa` (`0..16777215`). Station address, monitoring TypeID and IOA must all match. Different TypeIDs at one IOA are distinct matching entries, not shortened addresses or interchangeable neighboring types.
 
--   `typeId`: ASDU TypeID in point configuration (u8)
--   `ioa`: Information Object Address in point configuration
+They are not necessarily separate physical control objects. Control exclusion follows CA/IOA, so changing a command TypeID cannot bypass an unresolved operation or select the same target twice.
 
-Therefore:
+## 2. Model status, value and quality separately
 
--   **Same IOA under different TypeID are different points**
--   If you configure Point TypeID wrong, even if IOA is correct, data will not be matched
+| Type | Meaning to retain | Recommended DataType |
+| --- | --- | --- |
+| M*SP*\* | Boolean single-point status with independent quality | Boolean |
+| M*DP*\* | `0` intermediate, `1` OFF, `2` ON, `3` indeterminate | UInt8 |
+| M*ST*\* | Signed `-64..63`; transient is independent | Int16 |
+| M*BO*\* | Full unsigned 32-bit pattern | UInt32 |
+| Normalized M*ME*\* | Signed raw count divided by `32768` | Float32 / Float64 |
+| Scaled M*ME*\* | Signed 16-bit value | Int16 / Float64 |
+| Short-float M*ME*\* | IEEE754 short float | Float32 / Float64 |
+| M*IT*\* | Signed 32-bit counter; SQ/CY/CA/IV are not value bits | Int32 / Int64 |
 
-## 2) How to Choose DataType for Common Uplink Types (M_*)
+Intermediate/indeterminate double-point status is not OFF. Preserve counter sign. Units, scaling and overflow semantics come from the actual device mapping, not an assumed energy unit. Protection EI means invalid elapsed time rather than measurement overflow.
 
-### Single Point (M_SP_*)
+Observe quality details, Test and source-time flags independently of value. Invalid, non-topical, substituted, blocked or overflow facts cannot become normal through conversion. CP24/CP56 source-time facts differ from gateway receive time. Without explicit zone/century information, do not manufacture a complete UTC source timestamp.
 
-Semantics: Switch/Status (1 bit)
-Recommendation:
+## 3. Writes use protocol units
 
--   `DataType = Boolean`
+WritePoint maps supported monitoring types to their commands. Action inputs configure command TypeIDs. Each input supplies its own IOA, data type and `controlMode`. See the [command table](./index.md#_4-process-control).
 
-### Double Point (M_DP_*)
+- Single command: Boolean or exact numeric `0/1`.
+- Double command: exact `1` OFF or `2` ON; `0/3` are invalid control states.
+- Regulating command: exact `1` LOWER or `2` HIGHER, not an absolute position.
+- Normalized setpoint: finite `[-1, 32767/32768]`, using Float64 protocol units; `0.5` corresponds to raw count `16384`.
+- Scaled setpoint: an exact signed 16-bit integer.
+- Short-float setpoint: a number representable as a finite short float.
+- Bitstring: an exact unsigned 32-bit integer; UInt32 includes `4294967295`; only `direct` is supported.
 
-Semantics: Double point status, usually value 0..3 (e.g., Intermediate/On/Off/Indeterminate, specific to protocol)
-Recommendation:
+Core applies its configured inverse transform once. Do not scale again, reduce states modulo a width, or truncate fractions. Boolean does not replace double/regulating commands; strings and byte blobs do not replace numbers.
 
--   `DataType = UInt8` (Preserve raw semantics)
--   Or map 0..3 to business enum in edge computing layer (More readable)
+## 4. Monitoring facts and operation outcomes
 
-### 32bit Bit String (M_BO_*)
+Link ACK is not application confirmation, and positive selection is not execution. Interpret protocol acceptance, completion, unknown outcome and independent monitoring separately. Reuse the original operation for one business intent; reconnection, a matching readback or a new Action does not justify inference or replay.
 
-Semantics: 32-bit bit string (e.g., Fault Word, Alarm Word)
-Recommendation:
-
--   `DataType = UInt32`
-
-### Telemetry (M_ME_*)
-
-IEC104 Telemetry has multiple expressions:
-
--   Normalized (M_ME_NA/ND)
--   Scaled (M_ME_NB)
--   Short Float (M_ME_NC)
-
-Recommendation:
-
--   Prioritize consistency with field RTU/Master Station agreement
--   For "Engineering Value" telemetry, recommend `Float32/Float64`, combined with `scale` for unit conversion
-
-### Integrated Totals (M_IT_*)
-
-Semantics: Energy/Cumulative Count
-Recommendation:
-
--   `DataType = Int64` or `UInt64`
-
-## 3) Value Type Requirements for Write Command Types (C_*)
-
-When writing (WritePoint / Action Parameter), the driver will force convert input value to target type according to Command TypeID:
-
--   C_SC_*: bool
--   C_DC_*: u8
--   C_RC_*: u8
--   C_SE_* (NA/NB): i16
--   C_SE_* (NC): f32
--   C_BO_*: i32
-
-::: tip Best Practice
-Point/Parameter `data_type` should be consistent with command semantics, so core type validation and driver conversion will be more predictable.
-:::
-
-## 4) How to Model CA (Common Address)
-
-CA is modeled as Device configuration:
-
--   **One CA One Device** is the most common practice
--   When multiple CAs exist on the same TCP link, create multiple Devices sharing one Channel
+Device CA metadata accepts `1..65535`; control and GI/CI needing one responder use `1..65534`. GI/CI uses the channel read-interrogation entry rather than a fabricated point write or dummy Action.

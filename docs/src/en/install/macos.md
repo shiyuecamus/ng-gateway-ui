@@ -51,19 +51,20 @@ rm -rf "$(brew --prefix)/var/lib/ng-gateway"
 rm -f "$(brew --prefix)/var/log/ng-gateway.log" \
       "$(brew --prefix)/var/log/ng-gateway.error.log"
 ```
+
 :::
 
 ## 3. Runtime Directories
 
--   **Runtime Directory**: `$(brew --prefix)/var/lib/ng-gateway/`
--   **Configuration File**: `$(brew --prefix)/var/lib/ng-gateway/gateway.toml`
+- **Runtime Directory**: `$(brew --prefix)/var/lib/ng-gateway/`
+- **Configuration File**: `$(brew --prefix)/var/lib/ng-gateway/gateway.toml`
 
 Default ports and access conventions:
 
--   **HTTP**: `8978`
--   **HTTPS**: `8979`
--   **API Prefix**: `/api`
--   **UI Mode**: `embedded_zip`
+- **HTTP**: `8978`
+- **HTTPS**: `8979`
+- **API Prefix**: `/api`
+- **UI Mode**: `embedded`
 
 ## 4. Modify Configuration
 
@@ -100,12 +101,12 @@ tail -f "$(brew --prefix)/var/log/ng-gateway.log"
 tail -f "$(brew --prefix)/var/log/ng-gateway.error.log"
 ```
 
-::: tip
-If you are not sure where the service writes logs, you can first check the service status/definition:
+::: tip If you are not sure where the service writes logs, you can first check the service status/definition:
 
 ```bash
 brew services info ng-gateway
 ```
+
 :::
 
 ## 6. Health Check
@@ -118,10 +119,10 @@ curl -fsS "http://127.0.0.1:8978/health" && echo
 
 ## 7. Default Access Address
 
--   **UI**: `http://<host-ip>:8978/`
--   **API**: `http://<host-ip>:8978/api`
+- **UI**: `http://<host-ip>:8978/`
+- **API**: `http://<host-ip>:8978/api`
 
 ::: tip
--   Default Account: system_admin
--   Default Password: system_admin
-:::
+
+- Default Account: system_admin
+- Default Password: system_admin :::

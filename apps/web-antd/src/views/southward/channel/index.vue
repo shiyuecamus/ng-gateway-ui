@@ -4,13 +4,13 @@ import type { ChannelInfo, IdType, Recordable } from '@vben/types';
 
 import type { OnActionClickParams, VxeGridProps } from '#/adapter/vxe-table';
 
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { confirm, Page, useVbenDrawer, useVbenModal } from '@vben/common-ui';
 import { FormOpenType } from '@vben/constants';
 import { useRequestHandler } from '@vben/hooks';
-import { $t } from '@vben/locales';
+import { $t, i18n } from '@vben/locales';
 import { CommonStatus, EntityType } from '@vben/types';
 
 import { useIntervalFn } from '@vueuse/core';
@@ -26,7 +26,7 @@ import {
 } from '#/api';
 import { activateChannel } from '#/api/core/channel';
 
-import { searchFormSchema, useColumns } from './modules/schemas';
+import { useChannelSearchFormSchema, useColumns } from './modules/schemas';
 import OpcuaClientCertificateModal from './modules/widgets/certificate.vue';
 import ConfigViewer from './modules/widgets/config-viewer.vue';
 import EngineeringModal from './modules/widgets/engineering.vue';
@@ -46,7 +46,7 @@ let refreshingConfigurations = false;
 const formOptions: VbenFormProps = {
   // 默认展开
   collapsed: true,
-  schema: searchFormSchema,
+  schema: useChannelSearchFormSchema(),
   // 控制表单是否显示折叠按钮
   showCollapseButton: true,
   // 按下回车时是否提交表单
@@ -102,6 +102,10 @@ const gridOptions: VxeGridProps<ChannelInfo> = {
 
 type ChannelGridApi = {
   query: () => Promise<unknown>;
+  setState: (state: {
+    formOptions: Pick<VbenFormProps, 'schema'>;
+    gridOptions: Pick<VxeGridProps<ChannelInfo>, 'columns'>;
+  }) => void;
 };
 
 // Note: vxe-table's `DeepPartial<...>` generics can cause TS(2589) (excessively deep instantiation).
@@ -112,6 +116,13 @@ const [Grid, gridApi] = (
 )({
   formOptions,
   gridOptions,
+});
+
+watch(i18n.global.locale, () => {
+  gridApi.setState({
+    formOptions: { schema: useChannelSearchFormSchema() },
+    gridOptions: { columns: useColumns(onActionClick) },
+  });
 });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({

@@ -208,7 +208,9 @@ async function handleSubmit(values: Record<string, any>) {
       modalApi.close();
     },
     (error) => {
-      console.error(error);
+      console.error(
+        error?.response?.data?.message ?? error?.message ?? 'Request failed',
+      );
     },
   ).finally(() => {
     saving.value = false;

@@ -51,6 +51,7 @@ rm -rf "$(brew --prefix)/var/lib/ng-gateway"
 rm -f "$(brew --prefix)/var/log/ng-gateway.log" \
       "$(brew --prefix)/var/log/ng-gateway.error.log"
 ```
+
 :::
 
 ## 3. 运行时目录
@@ -63,7 +64,7 @@ rm -f "$(brew --prefix)/var/log/ng-gateway.log" \
 - **HTTP**：`8978`
 - **HTTPS**：`8979`
 - **API 前缀**：`/api`
-- **UI 模式**：`embedded_zip`
+- **UI 模式**：`embedded`
 
 ## 4. 修改配置
 
@@ -100,12 +101,12 @@ tail -f "$(brew --prefix)/var/log/ng-gateway.log"
 tail -f "$(brew --prefix)/var/log/ng-gateway.error.log"
 ```
 
-::: tip
-如果你不确定服务具体把日志写到了哪里，可以先查看服务状态/定义：
+::: tip如果你不确定服务具体把日志写到了哪里，可以先查看服务状态/定义：
 
 ```bash
 brew services info ng-gateway
 ```
+
 :::
 
 ## 6. 健康检查
@@ -122,6 +123,6 @@ curl -fsS "http://127.0.0.1:8978/health" && echo
 - **API**：`http://<host-ip>:8978/api`
 
 ::: tip
+
 - 默认账号: system_admin
-- 默认密码: system_admin
-:::
+- 默认密码: system_admin :::

@@ -52,6 +52,12 @@ interface QueuePolicy {
   deliveryMaxPayloadBytes: number;
   deliveryTimeoutMs: number;
   deliveryRetryMs: number;
+  /** Maximum retained replies across queue and in-flight work. */
+  replyCapacity: number;
+  /** Reply memory budget including encoding headroom. */
+  replyMaxBytes: number;
+  /** Reply attempts in addition to the ordinary delivery window. */
+  replyMaxInFlight: number;
 }
 
 /**

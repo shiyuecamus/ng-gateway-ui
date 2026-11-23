@@ -11,15 +11,11 @@ description: 'Install and operate NG Gateway on Linux: deb/rpm + systemd (Recomm
 
 Please download the `.deb` / `.rpm` matching your distribution and architecture from the [Release Page](https://github.com/shiyuecamus/ng-gateway/releases):
 
-::: tip
-If you are unsure of the target machine architecture, you can use `uname -m` (e.g., `x86_64` / `aarch64`) to quickly confirm.
-:::
+::: tip If you are unsure of the target machine architecture, you can use `uname -m` (e.g., `x86_64` / `aarch64`) to quickly confirm. :::
 
 ### 1.2 Install
 
-::: warning Note
-Package management commands vary slightly across distributions; package filenames are subject to actual release.
-:::
+::: warning Note Package management commands vary slightly across distributions; package filenames are subject to actual release. :::
 
 **Debian/Ubuntu (.deb)**:
 
@@ -74,8 +70,7 @@ sudo rpm -e ng-gateway
 
 > Note: Uninstalling the package generally does not automatically delete data under `/var/lib/ng-gateway/` to avoid accidental deletion of production data.
 
-::: warning Complete Uninstallation
-Linux package installation follows the best practice of "uninstalling the program does not automatically delete the data directory". Therefore, if you confirm that you want to clean up the runtime directory and data, please manually execute the following steps.
+::: warning Complete Uninstallation Linux package installation follows the best practice of "uninstalling the program does not automatically delete the data directory". Therefore, if you confirm that you want to clean up the runtime directory and data, please manually execute the following steps.
 
 ```bash
 # 1) Stop and disable the service (if you no longer need it)
@@ -93,34 +88,30 @@ sudo rpm -e ng-gateway
 sudo rm -rf /var/lib/ng-gateway
 
 ```
+
 :::
 
 ## 3. Runtime Directories
 
-::: tip
-Linux packaging follows the standard layout of "Read-only Installation Area + Independent Configuration + Independent Writable Runtime Directory".
-:::
+::: tip Linux packaging follows the standard layout of "Read-only Installation Area + Independent Configuration + Independent Writable Runtime Directory". :::
 
--   **Installation Area**: `/opt/ng-gateway/`
-    -   `bin/ng-gateway-bin`
-    -   `drivers/builtin/*.so`
-    -   `plugins/builtin/*.so`
--   **Configuration File**: `/etc/ng-gateway/gateway.toml`
--   **Runtime Directory (WorkingDirectory)**: `/var/lib/ng-gateway/`
-    -   `data/ng-gateway.db` (Automatically created and migrated by SQLite on first startup)
-    -   `drivers/`, `plugins/`, `certs/`, `pki/`, etc.
+- **Installation Area**: `/opt/ng-gateway/`
+  - `bin/ng-gateway-bin`
+  - `drivers/builtin/*.so`
+  - `plugins/builtin/*.so`
+- **Configuration File**: `/etc/ng-gateway/gateway.toml`
+- **Runtime Directory (WorkingDirectory)**: `/var/lib/ng-gateway/`
+  - `data/ng-gateway.db` (Automatically created and migrated by SQLite on first startup)
+  - `drivers/`, `plugins/`, `certs/`, `pki/`, etc.
 
 Default ports and access conventions (subject to `gateway.toml` included in the Linux distribution package):
 
--   **HTTP**: `8978`
--   **HTTPS**: `8979`
--   **API Prefix**: `/api`
--   **UI Mode**: `embedded_zip`
+- **HTTP**: `8978`
+- **HTTPS**: `8979`
+- **API Prefix**: `/api`
+- **UI Mode**: `embedded`
 
-::: tip Why must there be a stable WorkingDirectory?
-The gateway writes the paths of driver/plugin as "relative paths to the runtime root directory" into SQLite (e.g., `./drivers/builtin/libng_driver_modbus.so`).
-Therefore, the systemd unit fixes `WorkingDirectory=/var/lib/ng-gateway` to ensure paths are available long-term and easy to migrate and backup.
-:::
+::: tip Why must there be a stable WorkingDirectory? The gateway writes the paths of driver/plugin as "relative paths to the runtime root directory" into SQLite (e.g., `./drivers/builtin/libng_driver_modbus.so`). Therefore, the systemd unit fixes `WorkingDirectory=/var/lib/ng-gateway` to ensure paths are available long-term and easy to migrate and backup. :::
 
 ## 4. Modify Configuration
 
@@ -154,10 +145,10 @@ curl -fsS "http://127.0.0.1:8978/health" && echo
 
 ## 7. Default Access Address
 
--   **UI**: `http://<host-ip>:8978/`
--   **API**: `http://<host-ip>:8978/api`
+- **UI**: `http://<host-ip>:8978/`
+- **API**: `http://<host-ip>:8978/api`
 
 ::: tip
--   Default Account: system_admin
--   Default Password: system_admin
-:::
+
+- Default Account: system_admin
+- Default Password: system_admin :::

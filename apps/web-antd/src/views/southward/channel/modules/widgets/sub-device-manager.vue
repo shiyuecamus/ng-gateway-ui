@@ -134,7 +134,6 @@ const gridOptions: VxeGridProps<DeviceInfo> = {
         title: isDevicePointsImport
           ? ($t('page.southward.channel.importDevicePoints') as string)
           : ($t('page.southward.device.importTitle') as string),
-        allowCommitWithErrors: true,
         onDone: async () => {
           await gridApi.query();
         },

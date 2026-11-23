@@ -56,8 +56,9 @@ const cancelAttempt = ref<null | {
   reason: string;
 }>(null);
 let cancellationRequest: AbortController | null = null;
+let detailRequest: AbortController | null = null;
 let timer: ReturnType<typeof setTimeout> | undefined;
-let generation = 0;
+let operationGeneration = 0;
 const state = computed(() => details.value?.operation.state);
 const target = computed(() => {
   const snapshot = details.value?.operation.targetSnapshot;
@@ -66,10 +67,18 @@ const target = computed(() => {
     : {};
 });
 
-async function refresh(expected = generation) {
+async function refresh(expected = operationGeneration) {
+  if (expected !== operationGeneration) return;
+  clearTimeout(timer);
+  detailRequest?.abort();
+  const controller = new AbortController();
+  detailRequest = controller;
   try {
-    const response = await getControlOperation(props.operationId);
-    if (expected !== generation) return;
+    const response = await getControlOperation(
+      props.operationId,
+      controller.signal,
+    );
+    if (expected !== operationGeneration || controller.signal.aborted) return;
     details.value = response;
     error.value = '';
     if (
@@ -79,7 +88,10 @@ async function refresh(expected = generation) {
       timer = setTimeout(() => void refresh(expected), 1000);
     }
   } catch (error_) {
-    if (expected === generation) error.value = String(error_);
+    if (expected === operationGeneration && !controller.signal.aborted)
+      error.value = String(error_);
+  } finally {
+    if (detailRequest === controller) detailRequest = null;
   }
 }
 
@@ -93,7 +105,7 @@ async function requestCancellation() {
     busy.value
   )
     return;
-  const expected = generation;
+  const expected = operationGeneration;
   const attempt = cancelAttempt.value ?? {
     id: original.operationId,
     fingerprint: original.fingerprint,
@@ -112,14 +124,16 @@ async function requestCancellation() {
       attempt.reason,
       controller.signal,
     );
-    if (expected !== generation || controller.signal.aborted) return;
-    clearTimeout(timer);
+    if (expected !== operationGeneration || controller.signal.aborted) return;
     await refresh(expected);
   } catch (error_) {
-    if (expected === generation && !controller.signal.aborted)
+    if (expected === operationGeneration && !controller.signal.aborted)
       error.value = String(error_);
   } finally {
-    if (expected === generation && cancellationRequest === controller) {
+    if (
+      expected === operationGeneration &&
+      cancellationRequest === controller
+    ) {
       busy.value = false;
       cancellationRequest = null;
     }
@@ -136,7 +150,7 @@ async function reconcile() {
     busy.value
   )
     return;
-  const expected = generation;
+  const expected = operationGeneration;
   busy.value = true;
   try {
     await reconcileControl(
@@ -147,25 +161,18 @@ async function reconcile() {
         operatorVerification: evidence.value,
       },
     );
-    if (expected === generation) {
-      clearTimeout(timer);
-      await refresh(expected);
-    }
+    await refresh(expected);
   } catch (error_) {
-    if (expected === generation) error.value = String(error_);
+    if (expected === operationGeneration) error.value = String(error_);
   } finally {
-    if (expected === generation) busy.value = false;
+    if (expected === operationGeneration) busy.value = false;
   }
-}
-
-function reload() {
-  clearTimeout(timer);
-  void refresh(++generation);
 }
 
 watch(
   () => props.operationId,
   () => {
+    operationGeneration += 1;
     details.value = undefined;
     busy.value = false;
     error.value = '';
@@ -177,13 +184,14 @@ watch(
     cancellationRequest = null;
     reason.value = '';
     evidence.value = '';
-    reload();
+    void refresh();
   },
   { immediate: true },
 );
 onBeforeUnmount(() => {
   cancellationRequest?.abort();
-  generation++;
+  detailRequest?.abort();
+  operationGeneration += 1;
   clearTimeout(timer);
 });
 </script>
@@ -193,7 +201,7 @@ onBeforeUnmount(() => {
     <div class="flex flex-wrap items-center gap-2">
       <StateTag v-if="state" :state="state" />
       <code class="break-all text-xs">{{ operationId }}</code>
-      <Button size="small" @click="reload">
+      <Button size="small" @click="refresh()">
         {{ $t('page.control.refresh') }}
       </Button>
     </div>

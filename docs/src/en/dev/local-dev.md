@@ -9,18 +9,14 @@ This chapter is for R&D colleagues, aiming to: **Backend/Driver/Plugin** and **U
 
 ## Development Workflow Overview
 
--   **Backend (Gateway + drivers/plugins)**: Use `cargo xtask build` for unified build and deployment
--   **Web UI (Console)**: Use `pnpm dev:antd` to start Vite dev server, use proxy to integrate with backend
+- **Backend (Gateway + drivers/plugins)**: Use `cargo xtask build` for unified build and deployment
+- **Web UI (Console)**: Use `pnpm dev:antd` to start Vite dev server, use proxy to integrate with backend
 
-:::: tip Why not recommend frequent UI build during development?
-`cargo xtask build` builds UI and packages by default, which leans more towards "Integration Build/Release".
-When UI changes frequently during development, suggest using dev server directly (HMR + Faster incremental build), only run UI build once when verifying "Gateway Built-in UI Static Resources".
-::::
+:::: tip Why not recommend frequent UI build during development? `cargo xtask build` builds UI and packages by default, which leans more towards "Integration Build/Release". When UI changes frequently during development, suggest using dev server directly (HMR + Faster incremental build), only run UI build once when verifying "Gateway Built-in UI Static Resources". ::::
 
 ## 0. Prerequisites
 
-Please complete: **Rust Toolchain** and **System Dependencies** in [`Source Build Installation`](../install/source-build.md).
-UI/Docs also need Node + pnpm (Version requirements see `engines` in `ng-gateway-ui/package.json`).
+Please complete: **Rust Toolchain** and **System Dependencies** in [`Source Build Installation`](../install/source-build.md). UI/Docs also need Node + pnpm (Version requirements see `engines` in `ng-gateway-ui/package.json`).
 
 ## 1. Start Gateway Backend
 
@@ -37,7 +33,8 @@ cargo xtask build --profile debug --without-ui
 ### 1.2 Run
 
 ```bash
-./target/debug/ng-gateway-bin --config ./gateway.toml
+cohort="$(cargo xtask cohort-dir --profile debug)" &&
+  "$cohort/ng-gateway-bin" --config ./gateway.toml
 ```
 
 Health Check:
@@ -60,13 +57,13 @@ pnpm dev:antd
 
 `web-antd` Vite dev server has built-in proxy (See `ng-gateway-ui/apps/web-antd/vite.config.mts`):
 
--   Browser access `http://localhost:<vite-port>/api/...`
--   Vite proxies request to **Backend** `http://localhost:5678/api/...` (And enables ws)
+- Browser access `http://localhost:<vite-port>/api/...`
+- Vite proxies request to **Backend** `http://localhost:5678/api/...` (And enables ws)
 
 ::: warning
 
--   **Recommend running local backend on `5678`** (Use repo default `gateway.toml`)
--   If you modify backend port, please synchronously modify proxy `target` in `vite.config.mts`
+- **Recommend running local backend on `5678`** (Use repo default `gateway.toml`)
+- If you modify backend port, please synchronously modify proxy `target` in `vite.config.mts`
 
 :::
 
@@ -74,14 +71,13 @@ pnpm dev:antd
 
 ### 3.1 Do not run gateway in wrong directory
 
-If you don't start in repository root, default relative paths may fail (e.g., `gateway.toml`, `./drivers`, `./plugins`, `./data`).
-Safest way is: **Always run in repository root**, or explicitly use `--config` to specify full path of config file.
+If you don't start in repository root, default relative paths may fail (e.g., `gateway.toml`, `./drivers`, `./plugins`, `./data`). Safest way is: **Always run in repository root**, or explicitly use `--config` to specify full path of config file.
 
 ### 3.2 UI Static Resources Provided by Gateway vs Dev Server
 
--   **dev server (Recommended)**: Frontend iteration fast, supports HMR
--   **Gateway filesystem mode**: Used to verify "Final Deployment Form" (e.g., docker image puts dist into `/app/ui`)
--   **Gateway embedded_zip mode**: Used for single binary release (Homebrew etc.)
+- **dev server (Recommended)**: Frontend iteration fast, supports HMR
+- **Gateway filesystem mode**: Used to verify "Final Deployment Form" (e.g., the Docker builder publishes the V2 store into `/app/ui`)
+- **Gateway embedded mode**: Used for single binary release (Homebrew etc.)
 
 When doing UI development, suggest fixing "Page Access Entry" to dev server address; only use backend as API service.
 
@@ -117,19 +113,19 @@ cargo xtask clean --all
 
 Default `cargo xtask build` will:
 
--   **Discover and build all driver/plugin crates**
-    -   drivers: `ng-gateway-southward/*`
-    -   plugins: `ng-gateway-northward/*`
--   **Build `ng-gateway-bin`**
--   **Deploy dynamic libraries by platform extension** to:
-    -   `drivers/builtin/libng_driver_*.{so|dylib|dll}`
-    -   `plugins/builtin/libng_plugin_*.{so|dylib|dll}`
--   **Optionally build UI**: Default builds `ng-gateway-ui/apps/web-antd` and packages as `ng-gateway-web/ui-dist.zip`
+- **Discover and build all driver/plugin crates**
+  - drivers: `ng-gateway-southward/*`
+  - plugins: `ng-gateway-northward/*`
+- **Build `ng-gateway-bin`**
+- **Deploy dynamic libraries by platform extension** to:
+  - `drivers/builtin/libng_driver_*.{so|dylib|dll}`
+  - `plugins/builtin/libng_plugin_*.{so|dylib|dll}`
+- **Optionally build UI**: Default builds `ng-gateway-ui/apps/web-antd` and packages as `ng-gateway-web/ui-dist`
 
 > Key Constraint: driver/plugin crate must configure `[lib] crate-type = ["cdylib", "rlib"]` in `Cargo.toml`, and crate name recommends following:
 >
-> -   driver: `ng-driver-xxx` → Artifact filename `libng_driver_xxx.*`
-> -   plugin: `ng-plugin-yyy` → Artifact filename `libng_plugin_yyy.*`
+> - driver: `ng-driver-xxx` → Artifact filename `libng_driver_xxx.*`
+> - plugin: `ng-plugin-yyy` → Artifact filename `libng_plugin_yyy.*`
 
 ### 5.3 How to debug only one driver/plugin?
 
@@ -143,7 +139,8 @@ cargo build -p ng-driver-modbus -p ng-gateway-bin
 cargo xtask deploy --profile debug
 
 # 3) Restart gateway process (Dynamic library loading happens at startup phase; replacing file during runtime not guaranteed to take effect)
-./target/debug/ng-gateway-bin --config ./gateway.toml
+cohort="$(cargo xtask cohort-dir --profile debug)" &&
+  "$cohort/ng-gateway-bin" --config ./gateway.toml
 ```
 
 > Note: `deploy` will copy all built `libng_driver_*`/`libng_plugin_*` by filename glob, so "Build one crate + deploy" can achieve "Replace only one dynamic library".

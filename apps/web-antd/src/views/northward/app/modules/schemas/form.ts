@@ -92,7 +92,7 @@ export function useRetryPolicyFormSchema(): FormSchema[] {
         unit: $t('ui.unit.milliseconds'),
       }),
       controlClass: 'w-full',
-      componentProps: { min: 0 },
+      componentProps: { min: 1 },
       rules: 'required',
       defaultValue: 1000,
     },
@@ -104,7 +104,7 @@ export function useRetryPolicyFormSchema(): FormSchema[] {
         unit: $t('ui.unit.milliseconds'),
       }),
       controlClass: 'w-full',
-      componentProps: { min: 0 },
+      componentProps: { min: 1 },
       rules: 'required',
       defaultValue: 30_000,
     },
@@ -154,6 +154,9 @@ export function useQueuePolicyFormSchema(): FormSchema[] {
         ['deliveryMaxPayloadBytes', 262_144, 1_073_741_824],
         ['deliveryTimeoutMs', 30_000, 300_000],
         ['deliveryRetryMs', 1000, 300_000],
+        ['replyCapacity', 64, 1_000_000],
+        ['replyMaxBytes', 33_554_432, 1_073_741_824],
+        ['replyMaxInFlight', 16, 1024],
       ] as const
     ).map(([field, defaultValue, max]) => ({
       component: 'InputNumber',
@@ -208,7 +211,7 @@ export function useQueuePolicyFormSchema(): FormSchema[] {
       controlClass: 'w-full',
       componentProps: { min: 0 },
       rules: 'required',
-      defaultValue: 5000,
+      defaultValue: 1000,
       dependencies: {
         triggerFields: ['queuePolicy.dropPolicy'],
         if: (values) => {
@@ -240,7 +243,7 @@ export function useQueuePolicyFormSchema(): FormSchema[] {
       controlClass: 'w-full',
       componentProps: { min: 1 },
       rules: 'required',
-      defaultValue: 8192,
+      defaultValue: 1000,
       dependencies: {
         triggerFields: ['queuePolicy.bufferEnabled'],
         if: (values) => {

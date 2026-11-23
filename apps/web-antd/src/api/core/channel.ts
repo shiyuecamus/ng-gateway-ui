@@ -61,9 +61,13 @@ export async function clearChannelLogLevel(id: IdType) {
  * @param params - Channel page params
  * @returns Promise with channel page response
  */
-export async function fetchChannelPage(params: ChannelApi.ChannelPageParams) {
+export async function fetchChannelPage(
+  params: ChannelApi.ChannelPageParams,
+  signal?: AbortSignal,
+) {
   return requestClient.get<CommonPageResponse<ChannelInfo>>(ChannelApi.page, {
     params,
+    signal,
   });
 }
 

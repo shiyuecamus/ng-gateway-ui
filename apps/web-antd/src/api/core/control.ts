@@ -156,9 +156,10 @@ export function getControlCapabilities() {
   return requestClient.get<ControlCapabilities>('/control/capabilities');
 }
 
-export function getControlOperation(id: string) {
+export function getControlOperation(id: string, signal?: AbortSignal) {
   return requestClient.get<ControlDetails>(
     `/control/operations/${encodeURIComponent(id)}`,
+    { signal },
   );
 }
 

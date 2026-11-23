@@ -1,6 +1,35 @@
 import type { MmsAlternateAccess } from '#/api/core/capability';
 import type { GooseSourceRequest } from '#/api/core/engineering';
 
+import { $t } from '@vben/locales';
+
+export type EngineeringDiagnostic =
+  | string
+  | { key: string; values?: Record<string, number | string> };
+
+/** Keep the key for a local validation error until rendering. */
+export class EngineeringValidationError extends Error {
+  constructor(readonly key: string) {
+    super(key);
+  }
+}
+
+export function engineeringFailure(
+  cause: unknown,
+  fallbackKey: string,
+): EngineeringDiagnostic {
+  if (cause instanceof EngineeringValidationError) return { key: cause.key };
+  return describeFailure(cause, '') || { key: fallbackKey };
+}
+
+export function renderEngineeringDiagnostic(
+  diagnostic: EngineeringDiagnostic,
+): string {
+  return typeof diagnostic === 'string'
+    ? diagnostic
+    : $t(diagnostic.key, diagnostic.values ?? {});
+}
+
 /** A pinned original cannot cross source roles or acquire a service binding by inference. */
 export function validNamespaceBasis(
   basis: Pick<GooseSourceRequest['namespaces'], 'data' | 'services'>,
@@ -75,16 +104,30 @@ export function describeAccess(access: MmsAlternateAccess | null): string {
     : `{${entries.join(', ')}}`;
 }
 
-/** The request adapter returns either an Error or the server's structured error body. */
-export function describeFailure(cause: unknown, fallback: string): string {
-  if (cause instanceof Error && cause.message) return cause.message;
+function diagnosticMessage(value: unknown): string | undefined {
   if (
-    cause !== null &&
-    typeof cause === 'object' &&
-    'message' in cause &&
-    typeof cause.message === 'string' &&
-    cause.message.length > 0
+    value !== null &&
+    typeof value === 'object' &&
+    'message' in value &&
+    typeof value.message === 'string' &&
+    value.message.trim()
   )
-    return cause.message;
-  return fallback;
+    return value.message;
+  return undefined;
+}
+
+/** The request adapter preserves the server body inside the original rejection. */
+export function describeFailure(cause: unknown, fallback: string): string {
+  if (cause !== null && typeof cause === 'object' && 'response' in cause) {
+    const response = cause.response;
+    if (
+      response !== null &&
+      typeof response === 'object' &&
+      'data' in response
+    ) {
+      const diagnostic = diagnosticMessage(response.data);
+      if (diagnostic) return diagnostic;
+    }
+  }
+  return diagnosticMessage(cause) ?? fallback;
 }
